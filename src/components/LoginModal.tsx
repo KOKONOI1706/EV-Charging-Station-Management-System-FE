@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Car, Users } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Users } from "lucide-react";
 import { AuthService } from "../services/authService";
 import { toast } from "sonner";
 import { useLanguage } from "../hooks/useLanguage";
@@ -38,11 +38,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     email: "",
     phone: "",
     password: "",
-    confirmPassword: "",
-    vehicleMake: "",
-    vehicleModel: "",
-    vehicleYear: "",
-    batteryCapacity: ""
+    confirmPassword: ""
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -87,10 +83,10 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
         phone: registerForm.phone,
         password: registerForm.password,
         vehicleInfo: {
-          make: registerForm.vehicleMake,
-          model: registerForm.vehicleModel,
-          year: parseInt(registerForm.vehicleYear),
-          batteryCapacity: parseInt(registerForm.batteryCapacity)
+          make: "N/A",
+          model: "N/A",
+          year: 2020,
+          batteryCapacity: 50
         }
       };
 
@@ -128,11 +124,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
       email: "",
       phone: "",
       password: "",
-      confirmPassword: "",
-      vehicleMake: "",
-      vehicleModel: "",
-      vehicleYear: "",
-      batteryCapacity: ""
+      confirmPassword: ""
     });
     setError("");
   };
@@ -161,7 +153,9 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             <Card>
               <CardHeader className="text-center">
                 <CardTitle>{t.signInTitle}</CardTitle>
-              
+                <CardDescription>
+                  Nhập thông tin của bạn để đăng nhập
+                </CardDescription>             
               </CardHeader>
               <CardContent className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
@@ -354,71 +348,6 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                             required
                           />
                         </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vehicle Information */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-gray-700">{t.vehicleInformation}</h4>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="vehicle-make">{t.vehicleMake}</Label>
-                        <div className="relative">
-                          <Car className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <Input
-                            id="vehicle-make"
-                            type="text"
-                            placeholder={t.vehicleMakePlaceholder}
-                            value={registerForm.vehicleMake}
-                            onChange={(e) => setRegisterForm({ ...registerForm, vehicleMake: e.target.value })}
-                            className="pl-10"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="vehicle-model">{t.vehicleModel}</Label>
-                        <Input
-                          id="vehicle-model"
-                          type="text"
-                          placeholder={t.vehicleModelPlaceholder}
-                          value={registerForm.vehicleModel}
-                          onChange={(e) => setRegisterForm({ ...registerForm, vehicleModel: e.target.value })}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="vehicle-year">{t.vehicleYear}</Label>
-                        <Input
-                          id="vehicle-year"
-                          type="number"
-                          placeholder={t.vehicleYearPlaceholder}
-                          min="2010"
-                          max="2025"
-                          value={registerForm.vehicleYear}
-                          onChange={(e) => setRegisterForm({ ...registerForm, vehicleYear: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="battery-capacity">{t.batteryCapacity}</Label>
-                        <Input
-                          id="battery-capacity"
-                          type="number"
-                          placeholder={t.batteryCapacityPlaceholder}
-                          min="10"
-                          max="200"
-                          value={registerForm.batteryCapacity}
-                          onChange={(e) => setRegisterForm({ ...registerForm, batteryCapacity: e.target.value })}
-                          required
-                        />
                       </div>
                     </div>
                   </div>

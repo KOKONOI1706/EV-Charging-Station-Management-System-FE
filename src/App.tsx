@@ -13,6 +13,7 @@ import { SupportPage } from "./components/SupportPage";
 import { Footer } from "./components/Footer";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { useLanguage } from "./hooks/useLanguage";
 import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import {
 
 function AppContent() {
   const { user, login, logout, isAuthenticated, isLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [currentView, setCurrentView] = useState<"home" | "dashboard" | "pricing" | "support" | "staff" | "admin">("home");
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
@@ -164,10 +166,10 @@ function AppContent() {
               <div className="container mx-auto px-4">
                 <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold mb-4">
-                    Why Choose ChargeTech?
+                    {t.whyChooseTitle}
                   </h2>
                   <p className="text-gray-600 max-w-2xl mx-auto">
-                    Experience the future of EV charging with our cutting-edge technology and nationwide network.
+                    {t.whyChooseSubtitle}
                   </p>
                 </div>
 
@@ -176,9 +178,9 @@ function AppContent() {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-2xl">⚡</span>
                     </div>
-                    <h3 className="font-semibold mb-2">Ultra-Fast Charging</h3>
+                    <h3 className="font-semibold mb-2">{t.ultraFastCharging}</h3>
                     <p className="text-gray-600">
-                      Get up to 350kW charging speeds for the fastest possible charge times.
+                      {t.ultraFastChargingDesc}
                     </p>
                   </div>
 
@@ -186,9 +188,9 @@ function AppContent() {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-2xl">📱</span>
                     </div>
-                    <h3 className="font-semibold mb-2">Easy Booking</h3>
+                    <h3 className="font-semibold mb-2">{t.easyBooking}</h3>
                     <p className="text-gray-600">
-                      Reserve your charging spot in advance with our intuitive mobile app.
+                      {t.easyBookingDesc}
                     </p>
                   </div>
 
@@ -196,9 +198,9 @@ function AppContent() {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-2xl">🌍</span>
                     </div>
-                    <h3 className="font-semibold mb-2">Nationwide Network</h3>
+                    <h3 className="font-semibold mb-2">{t.nationwideNetwork}</h3>
                     <p className="text-gray-600">
-                      Access over 500 charging locations across the country.
+                      {t.nationwideNetworkDesc}
                     </p>
                   </div>
                 </div>
@@ -209,27 +211,27 @@ function AppContent() {
             <section className="py-16 bg-green-600 text-white">
               <div className="container mx-auto px-4 text-center">
                 <h2 className="text-3xl font-bold mb-4">
-                  Ready to Start Charging?
+                  {t.readyToStartTitle}
                 </h2>
                 <p className="text-xl mb-8 opacity-90">
-                  Join thousands of EV drivers who choose ChargeTech for their charging needs.
+                  {t.readyToStartSubtitle}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
                     size="lg"
                     variant="secondary"
                     onClick={() => !isAuthenticated ? handleAuth() : handleNavigate("dashboard")}
-                    className="bg-white text-green-600 hover:bg-gray-100"
+                    className="bg-white text-green-600 hover:bg-gray-100 hover:scale-105 transition-all duration-200"
                   >
-                    {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
+                    {isAuthenticated ? t.goToDashboard : t.getStartedToday}
                   </Button>
                   <Button
                     size="lg"
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => handleNavigate("pricing")}
-                    className="border-white text-white hover:bg-white hover:text-green-600"
+                    className="bg-white text-green-600 hover:bg-gray-100 hover:scale-105 transition-all duration-200"
                   >
-                    View Pricing
+                    {t.viewPricing}
                   </Button>
                 </div>
               </div>

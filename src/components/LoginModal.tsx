@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Car } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Car, Users } from "lucide-react";
 import { AuthService } from "../services/authService";
 import { toast } from "sonner";
+import { useLanguage } from "../hooks/useLanguage";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -17,10 +19,12 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("login");
+  const [selectedRole, setSelectedRole] = useState<string>("");
 
   // Login form state
   const [loginForm, setLoginForm] = useState({
@@ -48,7 +52,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
 
     try {
       const user = await AuthService.login(loginForm.email, loginForm.password);
-      toast.success(`Welcome back, ${user.name}!`);
+      toast.success(`Chào mừng trở lại, ${user.name}!`);
       onSuccess(user);
       onClose();
     } catch (err: any) {
@@ -65,13 +69,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
 
     // Validation
     if (registerForm.password !== registerForm.confirmPassword) {
-      setError("Passwords do not match");
+      setError("Mật khẩu không khớp");
       setIsLoading(false);
       return;
     }
 
     if (registerForm.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Mật khẩu phải có ít nhất 6 ký tự");
       setIsLoading(false);
       return;
     }
@@ -91,7 +95,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
       };
 
       const user = await AuthService.register(userData);
-      toast.success(`Account created successfully! Welcome, ${user.name}!`);
+      toast.success(`Tạo tài khoản thành công! Chào mừng, ${user.name}!`);
       onSuccess(user);
       onClose();
     } catch (err: any) {
@@ -101,22 +105,24 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     }
   };
 
-  const handleQuickLogin = async (role: "customer" | "staff" | "admin") => {
-    setIsLoading(true);
-    try {
-      const user = await AuthService.quickLogin(role);
-      toast.success(`Logged in as ${role}! Welcome, ${user.name}!`);
-      onSuccess(user);
-      onClose();
-    } catch (err: any) {
-      setError(err.message || "Quick login failed");
-    } finally {
-      setIsLoading(false);
+  const handleRoleSelect = (role: string) => {
+    setSelectedRole(role);
+    
+    // Show a message to guide user
+    const roleNames = {
+      customer: 'Khách hàng',
+      staff: 'Nhân viên', 
+      admin: 'Quản trị viên'
+    };
+    
+    if (role && role in roleNames) {
+      toast.info(`Đã chọn vai trò ${roleNames[role as keyof typeof roleNames]}.`);
     }
   };
 
   const resetForms = () => {
     setLoginForm({ email: "", password: "" });
+    setSelectedRole("");
     setRegisterForm({
       name: "",
       email: "",
@@ -141,34 +147,32 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">
-            Welcome to ChargeTech
+            {t.welcome}
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Sign In</TabsTrigger>
-            <TabsTrigger value="register">Sign Up</TabsTrigger>
+            <TabsTrigger value="login">{t.signIn}</TabsTrigger>
+            <TabsTrigger value="register">{t.signUp}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login" className="space-y-4">
             <Card>
               <CardHeader className="text-center">
-                <CardTitle>Sign In</CardTitle>
-                <CardDescription>
-                  Enter your credentials to access your account
-                </CardDescription>
+                <CardTitle>{t.signInTitle}</CardTitle>
+              
               </CardHeader>
               <CardContent className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t.email}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         id="email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder={t.emailPlaceholder}
                         value={loginForm.email}
                         onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                         className="pl-10"
@@ -178,13 +182,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t.password}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
+                        placeholder={t.passwordPlaceholder}
                         value={loginForm.password}
                         onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                         className="pl-10 pr-10"
@@ -200,6 +204,41 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                     </div>
                   </div>
 
+                  {/* Role Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="role-select" className="text-sm font-medium">
+                      {t.roleSelection}
+                    </Label>
+                    <Select value={selectedRole} onValueChange={handleRoleSelect}>
+                      <SelectTrigger className="w-full">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder={t.selectRole} />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="customer">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <span>{t.customer}</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="staff">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <span>{t.staff}</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <span>{t.admin}</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {error && (
                     <Alert className="border-red-200 bg-red-50">
                       <AlertDescription className="text-red-700">
@@ -213,56 +252,9 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                     className="w-full bg-green-600 hover:bg-green-700"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Signing In..." : "Sign In"}
+                    {isLoading ? "Đang đăng nhập..." : t.signIn}
                   </Button>
                 </form>
-
-                {/* Demo accounts */}
-                <div className="mt-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-muted-foreground">
-                        Or try demo accounts
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2 mt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickLogin("customer")}
-                      disabled={isLoading}
-                      className="text-xs"
-                    >
-                      Customer
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickLogin("staff")}
-                      disabled={isLoading}
-                      className="text-xs"
-                    >
-                      Staff
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickLogin("admin")}
-                      disabled={isLoading}
-                      className="text-xs"
-                    >
-                      Admin
-                    </Button>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -270,26 +262,26 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
           <TabsContent value="register" className="space-y-4">
             <Card>
               <CardHeader className="text-center">
-                <CardTitle>Create Account</CardTitle>
+                <CardTitle>{t.createAccount}</CardTitle>
                 <CardDescription>
-                  Join ChargeTech to start your EV journey
+                  Tham gia ChargeTech để bắt đầu hành trình xe điện
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <form onSubmit={handleRegister} className="space-y-4">
                   {/* Personal Information */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-gray-700">Personal Information</h4>
+                    <h4 className="text-sm font-medium text-gray-700">{t.personalInformation}</h4>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="register-name">Full Name</Label>
+                        <Label htmlFor="register-name">{t.fullName}</Label>
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
                             id="register-name"
                             type="text"
-                            placeholder="John Doe"
+                            placeholder={t.fullNamePlaceholder}
                             value={registerForm.name}
                             onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
                             className="pl-10"
@@ -299,13 +291,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="register-phone">Phone</Label>
+                        <Label htmlFor="register-phone">{t.phoneNumber}</Label>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
                             id="register-phone"
                             type="tel"
-                            placeholder="+1 (555) 123-4567"
+                            placeholder={t.phoneNumberPlaceholder}
                             value={registerForm.phone}
                             onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
                             className="pl-10"
@@ -316,13 +308,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="register-email">Email</Label>
+                      <Label htmlFor="register-email">{t.email}</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                         <Input
                           id="register-email"
                           type="email"
-                          placeholder="your@email.com"
+                          placeholder={t.emailPlaceholder}
                           value={registerForm.email}
                           onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                           className="pl-10"
@@ -333,13 +325,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="register-password">Password</Label>
+                        <Label htmlFor="register-password">{t.password}</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
                             id="register-password"
                             type="password"
-                            placeholder="••••••••"
+                            placeholder={t.passwordPlaceholder}
                             value={registerForm.password}
                             onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                             className="pl-10"
@@ -349,13 +341,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="register-confirm">Confirm Password</Label>
+                        <Label htmlFor="register-confirm">{t.confirmPassword}</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
                             id="register-confirm"
                             type="password"
-                            placeholder="••••••••"
+                            placeholder={t.passwordPlaceholder}
                             value={registerForm.confirmPassword}
                             onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
                             className="pl-10"
@@ -368,17 +360,17 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
 
                   {/* Vehicle Information */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-gray-700">Vehicle Information</h4>
+                    <h4 className="text-sm font-medium text-gray-700">{t.vehicleInformation}</h4>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="vehicle-make">Make</Label>
+                        <Label htmlFor="vehicle-make">{t.vehicleMake}</Label>
                         <div className="relative">
                           <Car className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
                             id="vehicle-make"
                             type="text"
-                            placeholder="Tesla"
+                            placeholder={t.vehicleMakePlaceholder}
                             value={registerForm.vehicleMake}
                             onChange={(e) => setRegisterForm({ ...registerForm, vehicleMake: e.target.value })}
                             className="pl-10"
@@ -388,11 +380,11 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="vehicle-model">Model</Label>
+                        <Label htmlFor="vehicle-model">{t.vehicleModel}</Label>
                         <Input
                           id="vehicle-model"
                           type="text"
-                          placeholder="Model 3"
+                          placeholder={t.vehicleModelPlaceholder}
                           value={registerForm.vehicleModel}
                           onChange={(e) => setRegisterForm({ ...registerForm, vehicleModel: e.target.value })}
                           required
@@ -402,11 +394,11 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="vehicle-year">Year</Label>
+                        <Label htmlFor="vehicle-year">{t.vehicleYear}</Label>
                         <Input
                           id="vehicle-year"
                           type="number"
-                          placeholder="2023"
+                          placeholder={t.vehicleYearPlaceholder}
                           min="2010"
                           max="2025"
                           value={registerForm.vehicleYear}
@@ -416,11 +408,11 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="battery-capacity">Battery (kWh)</Label>
+                        <Label htmlFor="battery-capacity">{t.batteryCapacity}</Label>
                         <Input
                           id="battery-capacity"
                           type="number"
-                          placeholder="75"
+                          placeholder={t.batteryCapacityPlaceholder}
                           min="10"
                           max="200"
                           value={registerForm.batteryCapacity}
@@ -444,7 +436,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                     className="w-full bg-green-600 hover:bg-green-700"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Creating Account..." : "Create Account"}
+                    {isLoading ? "Đang tạo tài khoản..." : t.createAccount}
                   </Button>
                 </form>
               </CardContent>

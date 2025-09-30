@@ -19,27 +19,27 @@ export const useLanguage = () => {
 
 export const useLanguageState = () => {
   const [language, setLanguageState] = useState<Language>(() => {
-    // Check localStorage first, then default to Vietnamese
+    // Try to get saved language preference, default to Vietnamese
     try {
-      const saved = localStorage.getItem("chargetech-language") as Language;
-      if (saved && ["en", "vi"].includes(saved)) {
-        return saved;
+      const saved = localStorage.getItem("chargetech-language");
+      if (saved && (saved === "en" || saved === "vi")) {
+        return saved as Language;
       }
     } catch (error) {
-      // localStorage might not be available
-      console.warn("localStorage not available:", error);
+      console.warn("Could not read language preference:", error);
     }
-    
-    // Default to Vietnamese
-    return "vi";
+    return "vi"; // Default to Vietnamese
   });
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    try {
-      localStorage.setItem("chargetech-language", lang);
-    } catch (error) {
-      console.warn("Could not save language preference:", error);
+    // Allow both English and Vietnamese
+    if (lang === "en" || lang === "vi") {
+      setLanguageState(lang);
+      try {
+        localStorage.setItem("chargetech-language", lang);
+      } catch (error) {
+        console.warn("Could not save language preference:", error);
+      }
     }
   };
 

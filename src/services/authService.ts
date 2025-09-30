@@ -29,9 +29,9 @@ export class AuthService {
 
     // Demo credentials for different roles
     const demoCredentials = [
-      { email: "customer@demo.com", password: "demo123", role: "customer" },
-      { email: "staff@demo.com", password: "demo123", role: "staff" },
-      { email: "admin@demo.com", password: "demo123", role: "admin" },
+      { email: "customer@demo.com", password: "123", role: "customer" },
+      { email: "staff@demo.com", password: "123", role: "staff" },
+      { email: "admin@demo.com", password: "123", role: "admin" },
     ];
 
     // Check demo credentials first

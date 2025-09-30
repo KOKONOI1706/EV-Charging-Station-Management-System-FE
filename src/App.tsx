@@ -3,86 +3,86 @@ import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { StationFinder } from "./components/StationFinder";
 import { BookingModal } from "./components/BookingModal";
+import { LoginModal } from "./components/LoginModal";
+import { ProfileModal } from "./components/ProfileModal";
 import { UserDashboard } from "./components/UserDashboard";
 import { EnhancedStaffDashboard } from "./components/EnhancedStaffDashboard";
 import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
 import { PricingPage } from "./components/PricingPage";
 import { SupportPage } from "./components/SupportPage";
 import { Footer } from "./components/Footer";
-import { RoleSelector } from "./components/RoleSelector";
 import { LanguageProvider } from "./components/LanguageProvider";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
-import { useLanguage } from "./hooks/useLanguage";
 import { 
   Station, 
   Booking, 
-  User, 
-  MockDatabaseService, 
-  MOCK_USERS 
+  User,
+  MockDatabaseService
 } from "./data/mockDatabase";
 
 function AppContent() {
-  const { t } = useLanguage();
+  const { user, login, logout, isAuthenticated, isLoading } = useAuth();
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showRoleSelector, setShowRoleSelector] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<"home" | "dashboard" | "pricing" | "support" | "staff" | "admin">("home");
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && currentUser?.role === "customer" && currentUser.id && bookings.length === 0) {
-      loadUserData(currentUser.id);
+    if (isAuthenticated && user?.role === "customer" && user.id && bookings.length === 0) {
+      loadUserData(user.id);
     }
-  }, [isAuthenticated, currentUser?.id, currentUser?.role, bookings.length]);
+  }, [isAuthenticated, user?.id, user?.role, bookings.length]);
 
   const loadUserData = async (userId: string) => {
     try {
-      setIsLoading(true);
+      setIsLoadingData(true);
       const userBookings = await MockDatabaseService.getUserBookings(userId);
       setBookings(userBookings);
     } catch (error) {
       console.error("Failed to load user data:", error);
-      toast.error(t.error);
+      toast.error("Failed to load user data");
     } finally {
-      setIsLoading(false);
+      setIsLoadingData(false);
     }
   };
 
-  const handleRoleSelect = (role: "customer" | "staff" | "admin") => {
-    const selectedUser = MOCK_USERS.find(u => u.role === role);
-    if (selectedUser) {
-      setCurrentUser(selectedUser);
-      setIsAuthenticated(true);
-      setShowRoleSelector(false);
-      
-      if (role === "customer") {
-        setCurrentView("dashboard");
-        loadUserData(selectedUser.id);
-      } else if (role === "staff") {
-        setCurrentView("staff");
-      } else if (role === "admin") {
-        setCurrentView("admin");
-      }
-      
-      toast.success(`${t.welcome} ${selectedUser.name}!`);
+  const handleLoginSuccess = (authenticatedUser: User) => {
+    login(authenticatedUser);
+    
+    // Navigate to appropriate dashboard based on role
+    if (authenticatedUser.role === "customer") {
+      setCurrentView("dashboard");
+      loadUserData(authenticatedUser.id);
+    } else if (authenticatedUser.role === "staff") {
+      setCurrentView("staff");
+    } else if (authenticatedUser.role === "admin") {
+      setCurrentView("admin");
     }
   };
 
   const handleAuth = () => {
     if (!isAuthenticated) {
-      setShowRoleSelector(true);
+      setIsLoginModalOpen(true);
     } else {
-      setIsAuthenticated(false);
-      setCurrentUser(null);
+      handleLogout();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
       setBookings([]);
       setCurrentView("home");
-      toast.success("You've been signed out.");
+      toast.success("You've been signed out successfully.");
+    } catch (error) {
+      toast.error("Error signing out. Please try again.");
     }
   };
 
@@ -96,9 +96,10 @@ function AppContent() {
   const handleBookStation = (station: Station) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to book a charging station.");
+      setIsLoginModalOpen(true);
       return;
     }
-    if (currentUser?.role !== "customer") {
+    if (user?.role !== "customer") {
       toast.error("Only customers can book charging stations.");
       return;
     }
@@ -110,13 +111,13 @@ function AppContent() {
     try {
       const newBooking = await MockDatabaseService.createBooking({
         ...bookingData,
-        userId: currentUser?.id || "user_001"
+        userId: user?.id || "user_001"
       });
       setBookings((prev) => [...prev, newBooking]);
-      toast.success(t.success);
+      toast.success("Booking confirmed successfully!");
     } catch (error) {
       console.error("Failed to create booking:", error);
-      toast.error(t.error);
+      toast.error("Failed to create booking. Please try again.");
     }
   };
 
@@ -127,20 +128,28 @@ function AppContent() {
   const handleGetStarted = (planId: string) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to select a plan.");
+      setIsLoginModalOpen(true);
       return;
     }
     toast.success(`${planId.charAt(0).toUpperCase() + planId.slice(1)} plan selected!`);
   };
 
-  // Show role selector if not authenticated and requested
-  if (showRoleSelector) {
-    return <RoleSelector onRoleSelect={handleRoleSelect} />;
-  }
-
   const handleCloseBookingModal = () => {
     setIsBookingModalOpen(false);
     setSelectedStation(null);
   };
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -155,10 +164,10 @@ function AppContent() {
               <div className="container mx-auto px-4">
                 <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold mb-4">
-                    {t.whyChooseTitle}
+                    Why Choose ChargeTech?
                   </h2>
                   <p className="text-gray-600 max-w-2xl mx-auto">
-                    {t.whyChooseSubtitle}
+                    Experience the future of EV charging with our cutting-edge technology and nationwide network.
                   </p>
                 </div>
 
@@ -167,9 +176,9 @@ function AppContent() {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-2xl">⚡</span>
                     </div>
-                    <h3 className="font-semibold mb-2">{t.ultraFastCharging}</h3>
+                    <h3 className="font-semibold mb-2">Ultra-Fast Charging</h3>
                     <p className="text-gray-600">
-                      {t.ultraFastChargingDesc}
+                      Get up to 350kW charging speeds for the fastest possible charge times.
                     </p>
                   </div>
 
@@ -177,9 +186,9 @@ function AppContent() {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-2xl">📱</span>
                     </div>
-                    <h3 className="font-semibold mb-2">{t.easyBooking}</h3>
+                    <h3 className="font-semibold mb-2">Easy Booking</h3>
                     <p className="text-gray-600">
-                      {t.easyBookingDesc}
+                      Reserve your charging spot in advance with our intuitive mobile app.
                     </p>
                   </div>
 
@@ -187,9 +196,9 @@ function AppContent() {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-2xl">🌍</span>
                     </div>
-                    <h3 className="font-semibold mb-2">{t.nationwideNetwork}</h3>
+                    <h3 className="font-semibold mb-2">Nationwide Network</h3>
                     <p className="text-gray-600">
-                      {t.nationwideNetworkDesc}
+                      Access over 500 charging locations across the country.
                     </p>
                   </div>
                 </div>
@@ -200,10 +209,10 @@ function AppContent() {
             <section className="py-16 bg-green-600 text-white">
               <div className="container mx-auto px-4 text-center">
                 <h2 className="text-3xl font-bold mb-4">
-                  {t.readyToStartTitle}
+                  Ready to Start Charging?
                 </h2>
                 <p className="text-xl mb-8 opacity-90">
-                  {t.readyToStartSubtitle}
+                  Join thousands of EV drivers who choose ChargeTech for their charging needs.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
@@ -212,15 +221,15 @@ function AppContent() {
                     onClick={() => !isAuthenticated ? handleAuth() : handleNavigate("dashboard")}
                     className="bg-white text-green-600 hover:bg-gray-100"
                   >
-                    {isAuthenticated ? t.goToDashboard : t.getStartedToday}
+                    {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
                   </Button>
                   <Button
                     size="lg"
                     variant="outline"
                     onClick={() => handleNavigate("pricing")}
-                    className="border-white text-[rgba(21,191,80,1)] hover:bg-white hover:text-green-600"
+                    className="border-white text-white hover:bg-white hover:text-green-600"
                   >
-                    {t.viewPricing}
+                    View Pricing
                   </Button>
                 </div>
               </div>
@@ -229,35 +238,41 @@ function AppContent() {
         );
 
       case "dashboard":
-        return isAuthenticated && currentUser?.role === "customer" ? (
-          <UserDashboard bookings={bookings} userName={currentUser.name} />
+        return isAuthenticated && user?.role === "customer" ? (
+          <UserDashboard bookings={bookings} userName={user.name} />
         ) : (
           <div className="container mx-auto px-4 py-16 text-center">
-            <h2 className="text-2xl font-bold mb-4">{t.signIn}</h2>
-            <p className="text-gray-600 mb-8">You need to sign in to access your dashboard.</p>
+            <h2 className="text-2xl font-bold mb-4">Access Restricted</h2>
+            <p className="text-gray-600 mb-8">You need to sign in as a customer to access this dashboard.</p>
             <Button onClick={handleAuth} className="bg-green-600 hover:bg-green-700">
-              {t.signIn}
+              Sign In
             </Button>
           </div>
         );
 
       case "staff":
-        return isAuthenticated && currentUser?.role === "staff" ? (
+        return isAuthenticated && user?.role === "staff" ? (
           <EnhancedStaffDashboard />
         ) : (
           <div className="container mx-auto px-4 py-16 text-center">
             <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
             <p className="text-gray-600 mb-8">You need staff privileges to access this area.</p>
+            <Button onClick={handleAuth} className="bg-green-600 hover:bg-green-700">
+              Sign In as Staff
+            </Button>
           </div>
         );
 
       case "admin":
-        return isAuthenticated && currentUser?.role === "admin" ? (
+        return isAuthenticated && user?.role === "admin" ? (
           <EnhancedAdminDashboard />
         ) : (
           <div className="container mx-auto px-4 py-16 text-center">
             <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
             <p className="text-gray-600 mb-8">You need administrator privileges to access this area.</p>
+            <Button onClick={handleAuth} className="bg-green-600 hover:bg-green-700">
+              Sign In as Admin
+            </Button>
           </div>
         );
 
@@ -277,15 +292,16 @@ function AppContent() {
       <Header
         onAuthClick={handleAuth}
         isAuthenticated={isAuthenticated}
-        userName={currentUser?.name}
+        userName={user?.name}
         currentView={currentView}
         onNavigate={handleNavigate}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
       />
 
-      {isLoading ? (
+      {isLoadingData ? (
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t.loading}</p>
+          <p className="mt-4 text-gray-600">Loading your data...</p>
         </div>
       ) : (
         renderCurrentView()
@@ -296,24 +312,36 @@ function AppContent() {
         <div className="fixed bottom-6 right-6">
           <Button
             onClick={() => {
-              if (currentUser?.role === "customer") {
+              if (user?.role === "customer") {
                 handleNavigate("dashboard");
-              } else if (currentUser?.role === "staff") {
+              } else if (user?.role === "staff") {
                 handleNavigate("staff");
-              } else if (currentUser?.role === "admin") {
+              } else if (user?.role === "admin") {
                 handleNavigate("admin");
               }
             }}
             className="bg-green-600 hover:bg-green-700 shadow-lg"
           >
-            {currentUser?.role === "customer" ? t.dashboard : 
-             currentUser?.role === "staff" ? t.staffDashboard : 
-             t.adminDashboard}
+            {user?.role === "customer" ? "Dashboard" : 
+             user?.role === "staff" ? "Staff Panel" : 
+             "Admin Panel"}
           </Button>
         </div>
       )}
 
       <Footer onNavigate={handleNavigate} />
+
+      {/* Modals */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
+
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
 
       <BookingModal
         station={selectedStation}
@@ -330,7 +358,9 @@ function AppContent() {
 export default function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </LanguageProvider>
   );
 }

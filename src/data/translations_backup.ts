@@ -1,4 +1,4 @@
-export type Language = "vi" | "en";
+export type Language = "en" | "vi" | "ja";
 
 export interface Translation {
   // Header
@@ -785,11 +785,168 @@ export const translations: Record<Language, Translation> = {
     manageUsers: "Quản lý người dùng",
     viewBookings: "Xem đặt chỗ",
     generateReport: "Tạo báo cáo",
-  }
+  },
   
-  // ja translation temporarily removed for simplification
+  ja: {
+    // Header
+    signIn: "サインイン",
+    signOut: "サインアウト",
+    welcome: "ようこそ",
+    findStations: "ステーション検索",
+    pricing: "料金",
+    support: "サポート",
+    dashboard: "ダッシュボード",
+    
+    // Hero Section
+    heroTitle: "安心してEVを充電",
+    heroSubtitle: "全国のEV充電ステーションを検索、予約、支払い。必要な時に迅速で信頼性があり便利な充電。",
+    findStationsButton: "ステーション検索",
+    learnMore: "詳細を見る",
+    
+    // Features
+    whyChooseTitle: "なぜChargeTechを選ぶのか？",
+    whyChooseSubtitle: "信頼性が高く、高速でユーザーフレンドリーな充電ネットワークでEV充電の未来を体験してください。",
+    ultraFastCharging: "超高速充電",
+    ultraFastChargingDesc: "最大350kWの充電速度で素早く道路に戻れます。",
+    easyBooking: "簡単予約",
+    easyBookingDesc: "シンプルな予約システムで事前に充電スロットを予約。",
+    nationwideNetwork: "全国ネットワーク",
+    nationwideNetworkDesc: "全国500以上の充電ステーションにアクセス。",
+    
+    // CTA Section
+    readyToStartTitle: "充電を始める準備はできましたか？",
+    readyToStartSubtitle: "EV充電のニーズでChargeTechを信頼する数千人のドライバーに参加してください。",
+    getStartedToday: "今日から始める",
+    goToDashboard: "ダッシュボードへ",
+    viewPricing: "料金を見る",
+    downloadApp: "アプリをダウンロード",
+    
+    // Station Finder
+    findChargingStations: "充電ステーション検索",
+    findChargingStationsDesc: "最寄りの充電ステーションを見つけて事前にスロットを予約。リアルタイム空き状況と即座の確認。",
+    searchPlaceholder: "ステーション名または住所で検索",
+    filterStations: "ステーション絞り込み",
+    all: "すべて",
+    available: "利用可能",
+    fastCharging: "急速充電",
+    availableNow: "今利用可能",
+    rating: "評価",
+    bookNow: "今すぐ予約",
+    
+    // Booking Modal
+    bookChargingSession: "充電セッション予約",
+    selectDateTime: "日時選択",
+    selectDate: "日付選択",
+    selectTime: "時間選択",
+    duration: "時間",
+    hours: "時間",
+    reviewBooking: "予約確認",
+    stationDetails: "ステーション詳細",
+    bookingDetails: "予約詳細",
+    totalCost: "合計費用",
+    confirmBooking: "予約確認",
+    bookingConfirmed: "予約が確認されました！",
+    bookingConfirmedDesc: "充電セッションが正常に予約されました。確認メールを間もなくお送りします。",
+    viewDashboard: "ダッシュボードを見る",
+    close: "閉じる",
+    
+    // Dashboard
+    myDashboard: "マイダッシュボード",
+    overview: "概要",
+    bookings: "予約",
+    settings: "設定",
+    totalSessions: "総セッション数",
+    totalSpent: "総支出",
+    memberSince: "会員開始日",
+    upcomingBookings: "今後の予約",
+    recentBookings: "最近の予約",
+    confirmed: "確認済み",
+    completed: "完了",
+    cancelled: "キャンセル",
+    inProgress: "進行中",
+    
+    // Pricing
+    choosePlan: "充電プランを選択",
+    choosePlanDesc: "柔軟な料金プランでお金を節約し、プレミアム機能をお楽しみください。契約なし、いつでもキャンセル可能。",
+    monthly: "月額",
+    annual: "年額",
+    save: "節約",
+    mostPopular: "最も人気",
+    getStartedFree: "無料で始める",
+    choosePlan2: "プラン選択",
+    savingsCalculator: "節約計算機",
+    lightUser: "ライトユーザー",
+    regularUser: "レギュラーユーザー",
+    heavyUser: "ヘビーユー��ー",
+    
+    // Support
+    howCanWeHelp: "どのようにお手伝いできますか？",
+    howCanWeHelpDesc: "よくある質問への迅速な回答を得るか、サポートチームにお問い合わせください。",
+    callUs: "お電話ください",
+    supportAvailable: "24時間年中無休サポート",
+    liveChat: "ライブチャット",
+    avgResponse: "平均応答時間：2分",
+    emailSupport: "メールサポート",
+    responseTime: "24時間以内に返信",
+    startChat: "チャット開始",
+    sendEmail: "メール送信",
+    faq: "よくある質問",
+    contactUs: "お問い合わせ",
+    systemStatus: "システム状況",
+    
+    // Footer
+    powering: "信頼性が高く、高速でアクセス可能な充電ソリューションで電気モビリティの未来を支えています。",
+    quickLinks: "クイックリンク",
+    services: "サービス",
+    contactUsFooter: "お問い合わせ",
+    dcFastCharging: "DC急速充電",
+    level2Charging: "レベル2充電",
+    fleetSolutions: "フリートソリューション",
+    businessPartnerships: "ビジネスパートナーシップ",
+    privacyPolicy: "プライバシーポリシー",
+    termsOfService: "利用規約",
+    cookiePolicy: "クッキーポリシー",
+    allRightsReserved: "全著作権所有。",
+    
+    // Common
+    loading: "読み込み中...",
+    error: "エラー",
+    success: "成功",
+    cancel: "キャンセル",
+    save2: "保存",
+    edit: "編集",
+    delete: "削除",
+    back: "戻る",
+    next: "次へ",
+    previous: "前へ",
+    search: "検索",
+    filter: "フィルター",
+    
+    // Staff/Admin
+    staffDashboard: "スタッフダッシュボード",
+    adminDashboard: "管理者ダッシュボード",
+    stationManagement: "ステーション管理",
+    userManagement: "ユーザー管理",
+    bookingManagement: "予約管理",
+    analytics: "分析",
+    reports: "レポート",
+    systemSettings: "システム設定",
+    addStation: "ステーション追加",
+    editStation: "ステーション編集",
+    deleteStation: "ステーション削除",
+    stationStatus: "ステーション状況",
+    operational: "運用中",
+    maintenance: "メンテナンス",
+    offline: "オフライン",
+    totalUsers: "総ユーザー数",
+    activeBookings: "アクティブな予約",
+    revenue: "収益",
+    manageUsers: "ユーザー管理",
+    viewBookings: "予約を見る",
+    generateReport: "レポート生成",
+  }
 };
 
 export const getTranslation = (language: Language): Translation => {
-  return translations[language] || translations.vi;
+  return translations[language] || translations.en;
 };

@@ -9,9 +9,10 @@ interface HeaderProps {
   userName?: string;
   currentView: string;
   onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void;
+  onOpenProfile?: () => void;
 }
 
-export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate }: HeaderProps) {
+export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate, onOpenProfile }: HeaderProps) {
   const { t } = useLanguage();
   return (
     <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
@@ -64,6 +65,16 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
             <div className="flex items-center space-x-2">
               <User className="w-5 h-5" />
               <span className="hidden sm:inline">{t.welcome}, {userName}</span>
+              {onOpenProfile && (
+                <Button
+                  onClick={onOpenProfile}
+                  variant="ghost"
+                  size="sm"
+                  className="text-green-600 hover:text-green-700"
+                >
+                  Profile
+                </Button>
+              )}
               <Button
                 onClick={onAuthClick}
                 variant="outline"

@@ -4,6 +4,7 @@ import { Hero } from "./components/Hero";
 import { StationFinder } from "./components/StationFinder";
 import { BookingModal } from "./components/BookingModal";
 import { LoginModal } from "./components/LoginModal";
+import { AuthPage } from "./components/AuthPage";
 import { ProfileModal } from "./components/ProfileModal";
 import { UserDashboard } from "./components/UserDashboard";
 import { EnhancedStaffDashboard } from "./components/EnhancedStaffDashboard";
@@ -28,7 +29,7 @@ function AppContent() {
   const { user, login, logout, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
 
-  const [currentView, setCurrentView] = useState<"home" | "dashboard" | "pricing" | "support" | "staff" | "admin">("home");
+  const [currentView, setCurrentView] = useState<"home" | "dashboard" | "pricing" | "support" | "staff" | "admin" | "auth">("home");
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -71,7 +72,7 @@ function AppContent() {
 
   const handleAuth = () => {
     if (!isAuthenticated) {
-      setIsLoginModalOpen(true);
+      setCurrentView("auth");
     } else {
       handleLogout();
     }
@@ -284,6 +285,14 @@ function AppContent() {
       case "support":
         return <SupportPage />;
 
+      case "auth":
+        return (
+          <AuthPage
+            onSuccess={handleLoginSuccess}
+            onBack={() => setCurrentView("home")}
+          />
+        );
+
       default:
         return null;
     }
@@ -291,14 +300,16 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header
-        onAuthClick={handleAuth}
-        isAuthenticated={isAuthenticated}
-        userName={user?.name}
-        currentView={currentView}
-        onNavigate={handleNavigate}
-        onOpenProfile={() => setIsProfileModalOpen(true)}
-      />
+      {currentView !== "auth" && (
+        <Header
+          onAuthClick={handleAuth}
+          isAuthenticated={isAuthenticated}
+          userName={user?.name}
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+        />
+      )}
 
       {isLoadingData ? (
         <div className="container mx-auto px-4 py-16 text-center">
@@ -310,7 +321,7 @@ function AppContent() {
       )}
 
       {/* Quick Navigation for Authenticated Users */}
-      {isAuthenticated && (
+      {isAuthenticated && currentView !== "auth" && (
         <div className="fixed bottom-6 right-6">
           <Button
             onClick={() => {
@@ -331,7 +342,7 @@ function AppContent() {
         </div>
       )}
 
-      <Footer onNavigate={handleNavigate} />
+      {currentView !== "auth" && <Footer onNavigate={handleNavigate} />}
 
       {/* Modals */}
       <LoginModal

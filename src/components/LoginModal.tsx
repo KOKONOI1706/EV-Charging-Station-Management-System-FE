@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -25,6 +25,14 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("login");
   const [selectedRole, setSelectedRole] = useState<string>("");
+
+  // Reset tab to login whenever modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab("login");
+      setError("");
+    }
+  }, [isOpen]);
 
   // Login form state
   const [loginForm, setLoginForm] = useState({
@@ -77,25 +85,26 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     }
 
     try {
-      const userData = {
+      const user = await AuthService.register({
         name: registerForm.name,
         email: registerForm.email,
         phone: registerForm.phone,
         password: registerForm.password,
         vehicleInfo: {
           make: "N/A",
-          model: "N/A",
+          model: "N/A", 
           year: 2020,
           batteryCapacity: 50
         }
-      };
-
-      const user = await AuthService.register(userData);
+      });
+      
+      console.log('User registered successfully:', user);
       toast.success(`Tạo tài khoản thành công! Chào mừng, ${user.name}!`);
       onSuccess(user);
       onClose();
     } catch (err: any) {
-      setError(err.message || "Registration failed");
+      console.error('Registration error:', err);
+      setError(err.message || "Đăng ký thất bại");
     } finally {
       setIsLoading(false);
     }
@@ -127,6 +136,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
       confirmPassword: ""
     });
     setError("");
+    setActiveTab("login"); // Always reset to login tab
   };
 
   const handleClose = () => {

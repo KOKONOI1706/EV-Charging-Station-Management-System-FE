@@ -1,5 +1,8 @@
 import { User, MOCK_USERS } from "../data/mockDatabase";
 
+// Get API URL from environment or default
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -24,75 +27,151 @@ export class AuthService {
 
   // Login with email and password
   static async login(email: string, password: string): Promise<User> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Call real API
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password
+        }),
+      });
 
-    // Demo credentials for different roles
-    const demoCredentials = [
-      { email: "customer@demo.com", password: "123", role: "customer" },
-      { email: "staff@demo.com", password: "123", role: "staff" },
-      { email: "admin@demo.com", password: "123", role: "admin" },
-    ];
+      const result = await response.json();
 
-    // Check demo credentials first
-    const demoUser = demoCredentials.find(
-      cred => cred.email === email && cred.password === password
-    );
-
-    if (demoUser) {
-      const user = this.users.find(u => u.role === demoUser.role);
-      if (user) {
-        this.saveUserToStorage(user);
-        return user;
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Login failed');
       }
-    }
 
-    // Check registered users
-    const user = this.users.find(u => u.email === email);
-    if (!user) {
-      throw new Error("User not found. Please check your email or sign up.");
-    }
+      if (!result.success || !result.data?.user) {
+        throw new Error('Invalid response from server');
+      }
 
-    // In a real app, you would verify the password hash
-    // For demo purposes, we'll accept any password for existing users
-    if (password.length < 3) {
-      throw new Error("Invalid password. Please try again.");
-    }
+      // Transform API response to match frontend User interface
+      const apiUser = result.data.user;
+      const user: User = {
+        id: apiUser.id,
+        name: apiUser.name,
+        email: apiUser.email,
+        phone: apiUser.phone || '',
+        memberSince: new Date(apiUser.createdAt).toISOString().split('T')[0],
+        totalSessions: 0,
+        totalSpent: 0,
+        favoriteStations: [],
+        role: apiUser.role as "customer" | "staff" | "admin",
+        vehicleInfo: {
+          make: "N/A",
+          model: "N/A",
+          year: 2020,
+          batteryCapacity: 50
+        }
+      };
 
-    this.saveUserToStorage(user);
-    return user;
+      this.saveUserToStorage(user);
+      return user;
+    } catch (error) {
+      // Fallback to demo mode if API fails
+      console.warn('API login failed, falling back to demo mode:', error);
+      
+      // Demo credentials for different roles
+      const demoCredentials = [
+        { email: "customer@demo.com", password: "123", role: "customer" },
+        { email: "staff@demo.com", password: "123", role: "staff" },
+        { email: "admin@demo.com", password: "123", role: "admin" },
+      ];
+
+      // Check demo credentials
+      const demoUser = demoCredentials.find(
+        cred => cred.email === email && cred.password === password
+      );
+
+      if (demoUser) {
+        const user = this.users.find(u => u.role === demoUser.role);
+        if (user) {
+          this.saveUserToStorage(user);
+          return user;
+        }
+      }
+
+      // If it's a real API error (not network), throw it
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error("Login failed. Please check your credentials.");
+    }
   }
 
   // Register new user
   static async register(data: RegisterData): Promise<User> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    try {
+      console.log('Attempting registration with data:', {
+        name: data.name,
+        email: data.email,
+        phone: data.phone
+      });
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full URL:', `${API_BASE_URL}/users/register`);
 
-    // Check if user already exists
-    const existingUser = this.users.find(u => u.email === data.email);
-    if (existingUser) {
-      throw new Error("An account with this email already exists.");
+      // Call real API
+      const response = await fetch(`${API_BASE_URL}/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          password: data.password
+        }),
+      });
+
+      console.log('API Response status:', response.status);
+      console.log('API Response ok:', response.ok);
+
+      const result = await response.json();
+      console.log('API Response data:', result);
+
+      if (!response.ok) {
+        console.error('Registration failed:', result);
+        throw new Error(result.error || result.message || 'Registration failed');
+      }
+
+      if (!result.success || !result.data?.user) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Transform API response to match frontend User interface
+      const apiUser = result.data.user;
+      const newUser: User = {
+        id: apiUser.id,
+        name: apiUser.name,
+        email: apiUser.email,
+        phone: apiUser.phone || '',
+        memberSince: new Date(apiUser.createdAt).toISOString().split('T')[0],
+        totalSessions: 0,
+        totalSpent: 0,
+        favoriteStations: [],
+        role: apiUser.role as "customer" | "staff" | "admin",
+        vehicleInfo: data.vehicleInfo
+      };
+
+      // Add to local users array for demo compatibility
+      this.users.push(newUser);
+      this.saveUserToStorage(newUser);
+      
+      return newUser;
+    } catch (error) {
+      // If API fails, show specific error
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error. Please check your connection and try again.');
     }
-
-    // Create new user
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      memberSince: new Date().toISOString().split('T')[0],
-      totalSessions: 0,
-      totalSpent: 0,
-      favoriteStations: [],
-      role: "customer", // New users are customers by default
-      vehicleInfo: data.vehicleInfo
-    };
-
-    // Add to users array
-    this.users.push(newUser);
-
-    this.saveUserToStorage(newUser);
-    return newUser;
   }
 
   // Quick login for demo purposes

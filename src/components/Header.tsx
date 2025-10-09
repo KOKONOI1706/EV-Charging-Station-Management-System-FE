@@ -1,5 +1,6 @@
 import { Button } from "./ui/button";
 import { User, Menu } from "lucide-react";
+import { AuthService } from "../services/authService";
 import { LanguageSelector } from "./LanguageSelector";
 import { useLanguage } from "../hooks/useLanguage";
 
@@ -76,7 +77,16 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
                 </Button>
               )}
               <Button
-                onClick={onAuthClick}
+                onClick={async () => {
+                  try {
+                    // Ensure local storage is cleared and force a reload so AuthProvider re-initializes
+                    await AuthService.logout();
+                  } catch (err) {
+                    console.error('Logout from header failed:', err);
+                  }
+                  // reload to reset app state (AuthProvider will detect no user in storage)
+                  window.location.href = '/';
+                }}
                 variant="outline"
                 size="sm"
                 className="ml-2"

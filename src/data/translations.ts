@@ -231,6 +231,21 @@ export interface Translation {
   lightUser: string;
   regularUser: string;
   heavyUser: string;
+  pricingPlanPricePer: string;
+  savingsLabel: string;
+  statsChargingStations: string;
+  statsUptime: string;
+  statsActiveUsers: string;
+  statsSessions: string;
+  faqTitle: string;
+  faqChangePlanTitle: string;
+  faqChangePlanDesc: string;
+  faqRefundsTitle: string;
+  faqRefundsDesc: string;
+  faqPaymentsTitle: string;
+  faqPaymentsDesc: string;
+  faqHiddenFeesTitle: string;
+  faqHiddenFeesDesc: string;
   
   // Support
   howCanWeHelp: string;
@@ -525,6 +540,21 @@ export const translations: Record<Language, Translation> = {
     lightUser: "Light User",
     regularUser: "Regular User",
     heavyUser: "Heavy User",
+  pricingPlanPricePer: "per",
+  savingsLabel: "Savings",
+  statsChargingStations: "Charging Stations",
+  statsUptime: "Uptime",
+  statsActiveUsers: "Active Users",
+  statsSessions: "Sessions Completed",
+  faqTitle: "Frequently Asked Questions",
+  faqChangePlanTitle: "Can I change my plan anytime?",
+  faqChangePlanDesc: "Yes, you can upgrade, downgrade, or cancel your plan at any time. Changes take effect at the start of your next billing cycle.",
+  faqRefundsTitle: "Do you offer refunds?",
+  faqRefundsDesc: "We offer a 30-day money-back guarantee for annual subscriptions. Monthly subscriptions can be cancelled at any time without penalty.",
+  faqPaymentsTitle: "What payment methods do you accept?",
+  faqPaymentsDesc: "We accept all major credit cards, PayPal, and ACH bank transfers. Payment is automatically processed at the beginning of each billing cycle.",
+  faqHiddenFeesTitle: "Are there any hidden fees?",
+  faqHiddenFeesDesc: "No hidden fees! The pricing shown includes all features listed. You only pay for the electricity you use plus your plan fee.",
     
     // Support
     howCanWeHelp: "How can we help you?",
@@ -817,6 +847,21 @@ export const translations: Record<Language, Translation> = {
     lightUser: "Người dùng nhẹ",
     regularUser: "Người dùng thường xuyên",
     heavyUser: "Người dùng nặng",
+  pricingPlanPricePer: "/",
+  savingsLabel: "Tiết kiệm",
+  statsChargingStations: "Trạm sạc",
+  statsUptime: "Thời gian hoạt động",
+  statsActiveUsers: "Người dùng hoạt động",
+  statsSessions: "Phiên đã hoàn thành",
+  faqTitle: "Câu hỏi thường gặp",
+  faqChangePlanTitle: "Tôi có thể thay đổi gói bất cứ lúc nào không?",
+  faqChangePlanDesc: "Bạn có thể nâng cấp, hạ cấp hoặc hủy gói bất cứ lúc nào. Thay đổi sẽ có hiệu lực vào đầu chu kỳ thanh toán tiếp theo.",
+  faqRefundsTitle: "Bạn có hoàn tiền không?",
+  faqRefundsDesc: "Chúng tôi cung cấp đảm bảo hoàn tiền 30 ngày cho đăng ký hàng năm. Đăng ký hàng tháng có thể bị hủy bất cứ lúc nào mà không bị phạt.",
+  faqPaymentsTitle: "Bạn chấp nhận phương thức thanh toán nào?",
+  faqPaymentsDesc: "Chúng tôi chấp nhận tất cả các thẻ tín dụng chính, PayPal và chuyển khoản ngân hàng ACH. Thanh toán được xử lý tự động vào đầu mỗi chu kỳ thanh toán.",
+  faqHiddenFeesTitle: "Có phí ẩn không?",
+  faqHiddenFeesDesc: "Không có phí ẩn! Giá hiển thị bao gồm tất cả các tính năng được liệt kê. Bạn chỉ trả cho điện năng bạn sử dụng cộng với phí gói.",
     
     // Support
     howCanWeHelp: "Chúng tôi có thể giúp gì cho bạn?",

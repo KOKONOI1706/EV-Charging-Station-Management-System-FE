@@ -5,9 +5,10 @@ import { useLanguage } from "../hooks/useLanguage";
 
 interface HeroProps {
   onFindStations: () => void;
+  onLearnMore?: () => void;
 }
 
-export function Hero({ onFindStations }: HeroProps) {
+export function Hero({ onFindStations, onLearnMore }: HeroProps) {
   const { t } = useLanguage();
   return (
     <section className="relative bg-gradient-to-br from-gray-50 to-white py-20">
@@ -33,6 +34,7 @@ export function Hero({ onFindStations }: HeroProps) {
                 {t.findStationsButton}
               </Button>
               <Button
+                onClick={onLearnMore}
                 variant="outline"
                 size="lg"
                 className="border-gray-300 hover:bg-gray-50"

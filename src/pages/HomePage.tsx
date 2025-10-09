@@ -13,6 +13,19 @@ export default function HomePage() {
     if (!isAuthenticated) navigate('/auth');
   };
 
+  const handleFindStations = () => {
+    // Scroll to StationFinder section
+    const stationFinderSection = document.getElementById('station-finder');
+    if (stationFinderSection) {
+      stationFinderSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleLearnMore = () => {
+    // Navigate to pricing page to see more details
+    navigate('/pricing');
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header
@@ -25,8 +38,10 @@ export default function HomePage() {
       />
 
       <main>
-        <Hero onFindStations={() => {}} />
-        <StationFinder onBookStation={() => { if (!isAuthenticated) navigate('/auth'); }} />
+        <Hero onFindStations={handleFindStations} onLearnMore={handleLearnMore} />
+        <div id="station-finder">
+          <StationFinder onBookStation={() => { if (!isAuthenticated) navigate('/auth'); }} />
+        </div>
       </main>
 
       <Footer onNavigate={(v: any) => navigate(v === 'pricing' ? '/pricing' : '/') } />

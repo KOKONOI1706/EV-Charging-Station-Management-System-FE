@@ -6,6 +6,7 @@ import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
 import { Check, Zap, Calculator, TrendingUp, Users } from "lucide-react";
 import { PRICING_PLANS } from "../data/mockDatabase";
+import { useLanguage } from "../hooks/useLanguage";
 
 interface PricingPageProps {
   onGetStarted: (planId: string) => void;
@@ -13,35 +14,28 @@ interface PricingPageProps {
 
 export function PricingPage({ onGetStarted }: PricingPageProps) {
   const [isAnnual, setIsAnnual] = useState(false);
+  const { t } = useLanguage();
 
   const getAnnualPrice = (monthlyPrice: number) => {
     return monthlyPrice * 12 * 0.8; // 20% discount for annual
   };
 
-  const calculateSavings = (monthlyFee: number, discountRate: number, usage: number) => {
-    const baseCost = usage * 0.35; // Average rate without plan
-    const discountedCost = usage * 0.35 * (1 - discountRate / 100);
-    const monthlySavings = baseCost - discountedCost - monthlyFee;
-    return Math.max(0, monthlySavings);
-  };
+  // (calculateSavings removed - not used in current UI)
 
   return (
     <div className="container mx-auto px-4 py-16">
       {/* Header */}
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold mb-4">
-          Choose Your <span className="text-green-600">Charging Plan</span>
+          <span className="text-green-600">{t.choosePlan}</span>
         </h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Save money and enjoy premium features with our flexible pricing plans.
-          No contracts, cancel anytime.
-        </p>
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.choosePlanDesc}</p>
       </div>
 
       {/* Billing Toggle */}
       <div className="flex items-center justify-center mb-12">
         <span className={`mr-3 ${!isAnnual ? 'font-medium' : 'text-gray-500'}`}>
-          Monthly
+          {t.monthly}
         </span>
         <Switch
           checked={isAnnual}
@@ -49,11 +43,11 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
           className="data-[state=checked]:bg-green-600"
         />
         <span className={`ml-3 ${isAnnual ? 'font-medium' : 'text-gray-500'}`}>
-          Annual
+          {t.annual}
         </span>
         {isAnnual && (
           <Badge className="ml-2 bg-green-100 text-green-700">
-            Save 20%
+            {t.save} 20%
           </Badge>
         )}
       </div>
@@ -76,24 +70,24 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-green-600 text-white px-4 py-1">
-                    Most Popular
+                    {t.mostPopular}
                   </Badge>
                 </div>
               )}
               
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                <p className="text-gray-600 mb-4">{plan.description}</p>
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
+                  <p className="text-gray-600 mb-4">{plan.description}</p>
                 <div className="space-y-2">
                   <div className="text-4xl font-bold">
                     ${price.toFixed(2)}
                     <span className="text-lg font-normal text-gray-500">
-                      /{period}
+                      {` ${t.pricingPlanPricePer}${period === 'month' ? t.monthly.toLowerCase() : t.annual.toLowerCase()}`}
                     </span>
                   </div>
                   {plan.discountRate > 0 && (
                     <p className="text-green-600 font-medium">
-                      {plan.discountRate}% off all charging
+                      {plan.discountRate}% {t.save.toLowerCase()} all charging
                     </p>
                   )}
                 </div>
@@ -118,7 +112,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
                   }
                   variant={plan.popular ? "default" : "outline"}
                 >
-                  {plan.monthlyFee === 0 ? "Get Started Free" : "Choose Plan"}
+                  {plan.monthlyFee === 0 ? t.getStartedFree : t.choosePlan2}
                 </Button>
               </CardContent>
             </Card>
@@ -131,61 +125,61 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="w-6 h-6 text-green-600" />
-            Savings Calculator
+            {t.savingsCalculator}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="space-y-4">
-              <h3 className="font-semibold">Light User (100 kWh/month)</h3>
+              <h3 className="font-semibold">{t.lightUser} (100 kWh/month)</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Basic Plan:</span>
-                  <span>$35.00/month</span>
+                  <span>{PRICING_PLANS[0].name}:</span>
+                  <span>$35.00/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
-                  <span>Plus Plan:</span>
-                  <span>$41.49/month</span>
+                  <span>{PRICING_PLANS[1].name}:</span>
+                  <span>$41.49/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
-                  <span>Premium Plan:</span>
-                  <span>$48.00/month</span>
+                  <span>{PRICING_PLANS[2].name}:</span>
+                  <span>$48.00/{t.monthly.toLowerCase()}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold">Regular User (300 kWh/month)</h3>
+              <h3 className="font-semibold">{t.regularUser} (300 kWh/month)</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Basic Plan:</span>
-                  <span>$105.00/month</span>
+                  <span>{PRICING_PLANS[0].name}:</span>
+                  <span>$105.00/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
-                  <span>Plus Plan:</span>
-                  <span>$104.49/month</span>
+                  <span>{PRICING_PLANS[1].name}:</span>
+                  <span>$104.49/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600 font-medium">
-                  <span>Premium Plan:</span>
-                  <span>$104.00/month</span>
+                  <span>{PRICING_PLANS[2].name}:</span>
+                  <span>$104.00/{t.monthly.toLowerCase()}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold">Heavy User (500 kWh/month)</h3>
+              <h3 className="font-semibold">{t.heavyUser} (500 kWh/month)</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Basic Plan:</span>
-                  <span>$175.00/month</span>
+                  <span>{PRICING_PLANS[0].name}:</span>
+                  <span>$175.00/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
-                  <span>Plus Plan:</span>
-                  <span>$167.49/month</span>
+                  <span>{PRICING_PLANS[1].name}:</span>
+                  <span>$167.49/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600 font-medium">
-                  <span>Premium Plan:</span>
-                  <span>$160.00/month</span>
+                  <span>{PRICING_PLANS[2].name}:</span>
+                  <span>$160.00/{t.monthly.toLowerCase()}</span>
                 </div>
               </div>
             </div>
@@ -199,7 +193,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
           <CardContent className="p-6 text-center">
             <Zap className="w-8 h-8 text-green-600 mx-auto mb-3" />
             <div className="text-2xl font-bold mb-1">500+</div>
-            <div className="text-sm text-gray-600">Charging Stations</div>
+            <div className="text-sm text-gray-600">{t.statsChargingStations}</div>
           </CardContent>
         </Card>
 
@@ -207,7 +201,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
           <CardContent className="p-6 text-center">
             <TrendingUp className="w-8 h-8 text-blue-600 mx-auto mb-3" />
             <div className="text-2xl font-bold mb-1">99.5%</div>
-            <div className="text-sm text-gray-600">Uptime</div>
+            <div className="text-sm text-gray-600">{t.statsUptime}</div>
           </CardContent>
         </Card>
 
@@ -215,7 +209,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
           <CardContent className="p-6 text-center">
             <Users className="w-8 h-8 text-purple-600 mx-auto mb-3" />
             <div className="text-2xl font-bold mb-1">50K+</div>
-            <div className="text-sm text-gray-600">Active Users</div>
+            <div className="text-sm text-gray-600">{t.statsActiveUsers}</div>
           </CardContent>
         </Card>
 
@@ -225,7 +219,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               <span className="text-orange-600 font-bold">⚡</span>
             </div>
             <div className="text-2xl font-bold mb-1">2M+</div>
-            <div className="text-sm text-gray-600">Sessions Completed</div>
+            <div className="text-sm text-gray-600">{t.statsSessions}</div>
           </CardContent>
         </Card>
       </div>
@@ -233,39 +227,27 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
       {/* FAQ Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Frequently Asked Questions</CardTitle>
+          <CardTitle>{t.faqTitle}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <h3 className="font-semibold mb-2">Can I change my plan anytime?</h3>
-            <p className="text-gray-600 text-sm">
-              Yes, you can upgrade, downgrade, or cancel your plan at any time. 
-              Changes take effect at the start of your next billing cycle.
-            </p>
+            <h3 className="font-semibold mb-2">{t.faqChangePlanTitle}</h3>
+            <p className="text-gray-600 text-sm">{t.faqChangePlanDesc}</p>
           </div>
           <Separator />
           <div>
-            <h3 className="font-semibold mb-2">Do you offer refunds?</h3>
-            <p className="text-gray-600 text-sm">
-              We offer a 30-day money-back guarantee for annual subscriptions. 
-              Monthly subscriptions can be cancelled at any time without penalty.
-            </p>
+            <h3 className="font-semibold mb-2">{t.faqRefundsTitle}</h3>
+            <p className="text-gray-600 text-sm">{t.faqRefundsDesc}</p>
           </div>
           <Separator />
           <div>
-            <h3 className="font-semibold mb-2">What payment methods do you accept?</h3>
-            <p className="text-gray-600 text-sm">
-              We accept all major credit cards, PayPal, and ACH bank transfers. 
-              Payment is automatically processed at the beginning of each billing cycle.
-            </p>
+            <h3 className="font-semibold mb-2">{t.faqPaymentsTitle}</h3>
+            <p className="text-gray-600 text-sm">{t.faqPaymentsDesc}</p>
           </div>
           <Separator />
           <div>
-            <h3 className="font-semibold mb-2">Are there any hidden fees?</h3>
-            <p className="text-gray-600 text-sm">
-              No hidden fees! The pricing shown includes all features listed. 
-              You only pay for the electricity you use plus your plan fee.
-            </p>
+            <h3 className="font-semibold mb-2">{t.faqHiddenFeesTitle}</h3>
+            <p className="text-gray-600 text-sm">{t.faqHiddenFeesDesc}</p>
           </div>
         </CardContent>
       </Card>

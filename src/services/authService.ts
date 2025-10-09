@@ -248,24 +248,57 @@ export class AuthService {
 
   // Update user profile
   static async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      // Call real API
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: updates.name,
+          email: updates.email,
+          phone: updates.phone,
+          vehicleInfo: updates.vehicleInfo
+        }),
+      });
 
-    const userIndex = this.users.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
-      throw new Error("User not found");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Update failed');
+      }
+
+      if (!result.success || !result.data?.user) {
+        throw new Error('Invalid response from server');
+      }
+
+      const updatedUser = result.data.user;
+      
+      // Update storage
+      this.saveUserToStorage(updatedUser);
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('API update profile failed:', error);
+      
+      // Fallback to demo mode
+      const userIndex = this.users.findIndex(u => u.id === userId);
+      if (userIndex === -1) {
+        throw new Error("User not found");
+      }
+
+      // Update user data
+      this.users[userIndex] = { ...this.users[userIndex], ...updates };
+      
+      // Update storage if this is the current user
+      const currentUser = this.getCurrentUser();
+      if (currentUser && currentUser.id === userId) {
+        this.saveUserToStorage(this.users[userIndex]);
+      }
+
+      return this.users[userIndex];
     }
-
-    // Update user data
-    this.users[userIndex] = { ...this.users[userIndex], ...updates };
-    
-    // Update storage if this is the current user
-    const currentUser = this.getCurrentUser();
-    if (currentUser && currentUser.id === userId) {
-      this.saveUserToStorage(this.users[userIndex]);
-    }
-
-    return this.users[userIndex];
   }
 
   // Change password

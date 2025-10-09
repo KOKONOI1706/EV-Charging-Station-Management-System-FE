@@ -11,10 +11,8 @@ import {
   Settings,
   CreditCard,
   History,
-  BarChart,
 } from "lucide-react";
 import { Booking } from "../data/mockDatabase";
-import { CustomerAnalyticsDashboard } from "./CustomerAnalyticsDashboard";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -121,10 +119,9 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
       </div>
 
       <Tabs defaultValue="upcoming" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -266,10 +263,6 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <CustomerAnalyticsDashboard bookings={bookings} userName={userName} />
         </TabsContent>
 
         <TabsContent value="settings">

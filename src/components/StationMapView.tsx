@@ -77,19 +77,19 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
 
         {/* Map Legend */}
         <div className="absolute top-4 left-4 bg-white rounded-lg shadow-md p-3 z-10">
-          <h4 className="font-medium mb-2">Station Status</h4>
+          <h4 className="font-medium mb-2">{t.stationStatusLegend}</h4>
           <div className="space-y-1 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>Available (50%+)</span>
+              <span>{t.availableStatus}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>Limited (20-50%)</span>
+              <span>{t.limitedStatus}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>Busy (&lt;20%)</span>
+              <span>{t.busyStatus}</span>
             </div>
           </div>
         </div>
@@ -155,7 +155,7 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
                         onClick={() => onViewDetails(station)}
                         className="flex-1"
                       >
-                        View Layout
+                        {t.viewLayout}
                       </Button>
                       <Button 
                         size="sm" 
@@ -224,14 +224,14 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
                 onClick={() => onViewDetails(station)}
                 className="flex-1"
               >
-                View Layout
+                {t.viewLayout}
               </Button>
               <Button 
                 size="sm" 
                 onClick={() => onStationSelect(station)}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
-                Book Now
+                {t.bookNow}
               </Button>
             </div>
           </CardContent>
@@ -255,7 +255,7 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search stations by name or location..."
+            placeholder={t.searchStationsPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -270,7 +270,7 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
             className={viewMode === 'map' ? 'bg-green-600 hover:bg-green-700' : ''}
           >
             <Map className="w-4 h-4 mr-2" />
-            Map View
+            {t.mapView}
           </Button>
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
@@ -279,7 +279,7 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
             className={viewMode === 'list' ? 'bg-green-600 hover:bg-green-700' : ''}
           >
             <List className="w-4 h-4 mr-2" />
-            List View
+            {t.listView}
           </Button>
         </div>
       </div>
@@ -287,12 +287,12 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
       {/* Results Summary */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600">
-          Found {filteredStations.length} charging station{filteredStations.length !== 1 ? 's' : ''}
+          {t.foundStations.replace('{count}', filteredStations.length.toString())}
           {searchQuery && ` for "${searchQuery}"`}
         </p>
         <Button variant="outline" size="sm">
           <Filter className="w-4 h-4 mr-2" />
-          Filters
+          {t.filters}
         </Button>
       </div>
 
@@ -303,9 +303,9 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
       {filteredStations.length === 0 && searchQuery && (
         <div className="text-center py-8">
           <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No stations found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t.noStationsFound}</h3>
           <p className="text-gray-600 mb-4">
-            Try adjusting your search terms or clearing the search to see all stations.
+            {t.noStationsFoundDesc}
           </p>
           <Button 
             variant="outline" 

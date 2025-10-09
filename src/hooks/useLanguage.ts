@@ -19,64 +19,31 @@ export const useLanguage = () => {
 
 export const useLanguageState = () => {
   const [language, setLanguageState] = useState<Language>(() => {
-    // Check localStorage first, then browser language, then default to English
+    // Try to get saved language preference, default to Vietnamese
     try {
-      const saved = localStorage.getItem("chargetech-language") as Language;
-      if (saved && ["en", "vi", "ja"].includes(saved)) {
-        return saved;
+      const saved = localStorage.getItem("chargetech-language");
+      if (saved && (saved === "en" || saved === "vi")) {
+        return saved as Language;
       }
     } catch (error) {
-      // localStorage might not be available
-      console.warn("localStorage not available:", error);
+      console.warn("Could not read language preference:", error);
     }
-    
-    try {
-      const browserLang = navigator.language.toLowerCase();
-      if (browserLang.startsWith("vi")) return "vi";
-      if (browserLang.startsWith("ja")) return "ja";
-    } catch (error) {
-      // navigator might not be available
-      console.warn("navigator not available:", error);
-    }
-    
-    return "en";
+    return "vi"; // Default to Vietnamese
   });
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    try {
-      localStorage.setItem("chargetech-language", lang);
-    } catch (error) {
-      console.warn("Could not save language preference:", error);
+    // Allow both English and Vietnamese
+    if (lang === "en" || lang === "vi") {
+      setLanguageState(lang);
+      try {
+        localStorage.setItem("chargetech-language", lang);
+      } catch (error) {
+        console.warn("Could not save language preference:", error);
+      }
     }
   };
 
-  const baseTranslation = getTranslation(language);
-  
-  // Add missing map-related translations with fallbacks
-  const t = {
-    ...baseTranslation,
-    mapView: baseTranslation.mapView || "Map View",
-    listView: baseTranslation.listView || "List View",
-    viewLayout: baseTranslation.viewLayout || "View Layout",
-    stationLayout: baseTranslation.stationLayout || "Station Layout",
-    chargingPoints: baseTranslation.chargingPoints || "Charging Points",
-    chargingPoint: baseTranslation.chargingPoint || "Charging Point",
-    inUse: baseTranslation.inUse || "In Use",
-    bookThisPoint: baseTranslation.bookThisPoint || "Book This Point",
-    anyAvailable: baseTranslation.anyAvailable || "Book Any Available",
-    statusOverview: baseTranslation.statusOverview || "Status Overview",
-    quickActions: baseTranslation.quickActions || "Quick Actions",
-    getDirections: baseTranslation.getDirections || "Get Directions",
-    callStation: baseTranslation.callStation || "Call Station",
-    reportIssue: baseTranslation.reportIssue || "Report Issue",
-    facilities: baseTranslation.facilities || "Facilities",
-    entrances: baseTranslation.entrances || "Entrances",
-    connectorType: baseTranslation.connectorType || "Connector Type",
-    powerLevel: baseTranslation.powerLevel || "Power Level",
-    estimatedTime: baseTranslation.estimatedTime || "Estimated Time",
-    currentUser: baseTranslation.currentUser || "Current User",
-  } as Translation;
+  const t = getTranslation(language);
 
   useEffect(() => {
     // Update document language attribute

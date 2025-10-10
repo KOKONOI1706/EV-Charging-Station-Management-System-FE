@@ -42,6 +42,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
         setIsLoading(true);
         // Use demo data with color-coding system
         const stationData = mockStationsForDemo;
+        console.log(`📊 StationFinder loaded ${stationData.length} stations:`, stationData.map(s => ({ name: s.name, lat: s.lat, lng: s.lng })));
         setStations(stationData);
       } catch (error) {
         console.error("Failed to load stations:", error);
@@ -83,6 +84,8 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
       (selectedFilter === "fast" && station.power_kw >= 150);
     return matchesSearch && matchesFilter;
   });
+
+  console.log(`🔍 StationFinder filtered ${filteredStations.length} stations from ${stations.length} total`);
 
   const renderListView = () => (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -312,6 +315,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
 
           <TabsContent value="map">
             <StationMapView
+              stations={filteredStations}
               onStationSelect={handleStationSelect}
               onViewDetails={handleViewDetails}
             />

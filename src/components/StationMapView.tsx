@@ -26,7 +26,7 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true); // Auto show map
   const [mapInitialized, setMapInitialized] = useState(false);
   const [userVehicleType, setUserVehicleType] = useState<string>('Tesla Model 3');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
@@ -98,6 +98,7 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
     // Use external stations if provided
     if (externalStations) {
       setStations(externalStations);
+      setFilteredStations(externalStations); // Set filteredStations too!
       setIsLoading(false);
       return;
     }
@@ -136,7 +137,7 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
 
       const defaultCenter: [number, number] = userLocation 
         ? [userLocation.lat, userLocation.lng] 
-        : [34.0522, -118.2437];
+        : [10.8515, 106.7717]; // Thủ Đức default center
 
       const L = (window as any).L;
       const map = L.map(mapId).setView(defaultCenter, 12);
@@ -168,7 +169,10 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
 
       // Add stations to map
       if (filteredStations.length > 0) {
+        console.log(`🗺️ Adding ${filteredStations.length} stations to map:`, filteredStations.map(s => s.name));
         addStationsToLocalMap(map, filteredStations);
+      } else {
+        console.warn('⚠️ No filtered stations to display on map');
       }
     }
   }, [showMap, mapInitialized, filteredStations, userLocation, onStationSelect]);
@@ -218,7 +222,18 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
       const group = new L.featureGroup(
         stationsToAdd.map(station => L.marker([station.lat, station.lng]))
       );
-      map.fitBounds(group.getBounds().pad(0.1));
+      
+      // Set appropriate zoom based on station spread
+      const bounds = group.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds.pad(0.1));
+      } else {
+        // Fallback to default view if bounds are invalid
+        map.setView([10.8515, 106.7717], 11);
+      }
+    } else {
+      // No stations, center on Thủ Đức
+      map.setView([10.8515, 106.7717], 11);
     }
   };
 

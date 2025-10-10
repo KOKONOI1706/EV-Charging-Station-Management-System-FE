@@ -11,25 +11,64 @@ import { SupportPage } from "./components/SupportPage";
 import { Footer } from "./components/Footer";
 import { RoleSelector } from "./components/RoleSelector";
 import { LanguageProvider } from "./components/LanguageProvider";
+import { DatabaseTest } from "./components/DatabaseTest";
+import { StationStatusDemo } from "./components/StationStatusDemo";
 import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { useLanguage } from "./hooks/useLanguage";
 import { 
+  SupabaseService,
   Station, 
-  Booking, 
-  User, 
-  MockDatabaseService, 
-  MOCK_USERS 
-} from "./data/mockDatabase";
+  Reservation as Booking, 
+  User
+} from "./services/supabaseService";
+
+// Mock users for role selection (replace with proper auth)
+const MOCK_USERS: User[] = [
+  {
+    id: "user_001",
+    name: "Alex Johnson",
+    email: "alex.johnson@email.com",
+    phone: "+1 (555) 123-4567",
+    role: "customer",
+    created_at: "2023-01-15T00:00:00Z",
+    updated_at: "2023-01-15T00:00:00Z"
+  },
+  {
+    id: "staff_001",
+    name: "Sarah Martinez",
+    email: "sarah.martinez@chargetech.com",
+    phone: "+1 (555) 123-4568",
+    role: "staff",
+    created_at: "2022-06-01T00:00:00Z",
+    updated_at: "2022-06-01T00:00:00Z"
+  },
+  {
+    id: "admin_001",
+    name: "Michael Chen",
+    email: "michael.chen@chargetech.com",
+    phone: "+1 (555) 123-4569",
+    role: "admin",
+    created_at: "2022-01-01T00:00:00Z",
+    updated_at: "2022-01-01T00:00:00Z"
+  }
+];
 
 function AppContent() {
   const { t } = useLanguage();
 
+  // Check for special modes via URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const dbTestMode = urlParams.get('test') === 'db';
+  const demoMode = urlParams.get('demo') === 'true';
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentView, setCurrentView] = useState<"home" | "dashboard" | "pricing" | "support" | "staff" | "admin">("home");
+  const [currentView, setCurrentView] = useState<"home" | "dashboard" | "pricing" | "support" | "staff" | "admin" | "dbtest" | "demo">(
+    dbTestMode ? "dbtest" : demoMode ? "demo" : "home"
+  );
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -44,7 +83,7 @@ function AppContent() {
   const loadUserData = async (userId: string) => {
     try {
       setIsLoading(true);
-      const userBookings = await MockDatabaseService.getUserBookings(userId);
+      const userBookings = await SupabaseService.getUserReservations(userId);
       setBookings(userBookings);
     } catch (error) {
       console.error("Failed to load user data:", error);
@@ -108,14 +147,16 @@ function AppContent() {
 
   const handleConfirmBooking = async (bookingData: Partial<Booking>) => {
     try {
-      const newBooking = await MockDatabaseService.createBooking({
-        ...bookingData,
-        userId: currentUser?.id || "user_001"
-      });
-      setBookings((prev) => [...prev, newBooking]);
+      // Booking data from modal already includes reservation creation
+      // The reservation was created in BookingModal with payment processing
+      if (currentUser?.id) {
+        const userBookings = await SupabaseService.getUserReservations(currentUser.id);
+        setBookings(userBookings);
+      }
       toast.success(t.success);
+      setIsBookingModalOpen(false);
     } catch (error) {
-      console.error("Failed to create booking:", error);
+      console.error("Failed to update bookings:", error);
       toast.error(t.error);
     }
   };
@@ -266,6 +307,12 @@ function AppContent() {
 
       case "support":
         return <SupportPage />;
+
+      case "dbtest":
+        return <DatabaseTest />;
+
+      case "demo":
+        return <StationStatusDemo />;
 
       default:
         return null;

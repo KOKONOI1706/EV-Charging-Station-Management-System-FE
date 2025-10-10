@@ -11,10 +11,10 @@ export const ColorCodingNotification: React.FC = () => {
           <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-semibold text-green-800 mb-2">
-              🎨 Hệ Thống Màu Sắc Thông Minh Đã Được Tích Hợp!
+              🚗 Hệ Thống Trạm Sạc Thông Minh - Thủ Đức & TP.HCM
             </h3>
             <p className="text-sm text-green-700 mb-3">
-              Bây giờ bạn có thể dễ dàng nhận biết trạng thái trạm sạc qua màu sắc:
+              Tìm và sử dụng trạm sạc VinFast, Tesla và các xe điện khác dễ dàng:
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs">
@@ -31,7 +31,7 @@ export const ColorCodingNotification: React.FC = () => {
               </Badge>
             </div>
             <p className="text-xs text-green-600 mt-2">
-              ✨ Tự động hiển thị trạng thái real-time và kiểm tra tương thích xe của bạn
+              🇻🇳 Thủ Đức, TP.HCM | ✨ Hỗ trợ VinFast, Tesla và các xe điện phổ biến
             </p>
           </div>
         </div>

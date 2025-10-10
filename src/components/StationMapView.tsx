@@ -84,12 +84,12 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
         },
         (error) => {
           console.warn('Error getting location:', error);
-          // Default to Los Angeles if geolocation fails
-          setUserLocation({ lat: 34.0522, lng: -118.2437 });
+          // Default to Thủ Đức, TP.HCM if geolocation fails
+          setUserLocation({ lat: 10.8515, lng: 106.7717 });
         }
       );
     } else {
-      setUserLocation({ lat: 34.0522, lng: -118.2437 });
+      setUserLocation({ lat: 10.8515, lng: 106.7717 }); // Thủ Đức, TP.HCM
     }
   }, [externalUserLocation]);
 

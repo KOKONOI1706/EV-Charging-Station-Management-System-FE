@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Station } from "../services/supabaseService";
 import { StationStatusService } from "../services/stationStatusService";
-import { mockStationsForDemo } from "../data/mockStationsDemo";
+import { vietnamStations } from "../data/vietnamStations";
 import { ColorCodingNotification } from "./ColorCodingNotification";
 import { StationMapView } from "./StationMapView";
 import { StationDetailView } from "./StationDetailView";
@@ -33,16 +33,16 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [stations, setStations] = useState<Station[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<'list' | 'map' | 'detail'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'map' | 'detail'>('map'); // Default to map view for testing
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
 
   useEffect(() => {
     const loadStations = async () => {
       try {
         setIsLoading(true);
-        // Use demo data with color-coding system
-        const stationData = mockStationsForDemo;
-        console.log(`📊 StationFinder loaded ${stationData.length} stations:`, stationData.map(s => ({ name: s.name, lat: s.lat, lng: s.lng })));
+        // Use Vietnam stations to focus on Thủ Đức area
+        const stationData = vietnamStations;
+        console.log(`🇻🇳 StationFinder loaded ${stationData.length} Vietnam stations:`, stationData.map((s: Station) => ({ name: s.name, lat: s.lat, lng: s.lng })));
         setStations(stationData);
       } catch (error) {
         console.error("Failed to load stations:", error);
@@ -86,6 +86,14 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
   });
 
   console.log(`🔍 StationFinder filtered ${filteredStations.length} stations from ${stations.length} total`);
+  
+  // Debug: Show station names in browser title for debugging
+  useEffect(() => {
+    if (stations.length > 0) {
+      document.title = `EV Stations (${stations.length}) - Vietnam Focus`;
+      console.log('🎯 Station names for debugging:', stations.map(s => s.name).join(', '));
+    }
+  }, [stations]);
 
   const renderListView = () => (
     <div className="flex flex-col lg:flex-row gap-8">

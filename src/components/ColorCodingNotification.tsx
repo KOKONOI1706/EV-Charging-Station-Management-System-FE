@@ -11,10 +11,10 @@ export const ColorCodingNotification: React.FC = () => {
           <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-semibold text-green-800 mb-2">
-              🚗 Hệ Thống Trạm Sạc Thông Minh - Thủ Đức & TP.HCM
+              🇻🇳 Hệ Thống Trạm Sạc Thông Minh - Thủ Đức & Vùng Lân Cận
             </h3>
             <p className="text-sm text-green-700 mb-3">
-              Tìm và sử dụng trạm sạc VinFast, Tesla và các xe điện khác dễ dàng:
+              8 trạm sạc từ Thủ Đức đến Bình Dương, Đồng Nai với hỗ trợ VinFast, Tesla:
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs">
@@ -31,7 +31,7 @@ export const ColorCodingNotification: React.FC = () => {
               </Badge>
             </div>
             <p className="text-xs text-green-600 mt-2">
-              🇻🇳 Thủ Đức, TP.HCM | ✨ Hỗ trợ VinFast, Tesla và các xe điện phổ biến
+              �️ Thủ Đức, Bình Dương, Đồng Nai | ⚡ Hỗ trợ VinFast VF8/VF9, Tesla, BMW
             </p>
           </div>
         </div>

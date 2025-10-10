@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase configuration
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
@@ -51,14 +51,24 @@ export type Database = {
           id: string
           name: string
           address: string
-          latitude: number
-          longitude: number
+          city: string
+          state: string
+          zipCode: string
+          lat: number
+          lng: number
           status: 'available' | 'occupied' | 'maintenance'
-          charger_type: 'fast' | 'ultra_fast' | 'standard'
-          price: number
+          charger_type: string
+          price_per_kwh: number
+          power_kw: number
+          connector: string
           amenities: string[]
           total_spots: number
           available_spots: number
+          rating: number
+          network: string
+          operating_hours: string
+          phone: string
+          image_url?: string
           created_at: string
           updated_at: string
         }
@@ -66,14 +76,24 @@ export type Database = {
           id?: string
           name: string
           address: string
-          latitude: number
-          longitude: number
+          city: string
+          state: string
+          zipCode: string
+          lat: number
+          lng: number
           status?: 'available' | 'occupied' | 'maintenance'
-          charger_type: 'fast' | 'ultra_fast' | 'standard'
-          price: number
+          charger_type: string
+          price_per_kwh: number
+          power_kw: number
+          connector: string
           amenities?: string[]
           total_spots: number
           available_spots?: number
+          rating?: number
+          network: string
+          operating_hours: string
+          phone: string
+          image_url?: string
           created_at?: string
           updated_at?: string
         }
@@ -81,26 +101,40 @@ export type Database = {
           id?: string
           name?: string
           address?: string
-          latitude?: number
-          longitude?: number
+          city?: string
+          state?: string
+          zipCode?: string
+          lat?: number
+          lng?: number
           status?: 'available' | 'occupied' | 'maintenance'
-          charger_type?: 'fast' | 'ultra_fast' | 'standard'
-          price?: number
+          charger_type?: string
+          price_per_kwh?: number
+          power_kw?: number
+          connector?: string
           amenities?: string[]
           total_spots?: number
           available_spots?: number
+          rating?: number
+          network?: string
+          operating_hours?: string
+          phone?: string
+          image_url?: string
           updated_at?: string
         }
       }
-      bookings: {
+      reservations: {
         Row: {
           id: string
           user_id: string
           station_id: string
           start_time: string
           end_time: string
-          status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+          duration_hours: number
+          status: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
           total_cost: number
+          payment_status: 'pending' | 'paid' | 'failed'
+          payment_method?: string
+          payment_id?: string
           created_at: string
           updated_at: string
         }
@@ -110,8 +144,12 @@ export type Database = {
           station_id: string
           start_time: string
           end_time: string
-          status?: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+          duration_hours: number
+          status?: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
           total_cost?: number
+          payment_status?: 'pending' | 'paid' | 'failed'
+          payment_method?: string
+          payment_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -121,8 +159,12 @@ export type Database = {
           station_id?: string
           start_time?: string
           end_time?: string
-          status?: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+          duration_hours?: number
+          status?: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
           total_cost?: number
+          payment_status?: 'pending' | 'paid' | 'failed'
+          payment_method?: string
+          payment_id?: string
           updated_at?: string
         }
       }

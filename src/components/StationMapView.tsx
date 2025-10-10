@@ -97,12 +97,14 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
   useEffect(() => {
     // Use external stations if provided
     if (externalStations) {
+      console.log(`🇻🇳 StationMapView received ${externalStations.length} external stations:`, externalStations.map(s => ({ name: s.name, lat: s.lat, lng: s.lng })));
       setStations(externalStations);
       setFilteredStations(externalStations); // Set filteredStations too!
       setIsLoading(false);
       return;
     }
 
+    console.log('📡 No external stations provided, loading from Supabase...');
     const loadStations = async () => {
       try {
         setIsLoading(true);
@@ -114,6 +116,7 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
         let stationsWithDistance = data;
         // Note: Distance calculation would go here if needed
 
+        console.log(`📡 Loaded ${data.length} stations from Supabase`);
         setStations(stationsWithDistance);
         setFilteredStations(stationsWithDistance);
       } catch (err) {
@@ -131,7 +134,23 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
 
   // Initialize map when showing map view
   useEffect(() => {
+    console.log(`🗺️ Map init check: showMap=${showMap}, mapInitialized=${mapInitialized}, mapRef=${!!mapRef.current}`);
+    
     if (showMap && mapInitialized && mapRef.current) {
+      console.log('🗺️ Starting map initialization with Vietnam stations...');
+      
+      // Clean up any existing map instance first
+      if ((mapRef.current as any)._leaflet_id) {
+        console.log('🗺️ Cleaning up existing map instance');
+        const L = (window as any).L;
+        if (L && (mapRef.current as any)._leaflet_map) {
+          (mapRef.current as any)._leaflet_map.remove();
+        }
+        (mapRef.current as any)._leaflet_id = null;
+        (mapRef.current as any)._leaflet_map = null;
+        mapRef.current.innerHTML = '';
+      }
+      
       const mapId = `map-${Date.now()}`;
       mapRef.current.id = mapId;
 
@@ -139,40 +158,57 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
         ? [userLocation.lat, userLocation.lng] 
         : [10.8515, 106.7717]; // Thủ Đức default center
 
+      console.log(`🗺️ Map center: [${defaultCenter[0]}, ${defaultCenter[1]}]`);
+
       const L = (window as any).L;
-      const map = L.map(mapId).setView(defaultCenter, 12);
+      
+      try {
+        const map = L.map(mapId).setView(defaultCenter, 11); // Start with zoom 11 for Vietnam region
+        
+        // Store map reference for cleanup
+        (mapRef.current as any)._leaflet_map = map;
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 18,
-        minZoom: 8
-      }).addTo(map);
+        console.log('🗺️ Map instance created, adding tile layer...');
 
-      // Add user location marker if available
-      if (userLocation) {
-        const userIcon = L.divIcon({
-          html: '<div style="background-color: blue; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-          className: 'user-location-icon',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
-        });
-        L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
-      }
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 18,
+          minZoom: 8
+        }).addTo(map);
 
-      // Setup global station selection callback
-      (window as any).selectStation = (stationId: string) => {
-        const station = stations.find(s => s.id === stationId);
-        if (station) {
-          onStationSelect(station);
+        console.log('🗺️ Tile layer added successfully');
+
+        // Add user location marker if available
+        if (userLocation) {
+          console.log(`🧭 Adding user location marker at [${userLocation.lat}, ${userLocation.lng}]`);
+          const userIcon = L.divIcon({
+            html: '<div style="background-color: blue; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+            className: 'user-location-icon',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
         }
-      };
 
-      // Add stations to map
-      if (filteredStations.length > 0) {
-        console.log(`🗺️ Adding ${filteredStations.length} stations to map:`, filteredStations.map(s => s.name));
-        addStationsToLocalMap(map, filteredStations);
-      } else {
-        console.warn('⚠️ No filtered stations to display on map');
+        // Setup global station selection callback
+        (window as any).selectStation = (stationId: string) => {
+          const station = stations.find(s => s.id === stationId);
+          if (station) {
+            onStationSelect(station);
+          }
+        };
+
+        // Add stations to map
+        if (filteredStations.length > 0) {
+          console.log(`🗺️ Adding ${filteredStations.length} stations to map:`, filteredStations.map(s => s.name));
+          addStationsToLocalMap(map, filteredStations);
+        } else {
+          console.warn('⚠️ No filtered stations to display on map');
+          console.log('📊 Available stations:', stations.length);
+          console.log('📊 Filtered stations:', filteredStations.length);
+        }
+      } catch (error) {
+        console.error('❌ Error initializing map:', error);
       }
     }
   }, [showMap, mapInitialized, filteredStations, userLocation, onStationSelect]);
@@ -217,43 +253,61 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
       });
     });
 
-    // Fit map to show all stations
+    // Fit map to show all stations with appropriate zoom for Vietnam region
     if (stationsToAdd.length > 0) {
-      const group = new L.featureGroup(
-        stationsToAdd.map(station => L.marker([station.lat, station.lng]))
-      );
+      console.log(`🗺️ Fitting bounds for ${stationsToAdd.length} stations in Vietnam region`);
       
-      // Set appropriate zoom based on station spread
+      const markers = stationsToAdd.map(station => {
+        console.log(`📍 Station: ${station.name} at [${station.lat}, ${station.lng}]`);
+        return L.marker([station.lat, station.lng]);
+      });
+      
+      const group = new L.featureGroup(markers);
       const bounds = group.getBounds();
+      
+      console.log('🌏 Calculated bounds:', bounds);
+      
       if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.1));
+        // For Vietnam region, center on Thủ Đức with appropriate zoom
+        const center = bounds.getCenter();
+        console.log('📍 Bounds center:', center);
+        
+        // Use padding for better view, but ensure we stay focused on Vietnam
+        map.fitBounds(bounds, { 
+          padding: [20, 20],
+          maxZoom: 11  // Prevent zooming too close 
+        });
+        
+        console.log(`🔍 Map zoom after fitBounds: ${map.getZoom()}`);
+        
+        // Ensure minimum zoom for Vietnam region visibility
+        if (map.getZoom() > 11) {
+          map.setZoom(11);
+          console.log('🔍 Adjusted zoom to 11 for better Vietnam view');
+        }
       } else {
-        // Fallback to default view if bounds are invalid
+        console.warn('❌ Invalid bounds, using fallback center');
+        // Fallback to Thủ Đức center
         map.setView([10.8515, 106.7717], 11);
       }
     } else {
-      // No stations, center on Thủ Đức
+      console.log('📍 No stations, centering on Thủ Đức');
+      // No stations, center on Thủ Đức with good zoom
       map.setView([10.8515, 106.7717], 11);
     }
   };
 
   // Filter and sort stations
   useEffect(() => {
-    let filtered = stations.filter(station => {
-      // Search filter
-      const matchesSearch = searchQuery === '' || 
-        station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        station.address.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Status filter - cập nhật để phù hợp với status mới
-      const matchesStatus = statusFilter === 'all' || station.status === statusFilter;
-
-      // Charger type filter - using charger_type from Supabase
-      const chargerType = station.charger_type?.toLowerCase();
-      const matchesChargerType = chargerTypeFilter === 'all' || 
-        chargerType?.includes(chargerTypeFilter.replace('_', ' '));
-
-      return matchesSearch && matchesStatus && matchesChargerType;
+    console.log(`🔍 StationMapView filtering: searchQuery="${searchQuery}", statusFilter="${statusFilter}", chargerTypeFilter="${chargerTypeFilter}"`);
+    console.log(`📊 Input stations:`, stations.length);
+    
+    // Simplified filtering - just show all stations for now
+    let filtered = stations;
+    
+    console.log(`🔍 Simplified: showing all ${filtered.length} stations for debugging`);
+    filtered.forEach(station => {
+      console.log(`� Station: ${station.name} - Status: ${station.status} - Type: ${station.charger_type}`);
     });
 
     // Sort stations với ưu tiên trạng thái

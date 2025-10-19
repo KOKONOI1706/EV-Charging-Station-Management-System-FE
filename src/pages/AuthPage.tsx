@@ -8,8 +8,17 @@ export default function AuthRoute() {
 
   const handleSuccess = (user: any) => {
     login(user);
-    // Redirect to home page after successful login/registration
-    navigate("/");
+    // Redirect based on user role
+    switch (user.role) {
+      case "admin":
+        navigate("/admin");
+        break;
+      case "staff":
+        navigate("/staff");
+        break;
+      default:
+        navigate("/dashboard");
+    }
   };
 
   return <AuthPage onSuccess={handleSuccess} onBack={() => navigate("/")} />;

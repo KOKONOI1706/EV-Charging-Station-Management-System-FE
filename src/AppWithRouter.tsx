@@ -2,6 +2,11 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/sonner";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import AdminLayout from "./components/AdminLayout";
+import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
+import UserManagement from "./components/UserManagement";
+import PackageManagement from "./components/PackageManagement";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -10,6 +15,7 @@ import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminProfilePage from "./pages/AdminProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -22,19 +28,26 @@ const router = createBrowserRouter([
   },
   {
     path: "/profile",
-    element: <ProfilePage />,
+    element: <ProtectedRoute allowedRoles={["staff", "customer"]}><ProfilePage /></ProtectedRoute>,
   },
   {
     path: "/dashboard",
-    element: <DashboardPage />,
+    element: <ProtectedRoute allowedRoles={["customer"]}><DashboardPage /></ProtectedRoute>,
   },
   {
     path: "/staff",
-    element: <StaffPage />,
+    element: <ProtectedRoute allowedRoles={["staff"]}><StaffPage /></ProtectedRoute>,
   },
   {
     path: "/admin",
-    element: <AdminPage />,
+    element: <ProtectedRoute allowedRoles={["admin"]}><AdminLayout /></ProtectedRoute>,
+    children: [
+      { path: "", element: <EnhancedAdminDashboard /> },
+      { path: "dashboard", element: <EnhancedAdminDashboard /> },
+      { path: "users", element: <UserManagement /> },
+      { path: "packages", element: <PackageManagement /> },
+      { path: "profile", element: <AdminProfilePage /> }
+    ]
   },
   {
     path: "/pricing",

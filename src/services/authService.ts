@@ -52,16 +52,23 @@ export class AuthService {
 
       // Transform API response to match frontend User interface
       const apiUser = result.data.user;
+      // Map role_id to role string
+      const roleMap: { [key: number]: "customer" | "staff" | "admin" } = {
+        1: "customer",
+        2: "admin",
+        3: "staff"
+      };
+      
       const user: User = {
         id: apiUser.id,
         name: apiUser.name,
         email: apiUser.email,
         phone: apiUser.phone || '',
-        memberSince: new Date(apiUser.createdAt).toISOString().split('T')[0],
+        memberSince: apiUser.created_at ? new Date(apiUser.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         totalSessions: 0,
         totalSpent: 0,
         favoriteStations: [],
-        role: apiUser.role as "customer" | "staff" | "admin",
+        role: roleMap[apiUser.role_id] || "customer",
         vehicleInfo: {
           make: "N/A",
           model: "N/A",

@@ -1,12 +1,15 @@
 import { Button } from "./ui/button";
 import { MapPin, Clock, Zap } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { useLanguage } from "../hooks/useLanguage";
 
 interface HeroProps {
   onFindStations: () => void;
+  onLearnMore?: () => void;
 }
 
-export function Hero({ onFindStations }: HeroProps) {
+export function Hero({ onFindStations, onLearnMore }: HeroProps) {
+  const { t } = useLanguage();
   return (
     <section className="relative bg-gradient-to-br from-gray-50 to-white py-20">
       <div className="container mx-auto px-4">
@@ -14,12 +17,10 @@ export function Hero({ onFindStations }: HeroProps) {
           <div className="space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                Charge Your Future,{" "}
-                <span className="text-green-600">Book Today</span>
+                {t.heroTitle}
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed">
-                Find and reserve EV charging stations near you. Fast, reliable,
-                and convenient charging for your electric vehicle journey.
+                {t.heroSubtitle}
               </p>
             </div>
 
@@ -30,14 +31,15 @@ export function Hero({ onFindStations }: HeroProps) {
                 className="bg-green-600 hover:bg-green-700 text-white px-8"
               >
                 <MapPin className="w-5 h-5 mr-2" />
-                Find Stations
+                {t.findStationsButton}
               </Button>
               <Button
+                onClick={onLearnMore}
                 variant="outline"
                 size="lg"
                 className="border-gray-300 hover:bg-gray-50"
               >
-                Learn More
+                {t.learnMore}
               </Button>
             </div>
 
@@ -46,22 +48,22 @@ export function Hero({ onFindStations }: HeroProps) {
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Zap className="w-6 h-6 text-green-600" />
                 </div>
-                <h3 className="font-semibold mb-1">Fast Charging</h3>
-                <p className="text-sm text-gray-600">Up to 350kW</p>
+                <h3 className="font-semibold mb-1">{t.ultraFastCharging}</h3>
+                <p className="text-sm text-gray-600">{t.fastChargingShort}</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Clock className="w-6 h-6 text-green-600" />
                 </div>
-                <h3 className="font-semibold mb-1">24/7 Available</h3>
-                <p className="text-sm text-gray-600">Always open</p>
+                <h3 className="font-semibold mb-1">{t.easyBooking}</h3>
+                <p className="text-sm text-gray-600">{t.availableAlwaysShort}</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <MapPin className="w-6 h-6 text-green-600" />
                 </div>
-                <h3 className="font-semibold mb-1">Nationwide</h3>
-                <p className="text-sm text-gray-600">500+ locations</p>
+                <h3 className="font-semibold mb-1">{t.nationwideNetwork}</h3>
+                <p className="text-sm text-gray-600">{t.locationsShort}</p>
               </div>
             </div>
           </div>
@@ -80,7 +82,7 @@ export function Hero({ onFindStations }: HeroProps) {
                   <Zap className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold">Station Available</p>
+                  <p className="font-semibold">{t.availableNow}</p>
                   <p className="text-sm text-gray-600">2 min walk away</p>
                 </div>
               </div>

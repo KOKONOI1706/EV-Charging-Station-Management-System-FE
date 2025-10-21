@@ -73,15 +73,28 @@ const PackageManagement: React.FC = () => {
     setIsDialogOpen(false);
   };
 
+  const extractBenefits = (jsonString: string): string[] => {
+    try {
+      const data = JSON.parse(jsonString);
+      if (data.features && Array.isArray(data.features)) {
+        return data.features;
+      } else if (Array.isArray(data)) {
+        return data;
+      }
+      throw new Error();
+    } catch {
+      throw new Error("Lỗi định dạng quyền lợi. Vui lòng nhập đúng định dạng JSON");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     let benefitsData: string[] = [];
     try {
-      benefitsData = formData.benefits ? JSON.parse(formData.benefits) : [];
-      if (!Array.isArray(benefitsData)) throw new Error();
-    } catch {
-      setError("Lỗi định dạng quyền lợi (benefits phải là mảng JSON hợp lệ)");
+      benefitsData = formData.benefits ? extractBenefits(formData.benefits) : [];
+    } catch (err: any) {
+      setError(err.message);
       return;
     }
 

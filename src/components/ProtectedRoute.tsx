@@ -16,8 +16,14 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!allowedRoles.includes(currentUser.role)) {
-    // Not authorized, redirect to home page
-    return <Navigate to="/" replace />;
+    // Not authorized, redirect based on role
+    if (currentUser.role === "admin") {
+      return <Navigate to="/admin" replace />;
+    } else if (currentUser.role === "staff") {
+      return <Navigate to="/staff" replace />;
+    } else {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   // Authorized, render component

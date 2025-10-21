@@ -283,7 +283,7 @@ const PackageManagement: React.FC = () => {
                         {pkg.description}
                       </TableCell>
                       <TableCell className="text-green-600 font-semibold">
-                        ${pkg.price}
+                        {pkg.price}đ
                       </TableCell>
                       <TableCell>{pkg.duration_days}</TableCell>
                       <TableCell className="text-sm">

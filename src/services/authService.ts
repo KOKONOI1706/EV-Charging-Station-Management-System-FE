@@ -55,8 +55,8 @@ export class AuthService {
       // Map role_id to role string
       const roleMap: { [key: number]: "customer" | "staff" | "admin" } = {
         1: "customer",
-        2: "admin",
-        3: "staff"
+        2: "staff",
+        3: "admin"
       };
       
       const user: User = {

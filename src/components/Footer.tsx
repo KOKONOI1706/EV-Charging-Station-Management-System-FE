@@ -1,10 +1,12 @@
 import { MapPin, Phone, Mail, Twitter, Facebook, Instagram, Linkedin } from "lucide-react";
+import { useLanguage } from "../hooks/useLanguage";
 
 interface FooterProps {
   onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void;
 }
 
 export function Footer({ onNavigate }: FooterProps) {
+  const { t } = useLanguage();
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
@@ -18,7 +20,7 @@ export function Footer({ onNavigate }: FooterProps) {
               <h3 className="text-xl font-semibold">ChargeTech</h3>
             </div>
             <p className="text-gray-400">
-              Powering the future of electric mobility with reliable, fast, and accessible charging solutions.
+              {t.powering}
             </p>
             <div className="flex space-x-4">
               <Twitter className="w-5 h-5 text-gray-400 hover:text-green-400 cursor-pointer transition-colors" />
@@ -30,54 +32,54 @@ export function Footer({ onNavigate }: FooterProps) {
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h4 className="font-semibold">Quick Links</h4>
+            <h4 className="font-semibold">{t.quickLinks}</h4>
             <div className="space-y-2">
               <button 
                 onClick={() => onNavigate("home")}
                 className="block text-gray-400 hover:text-green-400 transition-colors"
               >
-                Find Stations
+                {t.findStations}
               </button>
               <button 
                 onClick={() => onNavigate("pricing")}
                 className="block text-gray-400 hover:text-green-400 transition-colors"
               >
-                Pricing Plans
+                {t.pricing}
               </button>
               <button 
                 onClick={() => onNavigate("support")}
                 className="block text-gray-400 hover:text-green-400 transition-colors"
               >
-                Support Center
+                {t.support}
               </button>
               <a href="#" className="block text-gray-400 hover:text-green-400 transition-colors">
-                Mobile App
+                {t.downloadApp}
               </a>
             </div>
           </div>
 
           {/* Services */}
           <div className="space-y-4">
-            <h4 className="font-semibold">Services</h4>
+            <h4 className="font-semibold">{t.services}</h4>
             <div className="space-y-2">
               <a href="#" className="block text-gray-400 hover:text-green-400 transition-colors">
-                DC Fast Charging
+                {t.dcFastCharging}
               </a>
               <a href="#" className="block text-gray-400 hover:text-green-400 transition-colors">
-                Level 2 Charging
+                {t.level2Charging}
               </a>
               <a href="#" className="block text-gray-400 hover:text-green-400 transition-colors">
-                Fleet Solutions
+                {t.fleetSolutions}
               </a>
               <a href="#" className="block text-gray-400 hover:text-green-400 transition-colors">
-                Business Partnerships
+                {t.businessPartnerships}
               </a>
             </div>
           </div>
 
           {/* Contact */}
           <div className="space-y-4">
-            <h4 className="font-semibold">Contact Us</h4>
+            <h4 className="font-semibold">{t.contactUsFooter}</h4>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Phone className="w-4 h-4 text-green-400" />
@@ -101,17 +103,17 @@ export function Footer({ onNavigate }: FooterProps) {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-gray-400 text-sm">
-              © 2024 ChargeTech. All rights reserved.
+              © 2024 ChargeTech. {t.allRightsReserved}
             </p>
             <div className="flex space-x-6 text-sm">
               <a href="#" className="text-gray-400 hover:text-green-400 transition-colors">
-                Privacy Policy
+                {t.privacyPolicy}
               </a>
               <a href="#" className="text-gray-400 hover:text-green-400 transition-colors">
-                Terms of Service
+                {t.termsOfService}
               </a>
               <a href="#" className="text-gray-400 hover:text-green-400 transition-colors">
-                Cookie Policy
+                {t.cookiePolicy}
               </a>
             </div>
           </div>

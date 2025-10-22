@@ -212,7 +212,11 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2 text-purple-600" />
+<<<<<<< HEAD
                         <span>{station.available_spots}/{station.total_spots} ports</span>
+=======
+                        <span>{station.available}/{station.total} {t.ports}</span>
+>>>>>>> 4347d46bab1cf49e361e013fb0632d5bf4e24420
                       </div>
                     </div>
                   </div>
@@ -230,7 +234,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
                         onClick={() => handleViewDetails(station)}
                         className="flex-1"
                       >
-                        View Layout
+                        {t.viewLayout}
                       </Button>
                       <Button
                         size="sm"
@@ -308,11 +312,11 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
             <TabsList className="grid w-full max-w-md grid-cols-2">
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <List className="w-4 h-4" />
-                List View
+                {t.listView}
               </TabsTrigger>
               <TabsTrigger value="map" className="flex items-center gap-2">
                 <Map className="w-4 h-4" />
-                Map View
+                {t.mapView}
               </TabsTrigger>
             </TabsList>
           </div>

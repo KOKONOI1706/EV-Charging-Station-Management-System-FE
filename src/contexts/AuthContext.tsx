@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '@/data/mockDatabase';
+import { User } from '../data/mockDatabase';
+import { AuthService } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
   login: (user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,32 +28,55 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const login = (user: User) => {
     setUser(user);
     setIsAuthenticated(true);
-    localStorage.setItem('currentUser', JSON.stringify(user));
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('currentUser');
+  const logout = async () => {
+    try {
+      await AuthService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force logout even if API call fails
+      setUser(null);
+      setIsAuthenticated(false);
+    }
+  };
+
+  const updateUser = async (updates: Partial<User>) => {
+    if (!user) throw new Error('No user logged in');
+    
+    try {
+      const updatedUser = await AuthService.updateProfile(user.id, updates);
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
+    }
   };
 
   useEffect(() => {
     // Check if user is stored in localStorage on app start
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
+    const initializeAuth = () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
+        const currentUser = AuthService.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+        }
       } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('currentUser');
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    initializeAuth();
   }, []);
 
   const value: AuthContextType = {
@@ -58,6 +84,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isAuthenticated,
+    isLoading,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

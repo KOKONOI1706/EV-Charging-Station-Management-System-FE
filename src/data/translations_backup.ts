@@ -1,4 +1,4 @@
-export type Language = "en" | "vi";
+export type Language = "en" | "vi" | "ja";
 
 export interface Translation {
   // Header
@@ -26,11 +26,6 @@ export interface Translation {
   nationwideNetwork: string;
   nationwideNetworkDesc: string;
   
-  // Hero Features (short versions)
-  fastChargingShort: string;
-  availableAlwaysShort: string;
-  locationsShort: string;
-  
   // CTA Section
   readyToStartTitle: string;
   readyToStartSubtitle: string;
@@ -43,7 +38,6 @@ export interface Translation {
   findChargingStations: string;
   findChargingStationsDesc: string;
   searchPlaceholder: string;
-  searchStationsPlaceholder: string;
   filterStations: string;
   all: string;
   available: string;
@@ -59,17 +53,6 @@ export interface Translation {
   stationLayout: string;
   chargingPoints: string;
   chargingPoint: string;
-  ports: string;
-  
-  // Map Legend
-  stationStatusLegend: string;
-  availableStatus: string;
-  limitedStatus: string;
-  busyStatus: string;
-  foundStations: string;
-  filters: string;
-  noStationsFound: string;
-  noStationsFoundDesc: string;
   inUse: string;
   maintenance: string;
   offline: string;
@@ -128,20 +111,6 @@ export interface Translation {
   customer: string;
   staff: string;
   admin: string;
-  selectRole: string;
-  roleSelection: string;
-  selectRoleToFillEmail: string;
-  demoPassword: string;
-  
-  // Placeholders
-  emailPlaceholder: string;
-  passwordPlaceholder: string;
-  fullNamePlaceholder: string;
-  phoneNumberPlaceholder: string;
-  vehicleMakePlaceholder: string;
-  vehicleModelPlaceholder: string;
-  vehicleYearPlaceholder: string;
-  batteryCapacityPlaceholder: string;
   
   // Profile
   profile: string;
@@ -231,21 +200,6 @@ export interface Translation {
   lightUser: string;
   regularUser: string;
   heavyUser: string;
-  pricingPlanPricePer: string;
-  savingsLabel: string;
-  statsChargingStations: string;
-  statsUptime: string;
-  statsActiveUsers: string;
-  statsSessions: string;
-  faqTitle: string;
-  faqChangePlanTitle: string;
-  faqChangePlanDesc: string;
-  faqRefundsTitle: string;
-  faqRefundsDesc: string;
-  faqPaymentsTitle: string;
-  faqPaymentsDesc: string;
-  faqHiddenFeesTitle: string;
-  faqHiddenFeesDesc: string;
   
   // Support
   howCanWeHelp: string;
@@ -320,29 +274,24 @@ export const translations: Record<Language, Translation> = {
     dashboard: "Dashboard",
     
     // Hero Section
-    heroTitle: "Reliable EV Charging",
-    heroSubtitle: "Find, book, and pay for electric vehicle charging stations nationwide. Fast, reliable, and convenient charging when you need it.",
+    heroTitle: "Charge Your EV with Confidence",
+    heroSubtitle: "Find, book, and pay for EV charging stations nationwide. Fast, reliable, and convenient charging when you need it.",
     findStationsButton: "Find Stations",
     learnMore: "Learn More",
     
     // Features
     whyChooseTitle: "Why Choose ChargeTech?",
-    whyChooseSubtitle: "Experience the future of electric vehicle charging with our reliable, fast, and user-friendly charging network.",
+    whyChooseSubtitle: "Experience the future of EV charging with our reliable, fast, and user-friendly charging network.",
     ultraFastCharging: "Ultra-Fast Charging",
     ultraFastChargingDesc: "Up to 350kW charging speeds to get you back on the road quickly.",
     easyBooking: "Easy Booking",
     easyBookingDesc: "Reserve your charging slot in advance with our simple booking system.",
     nationwideNetwork: "Nationwide Network",
-    nationwideNetworkDesc: "Access to over 500 charging stations across the country.",
-    
-    // Hero Features (short versions)
-    fastChargingShort: "Up to 350kW",
-    availableAlwaysShort: "Always open", 
-    locationsShort: "500+ locations",
+    nationwideNetworkDesc: "Access over 500 charging stations across the country.",
     
     // CTA Section
     readyToStartTitle: "Ready to Start Charging?",
-    readyToStartSubtitle: "Join thousands of EV drivers who choose ChargeTech for their charging needs.",
+    readyToStartSubtitle: "Join thousands of drivers who trust ChargeTech for their EV charging needs.",
     getStartedToday: "Get Started Today",
     goToDashboard: "Go to Dashboard",
     viewPricing: "View Pricing",
@@ -350,9 +299,8 @@ export const translations: Record<Language, Translation> = {
     
     // Station Finder
     findChargingStations: "Find Charging Stations",
-    findChargingStationsDesc: "Locate the nearest charging stations and book slots in advance. Real-time availability and instant confirmation.",
+    findChargingStationsDesc: "Locate the nearest charging stations and book your slot in advance. Real-time availability and instant confirmation.",
     searchPlaceholder: "Search by station name or address",
-    searchStationsPlaceholder: "Search stations by name or location...",
     filterStations: "Filter Stations",
     all: "All",
     available: "Available",
@@ -368,17 +316,6 @@ export const translations: Record<Language, Translation> = {
     stationLayout: "Station Layout",
     chargingPoints: "Charging Points",
     chargingPoint: "Charging Point",
-    ports: "ports",
-    
-    // Map Legend
-    stationStatusLegend: "Station Status",
-    availableStatus: "Available (50%+)",
-    limitedStatus: "Limited (20-50%)",
-    busyStatus: "Busy (<20%)",
-    foundStations: "Found {count} charging stations",
-    filters: "Filters",
-    noStationsFound: "No stations found",
-    noStationsFoundDesc: "Try adjusting your search terms or clearing the search to see all stations.",
     inUse: "In Use",
     maintenance: "Maintenance",
     offline: "Offline",
@@ -409,7 +346,7 @@ export const translations: Record<Language, Translation> = {
     totalCost: "Total Cost",
     confirmBooking: "Confirm Booking",
     bookingConfirmed: "Booking Confirmed!",
-    bookingConfirmedDesc: "Your charging session has been successfully booked. You'll receive a confirmation email shortly.",
+    bookingConfirmedDesc: "Your charging session has been booked successfully. You'll receive a confirmation email shortly.",
     viewDashboard: "View Dashboard",
     close: "Close",
     
@@ -427,45 +364,31 @@ export const translations: Record<Language, Translation> = {
     vehicleModel: "Vehicle Model",
     vehicleYear: "Vehicle Year",
     batteryCapacity: "Battery Capacity (kWh)",
-    rememberMe: "Remember me",
-    forgotPassword: "Forgot password?",
+    rememberMe: "Remember Me",
+    forgotPassword: "Forgot Password?",
     noAccount: "Don't have an account?",
     haveAccount: "Already have an account?",
     signUp: "Sign Up",
-    signInDemo: "Sign In with Demo",
+    signInDemo: "Sign In Demo",
     demoAccounts: "Demo Accounts",
     customer: "Customer",
     staff: "Staff",
     admin: "Admin",
-    selectRole: "Select Role",
-    roleSelection: "Role Selection",
-    selectRoleToFillEmail: "Select a role to auto-fill email",
-    demoPassword: "Demo password: <strong>123</strong>",
-    
-    // Placeholders
-    emailPlaceholder: "your@email.com",
-    passwordPlaceholder: "••••••••",
-    fullNamePlaceholder: "John Doe",
-    phoneNumberPlaceholder: "+1 234 567 890",
-    vehicleMakePlaceholder: "Tesla",
-    vehicleModelPlaceholder: "Model 3",
-    vehicleYearPlaceholder: "2023",
-    batteryCapacityPlaceholder: "75",
     
     // Profile
     profile: "Profile",
     profileSettings: "Profile Settings",
     personalInfo: "Personal Info",
     personalInformation: "Personal Information",
-    updatePersonalDetails: "Update Personal Details",
+    updatePersonalDetails: "Update your personal details here",
     vehicleInformation: "Vehicle Information",
-    updateVehicleDetails: "Update Vehicle Details",
+    updateVehicleDetails: "Update your electric vehicle details",
     security: "Security",
     securitySettings: "Security Settings",
     changePassword: "Change Password",
     currentPassword: "Current Password",
     newPassword: "New Password",
-    accountStats: "Account Stats",
+    accountStats: "Account Statistics",
     
     // Dashboard
     myDashboard: "My Dashboard",
@@ -540,29 +463,14 @@ export const translations: Record<Language, Translation> = {
     lightUser: "Light User",
     regularUser: "Regular User",
     heavyUser: "Heavy User",
-  pricingPlanPricePer: "per",
-  savingsLabel: "Savings",
-  statsChargingStations: "Charging Stations",
-  statsUptime: "Uptime",
-  statsActiveUsers: "Active Users",
-  statsSessions: "Sessions Completed",
-  faqTitle: "Frequently Asked Questions",
-  faqChangePlanTitle: "Can I change my plan anytime?",
-  faqChangePlanDesc: "Yes, you can upgrade, downgrade, or cancel your plan at any time. Changes take effect at the start of your next billing cycle.",
-  faqRefundsTitle: "Do you offer refunds?",
-  faqRefundsDesc: "We offer a 30-day money-back guarantee for annual subscriptions. Monthly subscriptions can be cancelled at any time without penalty.",
-  faqPaymentsTitle: "What payment methods do you accept?",
-  faqPaymentsDesc: "We accept all major credit cards, PayPal, and ACH bank transfers. Payment is automatically processed at the beginning of each billing cycle.",
-  faqHiddenFeesTitle: "Are there any hidden fees?",
-  faqHiddenFeesDesc: "No hidden fees! The pricing shown includes all features listed. You only pay for the electricity you use plus your plan fee.",
     
     // Support
     howCanWeHelp: "How can we help you?",
-    howCanWeHelpDesc: "Get quick answers to common questions or contact our support team.",
+    howCanWeHelpDesc: "Get quick answers to common questions or reach out to our support team.",
     callUs: "Call Us",
     supportAvailable: "24/7 Support Available",
     liveChat: "Live Chat",
-    avgResponse: "Avg. response: 2 minutes",
+    avgResponse: "Average response: 2 minutes",
     emailSupport: "Email Support",
     responseTime: "Response within 24 hours",
     startChat: "Start Chat",
@@ -616,6 +524,7 @@ export const translations: Record<Language, Translation> = {
     viewBookings: "View Bookings",
     generateReport: "Generate Report",
   },
+  
   vi: {
     // Header
     signIn: "Đăng nhập",
@@ -642,11 +551,6 @@ export const translations: Record<Language, Translation> = {
     nationwideNetwork: "Mạng lưới toàn quốc",
     nationwideNetworkDesc: "Truy cập hơn 500 trạm sạc trên khắp đất nước.",
     
-    // Hero Features (short versions)
-    fastChargingShort: "Lên đến 350kW",
-    availableAlwaysShort: "Luôn mở cửa",
-    locationsShort: "500+ địa điểm",
-    
     // CTA Section
     readyToStartTitle: "Sẵn sàng bắt đầu sạc?",
     readyToStartSubtitle: "Tham gia cùng hàng nghìn tài xế tin tưởng ChargeTech cho nhu cầu sạc xe điện.",
@@ -659,7 +563,6 @@ export const translations: Record<Language, Translation> = {
     findChargingStations: "Tìm trạm sạc",
     findChargingStationsDesc: "Định vị các trạm sạc gần nhất và đặt chỗ trước. Tình trạng thời gian thực và xác nhận ngay lập tức.",
     searchPlaceholder: "Tìm kiếm theo tên trạm hoặc địa chỉ",
-    searchStationsPlaceholder: "Tìm kiếm trạm theo tên hoặc địa điểm...",
     filterStations: "Lọc trạm sạc",
     all: "Tất cả",
     available: "Có sẵn",
@@ -675,32 +578,21 @@ export const translations: Record<Language, Translation> = {
     stationLayout: "Bố cục trạm sạc",
     chargingPoints: "Điểm sạc",
     chargingPoint: "Điểm sạc",
-    ports: "cổng",
-    
-    // Map Legend
-    stationStatusLegend: "Trạng thái trạm",
-    availableStatus: "Có sẵn (50%+)",
-    limitedStatus: "Hạn chế (20-50%)",
-    busyStatus: "Bận (<20%)",
-    foundStations: "Tìm thấy {count} trạm sạc",
-    filters: "Bộ lọc",
-    noStationsFound: "Không tìm thấy trạm nào",
-    noStationsFoundDesc: "Thử điều chỉnh từ khóa tìm kiếm hoặc xóa tìm kiếm để xem tất cả trạm.",
     inUse: "Đang sử dụng",
     maintenance: "Bảo trì",
     offline: "Ngoại tuyến",
     bookThisPoint: "Đặt điểm này",
-    anyAvailable: "Đặt bất kỳ điểm có sẵn",
+    anyAvailable: "Đặt bất kỳ điểm nào có sẵn",
     statusOverview: "Tổng quan trạng thái",
-    stationDetails: "Chi tiết trạm",
+    stationDetails: "Chi tiết trạm sạc",
     quickActions: "Hành động nhanh",
     getDirections: "Chỉ đường",
-    callStation: "Gọi trạm",
+    callStation: "Gọi trạm sạc",
     reportIssue: "Báo cáo sự cố",
     facilities: "Tiện ích",
     entrances: "Lối vào",
-    connectorType: "Loại đầu sạc",
-    powerLevel: "Mức công suất",
+    connectorType: "Loại đầu kết nối",
+    powerLevel: "Mức năng lượng",
     estimatedTime: "Thời gian ước tính",
     currentUser: "Người dùng hiện tại",
     
@@ -716,7 +608,7 @@ export const translations: Record<Language, Translation> = {
     totalCost: "Tổng chi phí",
     confirmBooking: "Xác nhận đặt chỗ",
     bookingConfirmed: "Đã xác nhận đặt chỗ!",
-    bookingConfirmedDesc: "Phiên sạc của bạn đã được đặt thành công. Bạn sẽ nhận được email xác nhận sớm.",
+    bookingConfirmedDesc: "Phiên sạc của bạn đã được đặt thành công. Bạn sẽ nhận được email xác nhận trong thời gian ngắn.",
     viewDashboard: "Xem bảng điều khiển",
     close: "Đóng",
     
@@ -739,25 +631,11 @@ export const translations: Record<Language, Translation> = {
     noAccount: "Chưa có tài khoản?",
     haveAccount: "Đã có tài khoản?",
     signUp: "Đăng ký",
-    signInDemo: "Đăng nhập Demo",
-    demoAccounts: "Tài khoản Demo",
+    signInDemo: "Đăng nhập demo",
+    demoAccounts: "Tài khoản demo",
     customer: "Khách hàng",
     staff: "Nhân viên",
     admin: "Quản trị viên",
-    selectRole: "Chọn Vai Trò",
-    roleSelection: "Lựa Chọn Vai Trò", 
-    selectRoleToFillEmail: "Chọn vai trò để tự động điền email",
-    demoPassword: "Mật khẩu demo: <strong>123</strong>",
-    
-    // Placeholders
-    emailPlaceholder: "email@example.com",
-    passwordPlaceholder: "••••••••",
-    fullNamePlaceholder: "Nhập họ và tên",
-    phoneNumberPlaceholder: "+84 123 456 789",
-    vehicleMakePlaceholder: "VinFast",
-    vehicleModelPlaceholder: "VF 8",
-    vehicleYearPlaceholder: "2023",
-    batteryCapacityPlaceholder: "75",
     
     // Profile
     profile: "Hồ sơ",
@@ -779,7 +657,7 @@ export const translations: Record<Language, Translation> = {
     overview: "Tổng quan",
     bookings: "Đặt chỗ",
     settings: "Cài đặt",
-    totalSessions: "Tổng số phiên",
+    totalSessions: "Tổng phiên",
     totalSpent: "Tổng chi tiêu",
     memberSince: "Thành viên từ",
     upcomingBookings: "Đặt chỗ sắp tới",
@@ -794,7 +672,7 @@ export const translations: Record<Language, Translation> = {
     comprehensiveAnalytics: "Phân tích toàn diện",
     revenueAnalytics: "Phân tích doanh thu",
     usageAnalytics: "Phân tích sử dụng",
-    stationAnalytics: "Phân tích trạm",
+    stationAnalytics: "Phân tích trạm sạc",
     customerAnalytics: "Phân tích khách hàng",
     forecastingAnalytics: "Phân tích dự báo",
     realTimeMetrics: "Chỉ số thời gian thực",
@@ -802,7 +680,7 @@ export const translations: Record<Language, Translation> = {
     monthlyGrowth: "Tăng trưởng hàng tháng",
     totalRevenue: "Tổng doanh thu",
     averagePerSession: "Trung bình mỗi phiên",
-    profitMargin: "Biên lợi nhuận",
+    profitMargin: "Tỷ suất lợi nhuận",
     totalUsers: "Tổng người dùng",
     revenue: "Doanh thu",
     activeBookings: "Đặt chỗ đang hoạt động",
@@ -811,9 +689,9 @@ export const translations: Record<Language, Translation> = {
     weeklyPattern: "Mẫu hàng tuần",
     utilizationRate: "Tỷ lệ sử dụng",
     customerSatisfaction: "Sự hài lòng khách hàng",
-    topStations: "Trạm hàng đầu",
+    topStations: "Trạm sạc hàng đầu",
     maintenanceAlerts: "Cảnh báo bảo trì",
-    stationHealth: "Sức khỏe trạm",
+    stationHealth: "Sức khỏe trạm sạc",
     expansionRecommendations: "Khuyến nghị mở rộng",
     demandForecast: "Dự báo nhu cầu",
     revenueForecast: "Dự báo doanh thu",
@@ -824,19 +702,19 @@ export const translations: Record<Language, Translation> = {
     usagePatterns: "Mẫu sử dụng",
     efficiency: "Hiệu quả",
     insights: "Thông tin chi tiết",
-    achievements: "Thành tích",
+    achievements: "Thành tựu",
     carbonSaved: "Carbon tiết kiệm",
     energyUsed: "Năng lượng sử dụng",
-    favoriteStation: "Trạm yêu thích",
+    favoriteStation: "Trạm sạc yêu thích",
     chargingHistory: "Lịch sử sạc",
     costPerKwh: "Chi phí mỗi kWh",
-    sessionsThisMonth: "Phiên tháng này",
+    sessionsThisMonth: "Phiên trong tháng",
     averageDuration: "Thời lượng trung bình",
     environmentalImpact: "Tác động môi trường",
     
     // Pricing
     choosePlan: "Chọn gói sạc của bạn",
-    choosePlanDesc: "Tiết kiệm tiền và tận hưởng các tính năng cao cấp với gói định giá linh hoạt. Không có hợp đồng, hủy bất cứ lúc nào.",
+    choosePlanDesc: "Tiết kiệm tiền và tận hưởng các tính năng cao cấp với các gói giá linh hoạt. Không ràng buộc hợp đồng, hủy bất cứ lúc nào.",
     monthly: "Hàng tháng",
     annual: "Hàng năm",
     save: "Tiết kiệm",
@@ -847,42 +725,27 @@ export const translations: Record<Language, Translation> = {
     lightUser: "Người dùng nhẹ",
     regularUser: "Người dùng thường xuyên",
     heavyUser: "Người dùng nặng",
-  pricingPlanPricePer: "/",
-  savingsLabel: "Tiết kiệm",
-  statsChargingStations: "Trạm sạc",
-  statsUptime: "Thời gian hoạt động",
-  statsActiveUsers: "Người dùng hoạt động",
-  statsSessions: "Phiên đã hoàn thành",
-  faqTitle: "Câu hỏi thường gặp",
-  faqChangePlanTitle: "Tôi có thể thay đổi gói bất cứ lúc nào không?",
-  faqChangePlanDesc: "Bạn có thể nâng cấp, hạ cấp hoặc hủy gói bất cứ lúc nào. Thay đổi sẽ có hiệu lực vào đầu chu kỳ thanh toán tiếp theo.",
-  faqRefundsTitle: "Bạn có hoàn tiền không?",
-  faqRefundsDesc: "Chúng tôi cung cấp đảm bảo hoàn tiền 30 ngày cho đăng ký hàng năm. Đăng ký hàng tháng có thể bị hủy bất cứ lúc nào mà không bị phạt.",
-  faqPaymentsTitle: "Bạn chấp nhận phương thức thanh toán nào?",
-  faqPaymentsDesc: "Chúng tôi chấp nhận tất cả các thẻ tín dụng chính, PayPal và chuyển khoản ngân hàng ACH. Thanh toán được xử lý tự động vào đầu mỗi chu kỳ thanh toán.",
-  faqHiddenFeesTitle: "Có phí ẩn không?",
-  faqHiddenFeesDesc: "Không có phí ẩn! Giá hiển thị bao gồm tất cả các tính năng được liệt kê. Bạn chỉ trả cho điện năng bạn sử dụng cộng với phí gói.",
     
     // Support
     howCanWeHelp: "Chúng tôi có thể giúp gì cho bạn?",
     howCanWeHelpDesc: "Nhận câu trả lời nhanh cho các câu hỏi thường gặp hoặc liên hệ với đội ngũ hỗ trợ.",
     callUs: "Gọi cho chúng tôi",
     supportAvailable: "Hỗ trợ 24/7",
-    liveChat: "Chat trực tuyến",
+    liveChat: "Chat trực tiếp",
     avgResponse: "Phản hồi trung bình: 2 phút",
-    emailSupport: "Hỗ trợ email",
-    responseTime: "Phản hồi trong 24 giờ",
+    emailSupport: "Hỗ trợ qua email",
+    responseTime: "Phản hồi trong vòng 24 giờ",
     startChat: "Bắt đầu chat",
     sendEmail: "Gửi email",
     faq: "Câu hỏi thường gặp",
-    contactUs: "Liên hệ",
+    contactUs: "Liên hệ chúng tôi",
     systemStatus: "Trạng thái hệ thống",
     
     // Footer
-    powering: "Thúc đẩy tương lai của di chuyển điện với các giải pháp sạc đáng tin cậy, nhanh chóng và dễ tiếp cận.",
+    powering: "Thúc đẩy tương lai của di động điện với các giải pháp sạc đáng tin cậy, nhanh chóng và dễ tiếp cận.",
     quickLinks: "Liên kết nhanh",
     services: "Dịch vụ",
-    contactUsFooter: "Liên hệ",
+    contactUsFooter: "Liên hệ chúng tôi",
     dcFastCharging: "Sạc nhanh DC",
     level2Charging: "Sạc cấp 2",
     fleetSolutions: "Giải pháp đội xe",
@@ -902,26 +765,185 @@ export const translations: Record<Language, Translation> = {
     delete: "Xóa",
     back: "Quay lại",
     next: "Tiếp theo",
-    previous: "Trước đó",
+    previous: "Trước",
     search: "Tìm kiếm",
     filter: "Lọc",
     
     // Staff/Admin
     staffDashboard: "Bảng điều khiển nhân viên",
     adminDashboard: "Bảng điều khiển quản trị",
-    stationManagement: "Quản lý trạm",
+    stationManagement: "Quản lý trạm sạc",
     userManagement: "Quản lý người dùng",
     bookingManagement: "Quản lý đặt chỗ",
     reports: "Báo cáo",
     systemSettings: "Cài đặt hệ thống",
-    addStation: "Thêm trạm",
-    editStation: "Chỉnh sửa trạm",
-    deleteStation: "Xóa trạm",
-    stationStatus: "Trạng thái trạm",
+    addStation: "Thêm trạm sạc",
+    editStation: "Chỉnh sửa trạm sạc",
+    deleteStation: "Xóa trạm sạc",
+    stationStatus: "Trạng thái trạm sạc",
     operational: "Hoạt động",
     manageUsers: "Quản lý người dùng",
     viewBookings: "Xem đặt chỗ",
     generateReport: "Tạo báo cáo",
+  },
+  
+  ja: {
+    // Header
+    signIn: "サインイン",
+    signOut: "サインアウト",
+    welcome: "ようこそ",
+    findStations: "ステーション検索",
+    pricing: "料金",
+    support: "サポート",
+    dashboard: "ダッシュボード",
+    
+    // Hero Section
+    heroTitle: "安心してEVを充電",
+    heroSubtitle: "全国のEV充電ステーションを検索、予約、支払い。必要な時に迅速で信頼性があり便利な充電。",
+    findStationsButton: "ステーション検索",
+    learnMore: "詳細を見る",
+    
+    // Features
+    whyChooseTitle: "なぜChargeTechを選ぶのか？",
+    whyChooseSubtitle: "信頼性が高く、高速でユーザーフレンドリーな充電ネットワークでEV充電の未来を体験してください。",
+    ultraFastCharging: "超高速充電",
+    ultraFastChargingDesc: "最大350kWの充電速度で素早く道路に戻れます。",
+    easyBooking: "簡単予約",
+    easyBookingDesc: "シンプルな予約システムで事前に充電スロットを予約。",
+    nationwideNetwork: "全国ネットワーク",
+    nationwideNetworkDesc: "全国500以上の充電ステーションにアクセス。",
+    
+    // CTA Section
+    readyToStartTitle: "充電を始める準備はできましたか？",
+    readyToStartSubtitle: "EV充電のニーズでChargeTechを信頼する数千人のドライバーに参加してください。",
+    getStartedToday: "今日から始める",
+    goToDashboard: "ダッシュボードへ",
+    viewPricing: "料金を見る",
+    downloadApp: "アプリをダウンロード",
+    
+    // Station Finder
+    findChargingStations: "充電ステーション検索",
+    findChargingStationsDesc: "最寄りの充電ステーションを見つけて事前にスロットを予約。リアルタイム空き状況と即座の確認。",
+    searchPlaceholder: "ステーション名または住所で検索",
+    filterStations: "ステーション絞り込み",
+    all: "すべて",
+    available: "利用可能",
+    fastCharging: "急速充電",
+    availableNow: "今利用可能",
+    rating: "評価",
+    bookNow: "今すぐ予約",
+    
+    // Booking Modal
+    bookChargingSession: "充電セッション予約",
+    selectDateTime: "日時選択",
+    selectDate: "日付選択",
+    selectTime: "時間選択",
+    duration: "時間",
+    hours: "時間",
+    reviewBooking: "予約確認",
+    stationDetails: "ステーション詳細",
+    bookingDetails: "予約詳細",
+    totalCost: "合計費用",
+    confirmBooking: "予約確認",
+    bookingConfirmed: "予約が確認されました！",
+    bookingConfirmedDesc: "充電セッションが正常に予約されました。確認メールを間もなくお送りします。",
+    viewDashboard: "ダッシュボードを見る",
+    close: "閉じる",
+    
+    // Dashboard
+    myDashboard: "マイダッシュボード",
+    overview: "概要",
+    bookings: "予約",
+    settings: "設定",
+    totalSessions: "総セッション数",
+    totalSpent: "総支出",
+    memberSince: "会員開始日",
+    upcomingBookings: "今後の予約",
+    recentBookings: "最近の予約",
+    confirmed: "確認済み",
+    completed: "完了",
+    cancelled: "キャンセル",
+    inProgress: "進行中",
+    
+    // Pricing
+    choosePlan: "充電プランを選択",
+    choosePlanDesc: "柔軟な料金プランでお金を節約し、プレミアム機能をお楽しみください。契約なし、いつでもキャンセル可能。",
+    monthly: "月額",
+    annual: "年額",
+    save: "節約",
+    mostPopular: "最も人気",
+    getStartedFree: "無料で始める",
+    choosePlan2: "プラン選択",
+    savingsCalculator: "節約計算機",
+    lightUser: "ライトユーザー",
+    regularUser: "レギュラーユーザー",
+    heavyUser: "ヘビーユー��ー",
+    
+    // Support
+    howCanWeHelp: "どのようにお手伝いできますか？",
+    howCanWeHelpDesc: "よくある質問への迅速な回答を得るか、サポートチームにお問い合わせください。",
+    callUs: "お電話ください",
+    supportAvailable: "24時間年中無休サポート",
+    liveChat: "ライブチャット",
+    avgResponse: "平均応答時間：2分",
+    emailSupport: "メールサポート",
+    responseTime: "24時間以内に返信",
+    startChat: "チャット開始",
+    sendEmail: "メール送信",
+    faq: "よくある質問",
+    contactUs: "お問い合わせ",
+    systemStatus: "システム状況",
+    
+    // Footer
+    powering: "信頼性が高く、高速でアクセス可能な充電ソリューションで電気モビリティの未来を支えています。",
+    quickLinks: "クイックリンク",
+    services: "サービス",
+    contactUsFooter: "お問い合わせ",
+    dcFastCharging: "DC急速充電",
+    level2Charging: "レベル2充電",
+    fleetSolutions: "フリートソリューション",
+    businessPartnerships: "ビジネスパートナーシップ",
+    privacyPolicy: "プライバシーポリシー",
+    termsOfService: "利用規約",
+    cookiePolicy: "クッキーポリシー",
+    allRightsReserved: "全著作権所有。",
+    
+    // Common
+    loading: "読み込み中...",
+    error: "エラー",
+    success: "成功",
+    cancel: "キャンセル",
+    save2: "保存",
+    edit: "編集",
+    delete: "削除",
+    back: "戻る",
+    next: "次へ",
+    previous: "前へ",
+    search: "検索",
+    filter: "フィルター",
+    
+    // Staff/Admin
+    staffDashboard: "スタッフダッシュボード",
+    adminDashboard: "管理者ダッシュボード",
+    stationManagement: "ステーション管理",
+    userManagement: "ユーザー管理",
+    bookingManagement: "予約管理",
+    analytics: "分析",
+    reports: "レポート",
+    systemSettings: "システム設定",
+    addStation: "ステーション追加",
+    editStation: "ステーション編集",
+    deleteStation: "ステーション削除",
+    stationStatus: "ステーション状況",
+    operational: "運用中",
+    maintenance: "メンテナンス",
+    offline: "オフライン",
+    totalUsers: "総ユーザー数",
+    activeBookings: "アクティブな予約",
+    revenue: "収益",
+    manageUsers: "ユーザー管理",
+    viewBookings: "予約を見る",
+    generateReport: "レポート生成",
   }
 };
 

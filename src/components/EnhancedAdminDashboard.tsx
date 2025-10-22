@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Input } from "./ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
@@ -14,11 +13,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Search,
-  Filter,
   Download,
   MapPin,
-  Phone,
   Settings,
   BarChart,
   DollarSign,
@@ -28,9 +24,8 @@ import {
   Activity
 } from "lucide-react";
 import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabase";
-import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { useLanguage } from "../hooks/useLanguage";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -209,20 +204,14 @@ export function EnhancedAdminDashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="analytics">Advanced Analytics</TabsTrigger>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
           <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
         </TabsList>
-
-        {/* Advanced Analytics */}
-        <TabsContent value="analytics">
-          <AnalyticsDashboard />
-        </TabsContent>
 
         {/* Overview */}
         <TabsContent value="overview">

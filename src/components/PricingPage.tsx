@@ -79,7 +79,6 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               
               <CardHeader className="text-center pb-4">
                 <CardTitle className="text-2xl mb-2">{pkg.name}</CardTitle>
-                <p className="text-gray-600 mb-4">{pkg.description}</p>
                 <div className="space-y-2">
                   <div className="text-4xl font-bold">
                     {pkg.price}đ
@@ -91,14 +90,24 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               </CardHeader>
 
               <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  {pkg.benefits?.map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
+                {pkg.description && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">Mô tả gói:</h4>
+                    <p className="text-gray-600 text-sm">{pkg.description}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <h4 className="font-semibold mb-3">Quyền lợi gói:</h4>
+                  <ul className="space-y-3">
+                    {pkg.benefits?.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 <Button
                   onClick={() => onGetStarted(pkg.package_id)}

@@ -157,6 +157,21 @@ export interface Translation {
   currentPassword: string;
   newPassword: string;
   accountStats: string;
+  accessDenied: string;
+  pleaseLoginToViewProfile: string;
+  updateProfileSuccess: string;
+  updateVehicleSuccess: string;
+  updateFailed: string;
+  passwordChangedSuccess: string;
+  passwordsDoNotMatch: string;
+  passwordTooShort: string;
+  fillAllPasswordFields: string;
+  saving: string;
+  // Password requirements box
+  passwordRequirementsTitle: string;
+  passwordRequirementMinLength: string;
+  passwordRequirementLettersAndNumbers: string;
+  passwordRequirementNoReuse: string;
   
   // Dashboard
   myDashboard: string;
@@ -231,6 +246,30 @@ export interface Translation {
   lightUser: string;
   regularUser: string;
   heavyUser: string;
+  // Pricing plan specific
+  planBasicName: string;
+  planBasicDescription: string;
+  planBasicFeature1: string;
+  planBasicFeature2: string;
+  planBasicFeature3: string;
+  planBasicFeature4: string;
+
+  planPlusName: string;
+  planPlusDescription: string;
+  planPlusFeature1: string;
+  planPlusFeature2: string;
+  planPlusFeature3: string;
+  planPlusFeature4: string;
+  planPlusFeature5: string;
+
+  planPremiumName: string;
+  planPremiumDescription: string;
+  planPremiumFeature1: string;
+  planPremiumFeature2: string;
+  planPremiumFeature3: string;
+  planPremiumFeature4: string;
+  planPremiumFeature5: string;
+  planPremiumFeature6: string;
   pricingPlanPricePer: string;
   savingsLabel: string;
   statsChargingStations: string;
@@ -466,6 +505,21 @@ export const translations: Record<Language, Translation> = {
     currentPassword: "Current Password",
     newPassword: "New Password",
     accountStats: "Account Stats",
+    accessDenied: "Access Denied",
+    pleaseLoginToViewProfile: "Please log in to view your profile",
+    updateProfileSuccess: "Profile updated successfully!",
+    updateVehicleSuccess: "Vehicle information updated successfully!",
+    updateFailed: "Update failed",
+    passwordChangedSuccess: "Password changed successfully!",
+    passwordsDoNotMatch: "Passwords do not match",
+    passwordTooShort: "Password must be at least 6 characters",
+    fillAllPasswordFields: "Please fill in all password fields",
+    saving: "Saving...",
+  // Password requirements
+  passwordRequirementsTitle: "Password requirements:",
+  passwordRequirementMinLength: "At least 6 characters",
+  passwordRequirementLettersAndNumbers: "Use a combination of letters and numbers",
+  passwordRequirementNoReuse: "Do not reuse an old password",
     
     // Dashboard
     myDashboard: "My Dashboard",
@@ -541,6 +595,30 @@ export const translations: Record<Language, Translation> = {
     regularUser: "Regular User",
     heavyUser: "Heavy User",
   pricingPlanPricePer: "per",
+  // Plans (EN)
+  planBasicName: "Basic",
+  planBasicDescription: "Perfect for occasional charging",
+  planBasicFeature1: "Standard charging rates",
+  planBasicFeature2: "Basic customer support",
+  planBasicFeature3: "Mobile app access",
+  planBasicFeature4: "Real-time availability",
+
+  planPlusName: "Plus",
+  planPlusDescription: "Great for regular commuters",
+  planPlusFeature1: "10% discount on all charging",
+  planPlusFeature2: "Priority customer support",
+  planPlusFeature3: "Advanced booking features",
+  planPlusFeature4: "Monthly usage reports",
+  planPlusFeature5: "Free charging session alerts",
+
+  planPremiumName: "Premium",
+  planPremiumDescription: "Best value for frequent travelers",
+  planPremiumFeature1: "20% discount on all charging",
+  planPremiumFeature2: "24/7 premium support",
+  planPremiumFeature3: "Unlimited advanced bookings",
+  planPremiumFeature4: "Detailed analytics dashboard",
+  planPremiumFeature5: "Priority charging slots",
+  planPremiumFeature6: "Concierge charging service",
   savingsLabel: "Savings",
   statsChargingStations: "Charging Stations",
   statsUptime: "Uptime",
@@ -773,6 +851,21 @@ export const translations: Record<Language, Translation> = {
     currentPassword: "Mật khẩu hiện tại",
     newPassword: "Mật khẩu mới",
     accountStats: "Thống kê tài khoản",
+    accessDenied: "Truy cập bị từ chối",
+    pleaseLoginToViewProfile: "Vui lòng đăng nhập để xem hồ sơ của bạn",
+    updateProfileSuccess: "Cập nhật hồ sơ thành công!",
+    updateVehicleSuccess: "Cập nhật thông tin xe thành công!",
+    updateFailed: "Cập nhật thất bại",
+    passwordChangedSuccess: "Đổi mật khẩu thành công!",
+    passwordsDoNotMatch: "Mật khẩu không khớp",
+    passwordTooShort: "Mật khẩu phải có ít nhất 6 ký tự",
+    fillAllPasswordFields: "Vui lòng điền tất cả các trường mật khẩu",
+    saving: "Đang lưu...",
+  // Password requirements
+  passwordRequirementsTitle: "⚠️ Yêu cầu mật khẩu:",
+  passwordRequirementMinLength: "Tối thiểu 6 ký tự",
+  passwordRequirementLettersAndNumbers: "Sử dụng kết hợp chữ cái và số",
+  passwordRequirementNoReuse: "Không sử dụng lại mật khẩu cũ",
     
     // Dashboard
     myDashboard: "Bảng điều khiển của tôi",
@@ -848,6 +941,30 @@ export const translations: Record<Language, Translation> = {
     regularUser: "Người dùng thường xuyên",
     heavyUser: "Người dùng nặng",
   pricingPlanPricePer: "/",
+  // Plans (VI)
+  planBasicName: "Cơ bản",
+  planBasicDescription: "Phù hợp cho việc sạc thỉnh thoảng",
+  planBasicFeature1: "Giá sạc tiêu chuẩn",
+  planBasicFeature2: "Hỗ trợ khách hàng cơ bản",
+  planBasicFeature3: "Truy cập ứng dụng di động",
+  planBasicFeature4: "Hiển thị tình trạng thời gian thực",
+
+  planPlusName: "Plus",
+  planPlusDescription: "Tốt cho người đi làm thường xuyên",
+  planPlusFeature1: "Giảm 10% cho tất cả giao dịch sạc",
+  planPlusFeature2: "Hỗ trợ khách hàng ưu tiên",
+  planPlusFeature3: "Tính năng đặt chỗ nâng cao",
+  planPlusFeature4: "Báo cáo sử dụng hàng tháng",
+  planPlusFeature5: "Thông báo phiên sạc miễn phí",
+
+  planPremiumName: "Premium",
+  planPremiumDescription: "Giá trị tốt cho người đi xa thường xuyên",
+  planPremiumFeature1: "Giảm 20% cho tất cả giao dịch sạc",
+  planPremiumFeature2: "Hỗ trợ cao cấp 24/7",
+  planPremiumFeature3: "Đặt chỗ nâng cao không giới hạn",
+  planPremiumFeature4: "Bảng điều khiển phân tích chi tiết",
+  planPremiumFeature5: "Vị trí sạc ưu tiên",
+  planPremiumFeature6: "Dịch vụ trợ lý sạc (concierge)",
   savingsLabel: "Tiết kiệm",
   statsChargingStations: "Trạm sạc",
   statsUptime: "Thời gian hoạt động",

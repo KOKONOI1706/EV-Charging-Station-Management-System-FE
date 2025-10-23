@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -11,7 +11,6 @@ import {
   MapPin,
   Phone,
   Star,
-  Wifi,
   Car,
   Coffee,
   // Restroom,
@@ -20,7 +19,6 @@ import {
   Navigation
 } from 'lucide-react';
 import { Station, ChargingPoint } from '../data/mockDatabase';
-import { useLanguage } from '../hooks/useLanguage';
 
 interface StationDetailViewProps {
   station: Station;
@@ -29,7 +27,6 @@ interface StationDetailViewProps {
 }
 
 export function StationDetailView({ station, onBack, onBookChargingPoint }: StationDetailViewProps) {
-  const { t } = useLanguage();
   const [selectedChargingPoint, setSelectedChargingPoint] = useState<ChargingPoint | null>(null);
 
   const getStatusColor = (status: ChargingPoint['status']) => {

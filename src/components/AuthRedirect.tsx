@@ -13,8 +13,8 @@ export const AuthRedirect = () => {
         navigate("/admin");
       } else if (user.role === "staff") {
         navigate("/staff");
-      } else {
-        navigate("/dashboard");
+      } else if (user.role === "customer") {
+        navigate("/"); // Chuyển về trang chủ cho customer
       }
     }
   }, [user, navigate]);

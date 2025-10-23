@@ -21,8 +21,8 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
       return <Navigate to="/admin" replace />;
     } else if (currentUser.role === "staff") {
       return <Navigate to="/staff" replace />;
-    } else {
-      return <Navigate to="/dashboard" replace />;
+    } else if (currentUser.role === "customer") {
+      return <Navigate to="/" replace />; // Customer về trang chủ
     }
   }
 

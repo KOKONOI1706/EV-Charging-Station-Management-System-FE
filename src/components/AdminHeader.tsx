@@ -40,7 +40,6 @@ const AdminHeader: React.FC = () => {
 
           {/* User */}
           <div className="flex flex-row items-center gap-1">
-            <span role="img" aria-label="user">👤</span>
             <span>Chào mừng, {user?.name || 'Admin'}</span>
           </div>
 

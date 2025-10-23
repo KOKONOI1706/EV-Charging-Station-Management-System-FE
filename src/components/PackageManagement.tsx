@@ -175,7 +175,7 @@ const PackageManagement: React.FC = () => {
             <CardTitle>Danh sách gói dịch vụ</CardTitle>
             <div className="flex gap-4">
               <Input
-                placeholder="🔍 Tìm kiếm theo tên gói..."
+                placeholder=" Tìm kiếm theo tên gói..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64"

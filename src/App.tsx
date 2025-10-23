@@ -59,9 +59,9 @@ function AppContent() {
   const handleLoginSuccess = (authenticatedUser: User) => {
     login(authenticatedUser);
     
-    // Navigate to appropriate dashboard based on role
+    // Navigate to appropriate page based on role
     if (authenticatedUser.role === "customer") {
-      setCurrentView("dashboard");
+      setCurrentView("home"); // Customer về trang chủ
       loadUserData(authenticatedUser.id);
     } else if (authenticatedUser.role === "staff") {
       setCurrentView("staff");
@@ -128,13 +128,13 @@ function AppContent() {
     setCurrentView(view);
   };
 
-  const handleGetStarted = (planId: string) => {
+  const handleGetStarted = (planId: number) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to select a plan.");
       setIsLoginModalOpen(true);
       return;
     }
-    toast.success(`${planId.charAt(0).toUpperCase() + planId.slice(1)} plan selected!`);
+    toast.success(`Plan ${planId} selected!`);
   };
 
   const handleCloseBookingModal = () => {
@@ -241,17 +241,8 @@ function AppContent() {
         );
 
       case "dashboard":
-        return isAuthenticated && user?.role === "customer" ? (
-          <UserDashboard bookings={bookings} userName={user.name} />
-        ) : (
-          <div className="container mx-auto px-4 py-16 text-center">
-            <h2 className="text-2xl font-bold mb-4">Access Restricted</h2>
-            <p className="text-gray-600 mb-8">You need to sign in as a customer to access this dashboard.</p>
-            <Button onClick={handleAuth} className="bg-green-600 hover:bg-green-700">
-              Sign In
-            </Button>
-          </div>
-        );
+        setCurrentView("home");
+        return null;
 
       case "staff":
         return isAuthenticated && user?.role === "staff" ? (
@@ -320,14 +311,12 @@ function AppContent() {
         renderCurrentView()
       )}
 
-      {/* Quick Navigation for Authenticated Users */}
-      {isAuthenticated && currentView !== "auth" && (
+      {/* Quick Navigation for Staff and Admin Users */}
+      {isAuthenticated && currentView !== "auth" && user?.role !== "customer" && (
         <div className="fixed bottom-6 right-6">
           <Button
             onClick={() => {
-              if (user?.role === "customer") {
-                handleNavigate("dashboard");
-              } else if (user?.role === "staff") {
+              if (user?.role === "staff") {
                 handleNavigate("staff");
               } else if (user?.role === "admin") {
                 handleNavigate("admin");
@@ -335,9 +324,7 @@ function AppContent() {
             }}
             className="bg-green-600 hover:bg-green-700 shadow-lg"
           >
-            {user?.role === "customer" ? "Dashboard" : 
-             user?.role === "staff" ? "Staff Panel" : 
-             "Admin Panel"}
+            {user?.role === "staff" ? "Staff Panel" : "Admin Panel"}
           </Button>
         </div>
       )}

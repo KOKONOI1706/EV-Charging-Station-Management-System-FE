@@ -33,6 +33,8 @@ import {
   Calendar
 } from 'lucide-react';
 import { Station, MockDatabaseService } from '../data/mockDatabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { toast } from 'sonner@2.0.3';
 
@@ -54,6 +56,8 @@ interface StaffAnalytics {
 
 export function EnhancedStaffDashboard() {
   const { t } = useLanguage();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<string>('all');
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
@@ -174,6 +178,21 @@ export function EnhancedStaffDashboard() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success(t.signOut || 'Logged out');
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            {t.signOut}
+          </Button>
         </div>
       </div>
 

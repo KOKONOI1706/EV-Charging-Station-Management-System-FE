@@ -32,7 +32,11 @@ export default function HomePage() {
         onAuthClick={handleAuthClick}
         isAuthenticated={isAuthenticated}
         userName={user?.name}
-        onNavigate={(v: any) => navigate(v === 'pricing' ? '/pricing' : '/')}
+        onNavigate={(v: any) => {
+          if (v === 'pricing') navigate('/pricing');
+          else if (v === 'support') navigate('/support');
+          else navigate('/');
+        }}
         currentView="home"
         onOpenProfile={() => navigate('/profile')}
       />
@@ -44,7 +48,11 @@ export default function HomePage() {
         </div>
       </main>
 
-      <Footer onNavigate={(v: any) => navigate(v === 'pricing' ? '/pricing' : '/') } />
+      <Footer onNavigate={(v: any) => {
+        if (v === 'pricing') navigate('/pricing');
+        else if (v === 'support') navigate('/support');
+        else navigate('/');
+      }} />
     </div>
   );
 }

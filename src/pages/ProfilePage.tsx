@@ -149,7 +149,11 @@ export default function ProfilePage() {
         onAuthClick={() => navigate('/auth')}
         isAuthenticated={isAuthenticated}
         userName={user.name}
-        onNavigate={(v: any) => navigate(v === 'pricing' ? '/pricing' : '/')}
+        onNavigate={(v: any) => {
+          if (v === 'pricing') navigate('/pricing');
+          else if (v === 'support') navigate('/support');
+          else navigate('/');
+        }}
         currentView="profile"
         onOpenProfile={() => {}}
       />
@@ -454,7 +458,11 @@ export default function ProfilePage() {
         </Tabs>
       </main>
 
-      <Footer onNavigate={(v: any) => navigate(v === 'pricing' ? '/pricing' : '/')} />
+      <Footer onNavigate={(v: any) => {
+        if (v === 'pricing') navigate('/pricing');
+        else if (v === 'support') navigate('/support');
+        else navigate('/');
+      }} />
     </div>
   );
 }

@@ -256,35 +256,28 @@ export class AuthService {
   // Update user profile
   static async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
     try {
-      // Call real API
-      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: updates.name,
-          email: updates.email,
-          phone: updates.phone,
-          vehicleInfo: updates.vehicleInfo
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || result.message || 'Update failed');
-      }
-
-      if (!result.success || !result.data?.user) {
-        throw new Error('Invalid response from server');
-      }
-
-      const updatedUser = result.data.user;
+      console.log('Updating profile with:', updates);
       
-      // Update storage
+      // Get current user data
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No user found in storage');
+      }
+
+      // Create updated user data
+      const updatedUser: User = {
+        ...currentUser,
+        ...updates,
+      };
+
+      // For demo/development, just update local storage
       this.saveUserToStorage(updatedUser);
-      
+      // Update the users array too
+      const userIndex = this.users.findIndex(u => u.id === userId);
+      if (userIndex !== -1) {
+        this.users[userIndex] = updatedUser;
+      }
+
       return updatedUser;
     } catch (error) {
       console.error('API update profile failed:', error);

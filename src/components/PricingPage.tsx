@@ -90,12 +90,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               </CardHeader>
 
               <CardContent className="space-y-6">
-                {pkg.description && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">Mô tả gói:</h4>
-                    <p className="text-gray-600 text-sm">{pkg.description}</p>
-                  </div>
-                )}
+                {/* Package descriptions removed per request */}
                 
                 <div>
                   <h4 className="font-semibold mb-3">Quyền lợi gói:</h4>

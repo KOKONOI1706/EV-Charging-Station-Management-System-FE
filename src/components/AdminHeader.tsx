@@ -7,6 +7,11 @@ const AdminHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Re-render khi user thay đổi
+  React.useEffect(() => {
+    // Không cần làm gì cả, chỉ cần re-render khi user thay đổi
+  }, [user]);
+
   const handleLogout = async () => {
     try {
       await logout();

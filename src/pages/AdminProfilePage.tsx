@@ -36,7 +36,15 @@ export default function AdminProfilePage() {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
+      // Cập nhật thông tin người dùng
       await updateUser({
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+      });
+      
+      // Cập nhật state local
+      setProfileData({
         name: profileData.name,
         email: profileData.email,
         phone: profileData.phone,

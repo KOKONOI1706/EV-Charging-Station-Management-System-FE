@@ -28,6 +28,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -45,7 +47,6 @@ export function EnhancedAdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [settings, setSettings] = useState<SystemSettings>({
     maintenanceMode: false,
     autoBackup: true,

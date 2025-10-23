@@ -22,6 +22,53 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
 
   // (calculateSavings removed - not used in current UI)
 
+  const getPlanText = (planId: string, fallbackPlan?: any) => {
+    switch (planId) {
+      case 'basic':
+        return {
+          name: t.planBasicName,
+          description: t.planBasicDescription,
+          features: [
+            t.planBasicFeature1,
+            t.planBasicFeature2,
+            t.planBasicFeature3,
+            t.planBasicFeature4,
+          ],
+        };
+      case 'plus':
+        return {
+          name: t.planPlusName,
+          description: t.planPlusDescription,
+          features: [
+            t.planPlusFeature1,
+            t.planPlusFeature2,
+            t.planPlusFeature3,
+            t.planPlusFeature4,
+            t.planPlusFeature5,
+          ],
+        };
+      case 'premium':
+        return {
+          name: t.planPremiumName,
+          description: t.planPremiumDescription,
+          features: [
+            t.planPremiumFeature1,
+            t.planPremiumFeature2,
+            t.planPremiumFeature3,
+            t.planPremiumFeature4,
+            t.planPremiumFeature5,
+            t.planPremiumFeature6,
+          ],
+        };
+      default:
+        return {
+          name: planId,
+          description: '',
+          features: fallbackPlan?.features || [],
+        };
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-16">
       {/* Header */}
@@ -76,8 +123,17 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               )}
               
                 <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                  <p className="text-gray-600 mb-4">{plan.description}</p>
+                  {
+                    (() => {
+                      const p = getPlanText(plan.id);
+                      return (
+                        <>
+                          <CardTitle className="text-2xl mb-2">{p.name}</CardTitle>
+                          <p className="text-gray-600 mb-4">{p.description}</p>
+                        </>
+                      );
+                    })()
+                  }
                 <div className="space-y-2">
                   <div className="text-4xl font-bold">
                     ${price.toFixed(2)}
@@ -95,7 +151,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
 
               <CardContent className="space-y-6">
                 <ul className="space-y-3">
-                  {plan.features.map((feature, index) => (
+                  {getPlanText(plan.id, plan).features.map((feature: string, index: number) => (
                     <li key={index} className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{feature}</span>

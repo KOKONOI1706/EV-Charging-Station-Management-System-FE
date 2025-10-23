@@ -47,8 +47,8 @@ export default function ProfilePage() {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="w-8 h-8 text-red-600" />
             </div>
-            <CardTitle className="text-2xl">Truy cập bị từ chối</CardTitle>
-            <CardDescription>Vui lòng đăng nhập để xem hồ sơ của bạn</CardDescription>
+            <CardTitle className="text-2xl">{t.accessDenied}</CardTitle>
+            <CardDescription>{t.pleaseLoginToViewProfile}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate('/auth')} className="w-full">
@@ -70,11 +70,11 @@ export default function ProfilePage() {
         phone: profileData.phone,
       });
       
-      toast.success("Cập nhật hồ sơ thành công!");
+      toast.success(t.updateProfileSuccess);
       setIsEditing(false);
     } catch (error) {
       console.error('Update profile error:', error);
-      toast.error("Cập nhật thất bại: " + (error instanceof Error ? error.message : "Lỗi không xác định"));
+      toast.error(t.updateFailed + ": " + (error instanceof Error ? error.message : ""));
     } finally {
       setIsSaving(false);
     }
@@ -88,24 +88,29 @@ export default function ProfilePage() {
         vehicleInfo: vehicleData,
       });
       
-      toast.success("Cập nhật thông tin xe thành công!");
+      toast.success(t.updateVehicleSuccess);
       setIsEditing(false);
     } catch (error) {
       console.error('Update vehicle error:', error);
-      toast.error("Cập nhật thất bại: " + (error instanceof Error ? error.message : "Lỗi không xác định"));
+      toast.error(t.updateFailed + ": " + (error instanceof Error ? error.message : ""));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleChangePassword = async () => {
+    if (!securityData.currentPassword || !securityData.newPassword || !securityData.confirmPassword) {
+      toast.error(t.fillAllPasswordFields);
+      return;
+    }
+
     if (securityData.newPassword !== securityData.confirmPassword) {
-      toast.error("Mật khẩu mới không khớp");
+      toast.error(t.passwordsDoNotMatch);
       return;
     }
 
     if (securityData.newPassword.length < 6) {
-      toast.error("Mật khẩu phải có ít nhất 6 ký tự");
+      toast.error(t.passwordTooShort);
       return;
     }
 
@@ -118,7 +123,7 @@ export default function ProfilePage() {
         securityData.newPassword
       );
       
-      toast.success("Đổi mật khẩu thành công!");
+      toast.success(t.passwordChangedSuccess);
       setSecurityData({
         currentPassword: "",
         newPassword: "",
@@ -126,7 +131,7 @@ export default function ProfilePage() {
       });
     } catch (error) {
       console.error('Change password error:', error);
-      toast.error("Đổi mật khẩu thất bại: " + (error instanceof Error ? error.message : "Lỗi không xác định"));
+      toast.error(t.updateFailed + ": " + (error instanceof Error ? error.message : ""));
     } finally {
       setIsSaving(false);
     }
@@ -171,11 +176,11 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2 mt-2">
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                     <User className="w-3 h-3 mr-1" />
-                    {user.role === 'customer' ? 'Tài xế' : user.role}
+                    {user.role}
                   </span>
                   <span className="text-xs text-gray-500">
                     <Calendar className="w-3 h-3 inline mr-1" />
-                    Thành viên từ {memberSince}
+                    {t.memberSince} {memberSince}
                   </span>
                 </div>
               </div>
@@ -194,13 +199,13 @@ export default function ProfilePage() {
         <Tabs defaultValue="profile" className="space-y-4">
           <TabsList className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-100 p-1">
             <TabsTrigger value="profile" className="rounded-md px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              Hồ sơ
+              {t.profile}
             </TabsTrigger>
             <TabsTrigger value="vehicle" className="rounded-md px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              Phương tiện
+              {t.vehicleInformation}
             </TabsTrigger>
             <TabsTrigger value="security" className="rounded-md px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              Bảo mật
+              {t.security}
             </TabsTrigger>
           </TabsList>
 
@@ -210,22 +215,22 @@ export default function ProfilePage() {
               <CardHeader className="border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold">Thông tin cá nhân</CardTitle>
-                    <CardDescription className="text-sm">Cập nhật thông tin cá nhân của bạn</CardDescription>
+                    <CardTitle className="text-lg font-semibold">{t.personalInformation}</CardTitle>
+                    <CardDescription className="text-sm">{t.updatePersonalDetails}</CardDescription>
                   </div>
                   {!isEditing ? (
                     <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
                       <Edit2 className="w-4 h-4 mr-2" />
-                      Chỉnh sửa
+                      {t.edit}
                     </Button>
                   ) : (
                     <div className="flex gap-2">
                       <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
-                        Hủy
+                        {t.cancel}
                       </Button>
                       <Button onClick={handleSaveProfile} disabled={isSaving} size="sm" className="bg-green-600 hover:bg-green-700">
                         <Save className="w-4 h-4 mr-2" />
-                        {isSaving ? 'Đang lưu...' : 'Lưu'}
+                        {isSaving ? t.saving : t.save}
                       </Button>
                     </div>
                   )}
@@ -234,7 +239,7 @@ export default function ProfilePage() {
               <CardContent className="space-y-4 pt-6">
                 <div className="grid gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium">Họ và tên</Label>
+                    <Label htmlFor="name" className="text-sm font-medium">{t.fullName}</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -243,13 +248,13 @@ export default function ProfilePage() {
                         onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                         disabled={!isEditing}
                         className="pl-10"
-                        placeholder="Nhập họ và tên"
+                        placeholder={t.fullNamePlaceholder}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-sm font-medium">Số điện thoại</Label>
+                    <Label htmlFor="phone" className="text-sm font-medium">{t.phoneNumber}</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -258,13 +263,13 @@ export default function ProfilePage() {
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                         disabled={!isEditing}
                         className="pl-10"
-                        placeholder="Nhập số điện thoại"
+                        placeholder={t.phoneNumberPlaceholder}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium">Địa chỉ email</Label>
+                    <Label htmlFor="email" className="text-sm font-medium">{t.email}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -274,7 +279,7 @@ export default function ProfilePage() {
                         onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                         disabled={!isEditing}
                         className="pl-10"
-                        placeholder="Nhập địa chỉ email"
+                        placeholder={t.emailPlaceholder}
                       />
                     </div>
                   </div>
@@ -289,22 +294,22 @@ export default function ProfilePage() {
               <CardHeader className="border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold">Thông tin phương tiện</CardTitle>
-                    <CardDescription className="text-sm">Quản lý thông tin xe điện của bạn</CardDescription>
+                    <CardTitle className="text-lg font-semibold">{t.vehicleInformation}</CardTitle>
+                    <CardDescription className="text-sm">{t.updateVehicleDetails}</CardDescription>
                   </div>
                   {!isEditing ? (
                     <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
                       <Edit2 className="w-4 h-4 mr-2" />
-                      Chỉnh sửa
+                      {t.edit}
                     </Button>
                   ) : (
                     <div className="flex gap-2">
                       <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
-                        Hủy
+                        {t.cancel}
                       </Button>
                       <Button onClick={handleSaveVehicle} disabled={isSaving} size="sm" className="bg-green-600 hover:bg-green-700">
                         <Save className="w-4 h-4 mr-2" />
-                        {isSaving ? 'Đang lưu...' : 'Lưu'}
+                        {isSaving ? t.saving : t.save}
                       </Button>
                     </div>
                   )}
@@ -313,7 +318,7 @@ export default function ProfilePage() {
               <CardContent className="space-y-4 pt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="make" className="text-sm font-medium">Hãng xe</Label>
+                    <Label htmlFor="make" className="text-sm font-medium">{t.vehicleMake}</Label>
                     <div className="relative">
                       <Car className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -322,45 +327,45 @@ export default function ProfilePage() {
                         onChange={(e) => setVehicleData({ ...vehicleData, make: e.target.value })}
                         disabled={!isEditing}
                         className="pl-10"
-                        placeholder="VD: Tesla, VinFast"
+                        placeholder={t.vehicleMakePlaceholder}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="model" className="text-sm font-medium">Mẫu xe</Label>
+                    <Label htmlFor="model" className="text-sm font-medium">{t.vehicleModel}</Label>
                     <Input
                       id="model"
                       value={vehicleData.model}
                       onChange={(e) => setVehicleData({ ...vehicleData, model: e.target.value })}
                       disabled={!isEditing}
-                      placeholder="VD: Model 3, VF e34"
+                      placeholder={t.vehicleModelPlaceholder}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="year" className="text-sm font-medium">Năm sản xuất</Label>
+                    <Label htmlFor="year" className="text-sm font-medium">{t.vehicleYear}</Label>
                     <Input
                       id="year"
                       type="number"
                       value={vehicleData.year}
                       onChange={(e) => setVehicleData({ ...vehicleData, year: parseInt(e.target.value) })}
                       disabled={!isEditing}
-                      placeholder="2024"
+                      placeholder={t.vehicleYearPlaceholder}
                       min="2000"
                       max={new Date().getFullYear() + 1}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="battery" className="text-sm font-medium">Dung lượng pin (kWh)</Label>
+                    <Label htmlFor="battery" className="text-sm font-medium">{t.batteryCapacity}</Label>
                     <Input
                       id="battery"
                       type="number"
                       value={vehicleData.batteryCapacity}
                       onChange={(e) => setVehicleData({ ...vehicleData, batteryCapacity: parseFloat(e.target.value) })}
                       disabled={!isEditing}
-                      placeholder="VD: 50, 75, 100"
+                      placeholder={t.batteryCapacityPlaceholder}
                       min="0"
                       step="0.1"
                     />
@@ -385,42 +390,42 @@ export default function ProfilePage() {
               <CardHeader className="border-b border-gray-100">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                   <Shield className="w-5 h-5" />
-                  Cài đặt bảo mật
+                  {t.securitySettings}
                 </CardTitle>
-                <CardDescription className="text-sm">Cập nhật mật khẩu và tùy chọn bảo mật</CardDescription>
+                <CardDescription className="text-sm">{t.changePassword}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="current-password" className="text-sm font-medium">Mật khẩu hiện tại</Label>
+                    <Label htmlFor="current-password" className="text-sm font-medium">{t.currentPassword}</Label>
                     <Input
                       id="current-password"
                       type="password"
                       value={securityData.currentPassword}
                       onChange={(e) => setSecurityData({ ...securityData, currentPassword: e.target.value })}
-                      placeholder="Nhập mật khẩu hiện tại"
+                      placeholder={t.passwordPlaceholder}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="new-password" className="text-sm font-medium">Mật khẩu mới</Label>
+                    <Label htmlFor="new-password" className="text-sm font-medium">{t.newPassword}</Label>
                     <Input
                       id="new-password"
                       type="password"
                       value={securityData.newPassword}
                       onChange={(e) => setSecurityData({ ...securityData, newPassword: e.target.value })}
-                      placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                      placeholder={t.passwordPlaceholder}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-sm font-medium">Xác nhận mật khẩu mới</Label>
+                    <Label htmlFor="confirm-password" className="text-sm font-medium">{t.confirmPassword}</Label>
                     <Input
                       id="confirm-password"
                       type="password"
                       value={securityData.confirmPassword}
                       onChange={(e) => setSecurityData({ ...securityData, confirmPassword: e.target.value })}
-                      placeholder="Nhập lại mật khẩu mới"
+                      placeholder={t.confirmPassword}
                     />
                   </div>
 
@@ -429,18 +434,18 @@ export default function ProfilePage() {
                     disabled={isSaving || !securityData.currentPassword || !securityData.newPassword}
                     className="w-full bg-green-600 hover:bg-green-700"
                   >
-                    {isSaving ? "Đang đổi mật khẩu..." : "Đổi mật khẩu"}
+                    {isSaving ? t.saving : t.changePassword}
                   </Button>
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
                   <p className="text-sm text-amber-900 font-medium mb-2">
-                    ⚠️ Yêu cầu mật khẩu:
+                    {t.passwordRequirementsTitle}
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-sm text-amber-800">
-                    <li>Tối thiểu 6 ký tự</li>
-                    <li>Sử dụng kết hợp chữ cái và số</li>
-                    <li>Không sử dụng lại mật khẩu cũ</li>
+                    <li>{t.passwordRequirementMinLength}</li>
+                    <li>{t.passwordRequirementLettersAndNumbers}</li>
+                    <li>{t.passwordRequirementNoReuse}</li>
                   </ul>
                 </div>
               </CardContent>

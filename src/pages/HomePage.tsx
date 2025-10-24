@@ -35,6 +35,7 @@ export default function HomePage() {
         onNavigate={(v: any) => {
           if (v === 'pricing') navigate('/pricing');
           else if (v === 'support') navigate('/support');
+          else if (v === 'dashboard') navigate('/dashboard');
           else navigate('/');
         }}
         currentView="home"
@@ -51,6 +52,7 @@ export default function HomePage() {
       <Footer onNavigate={(v: any) => {
         if (v === 'pricing') navigate('/pricing');
         else if (v === 'support') navigate('/support');
+        else if (v === 'dashboard') navigate('/dashboard');
         else navigate('/');
       }} />
     </div>

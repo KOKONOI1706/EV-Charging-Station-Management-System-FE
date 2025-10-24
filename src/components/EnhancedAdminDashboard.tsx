@@ -30,6 +30,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -229,13 +230,19 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+          <TabsTrigger value="chargingSessions">Charging Sessions</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
           <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
         </TabsList>
+
+        {/* Charging Sessions Management */}
+        <TabsContent value="chargingSessions">
+          <ChargingSessionsManagement userRole="admin" />
+        </TabsContent>
 
         {/* Overview */}
         <TabsContent value="overview">

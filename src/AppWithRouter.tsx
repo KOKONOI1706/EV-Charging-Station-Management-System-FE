@@ -9,10 +9,6 @@ import StaffPage from "./pages/StaffPage";
 import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
-import ProfilePage from "./pages/ProfilePage";
-import UserHistoryPage from "./pages/UserHistoryPage";
-import PersonalReportPage from "./pages/PersonalReportPage";
-import ChargingSessionPage from "./pages/ChargingSessionPage";
 
 const router = createBrowserRouter([
   {
@@ -22,10 +18,6 @@ const router = createBrowserRouter([
   {
     path: "/auth",
     element: <AuthPage />,
-  },
-  {
-    path: "/profile",
-    element: <ProfilePage />,
   },
   {
     path: "/dashboard",
@@ -46,18 +38,6 @@ const router = createBrowserRouter([
   {
     path: "/support",
     element: <SupportPage />,
-  },
-  {
-    path: "/user-history",
-    element: <UserHistoryPage />,
-  },
-  {
-    path: "/personal-report",
-    element: <PersonalReportPage />,
-  },
-  {
-    path: "/charging-session",
-    element: <ChargingSessionPage />,
   },
   {
     path: "*",

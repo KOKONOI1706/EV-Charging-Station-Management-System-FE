@@ -39,7 +39,6 @@ export default function HomePage() {
           else navigate('/');
         }}
         currentView="home"
-        onOpenProfile={() => navigate('/profile')}
       />
 
       <main>

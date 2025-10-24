@@ -9,7 +9,6 @@ import StaffPage from "./pages/StaffPage";
 import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
-import ProfilePage from "./pages/ProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -19,10 +18,6 @@ const router = createBrowserRouter([
   {
     path: "/auth",
     element: <AuthPage />,
-  },
-  {
-    path: "/profile",
-    element: <ProfilePage />,
   },
   {
     path: "/dashboard",

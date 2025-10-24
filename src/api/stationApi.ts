@@ -101,6 +101,14 @@ export async function searchStations(params: StationSearchParams): Promise<Stati
 
 // Transform API station data to frontend Station interface
 function transformApiStation(apiStation: any): Station {
+  // Generate charging points if not provided by API
+  const totalSpots = apiStation.total_spots || apiStation.total || 0;
+  const availableSpots = apiStation.available_spots || apiStation.available || 0;
+  const chargingPoints = apiStation.charging_points || generateChargingPoints(totalSpots, availableSpots);
+  
+  // Generate layout if not provided by API
+  const layout = apiStation.layout || generateStationLayout(totalSpots, chargingPoints);
+  
   return {
     id: apiStation.id?.toString() || '',
     name: apiStation.name || '',
@@ -109,8 +117,8 @@ function transformApiStation(apiStation: any): Station {
     state: apiStation.state || '',
     zipCode: apiStation.zip_code || apiStation.zipCode || '',
     distance: apiStation.distance_km ? `${apiStation.distance_km} km` : 'N/A',
-    available: apiStation.available_spots || apiStation.available || 0,
-    total: apiStation.total_spots || apiStation.total || 0,
+    available: availableSpots,
+    total: totalSpots,
     rating: apiStation.rating || 4.5,
     price: apiStation.price || apiStation.price_per_kwh ? `$${apiStation.price_per_kwh}/kWh` : '$0.35/kWh',
     pricePerKwh: apiStation.price_per_kwh || 0.35,
@@ -126,13 +134,75 @@ function transformApiStation(apiStation: any): Station {
     latitude: apiStation.lat || apiStation.latitude || 0,
     longitude: apiStation.lng || apiStation.longitude || 0,
     network: apiStation.network || 'ChargeTech',
-    chargingPoints: apiStation.charging_points || [],
-    layout: apiStation.layout || {
-      width: 10,
-      height: 8,
-      entrances: [{ x: 5, y: 0, direction: 'north' as const }],
-      facilities: [],
-    },
+    chargingPoints: chargingPoints,
+    layout: layout,
+    status: apiStation.status || 'active',
+  };
+}
+
+// Generate charging points based on total and available
+function generateChargingPoints(total: number, available: number) {
+  const points = [];
+  const inUse = total - available;
+  
+  for (let i = 0; i < total; i++) {
+    const status = i < available ? 'available' : i < (available + inUse) ? 'in-use' : 'offline';
+    points.push({
+      id: `cp-${i + 1}`,
+      number: i + 1,
+      status: status as any,
+      connectorType: 'CCS',
+      powerKw: 150,
+      position: { x: 0, y: 0 }, // Will be positioned by layout
+      currentUser: status === 'in-use' ? `User ${i + 1}` : undefined,
+      estimatedTimeRemaining: status === 'in-use' ? Math.floor(Math.random() * 30) + 10 : undefined,
+    });
+  }
+  
+  return points;
+}
+
+// Generate station layout based on charging points
+function generateStationLayout(total: number, chargingPoints: any[]) {
+  // Calculate grid size based on total points
+  const pointsPerRow = Math.ceil(Math.sqrt(total));
+  const rows = Math.ceil(total / pointsPerRow);
+  
+  const width = pointsPerRow * 2 + 4; // 2 cells per point + margins
+  const height = rows * 2 + 4; // 2 cells per row + margins
+  
+  // Position charging points in grid
+  chargingPoints.forEach((point, index) => {
+    const row = Math.floor(index / pointsPerRow);
+    const col = index % pointsPerRow;
+    point.position = {
+      x: col * 2 + 2,
+      y: row * 2 + 2,
+    };
+  });
+  
+  return {
+    width,
+    height,
+    entrances: [
+      { x: Math.floor(width / 2), y: 0, direction: 'north' as const }
+    ],
+    facilities: [
+      {
+        type: 'restroom',
+        x: 1,
+        y: 1,
+        width: 1,
+        height: 1,
+      },
+      {
+        type: 'cafe',
+        x: width - 2,
+        y: 1,
+        width: 1,
+        height: 1,
+      },
+    ],
   };
 }
 

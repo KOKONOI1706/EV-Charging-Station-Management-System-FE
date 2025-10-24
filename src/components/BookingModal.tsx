@@ -286,11 +286,20 @@ export function BookingModal({
                   Duration: {duration} hours
                 </p>
               </div>
+              
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                <h4 className="font-semibold text-green-800 mb-2">📋 Next Step</h4>
+                <p className="text-sm text-green-700 mb-3">
+                  Your booking is confirmed! When you arrive at the station, go to your Dashboard and click "Start Charging".
+                </p>
+              </div>
+
               <Button
                 onClick={resetModal}
-                className="w-full bg-green-600 hover:bg-green-700"
+                variant="outline"
+                className="w-full"
               >
-                Done
+                Done - I'll Start Later
               </Button>
             </div>
           )}

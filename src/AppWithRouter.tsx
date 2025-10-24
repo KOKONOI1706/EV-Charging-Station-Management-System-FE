@@ -13,6 +13,7 @@ import ProfilePage from "./pages/ProfilePage";
 import UserHistoryPage from "./pages/UserHistoryPage";
 import PersonalReportPage from "./pages/PersonalReportPage";
 import ChargingSessionPage from "./pages/ChargingSessionPage";
+import { ReservationTestPage } from "./pages/ReservationTestPage";
 
 const router = createBrowserRouter([
   {
@@ -58,6 +59,10 @@ const router = createBrowserRouter([
   {
     path: "/charging-session",
     element: <ChargingSessionPage />,
+  },
+  {
+    path: "/reservation-test",
+    element: <ReservationTestPage />,
   },
   {
     path: "*",

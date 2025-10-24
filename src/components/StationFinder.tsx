@@ -21,7 +21,7 @@ import { StationDetailView } from "./StationDetailView";
 import { useLanguage } from "../hooks/useLanguage";
 
 interface StationFinderProps {
-  onBookStation: (station: Station) => void;
+  onBookStation: (station: Station, chargingPointId?: string) => void;
 }
 
 export function StationFinder({ onBookStation }: StationFinderProps) {
@@ -63,9 +63,10 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
     setSelectedStation(null);
   };
 
-  const handleBookChargingPoint = (station: Station) => {
-    // In a real app, you could pass the specific charging point ID to the booking modal
-    onBookStation(station);
+  const handleBookChargingPoint = (station: Station, chargingPointId?: string) => {
+    console.log('📍 handleBookChargingPoint called with pointId:', chargingPointId);
+    // Pass the charging point ID to the booking handler
+    onBookStation(station, chargingPointId);
   };
 
   const filteredStations = stations.filter((station) => {

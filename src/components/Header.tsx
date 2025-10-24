@@ -15,6 +15,7 @@ interface HeaderProps {
 
 export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate, onOpenProfile }: HeaderProps) {
   const { t } = useLanguage();
+  
   return (
     <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -62,6 +63,7 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
 
         <div className="flex items-center space-x-4">
           <LanguageSelector />
+          
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
               <User className="w-5 h-5" />

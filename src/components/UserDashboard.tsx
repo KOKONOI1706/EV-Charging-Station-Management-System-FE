@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { useState } from "react";
 import {
   Calendar,
   Clock,
@@ -10,9 +11,12 @@ import {
   Star,
   Settings,
   CreditCard,
-  History,
+  Battery,
 } from "lucide-react";
 import { Booking } from "../data/mockDatabase";
+import { ActiveChargingSession } from "./ActiveChargingSession";
+import { ChargingHistory } from "./ChargingHistory";
+import { StartChargingModal } from "./StartChargingModal";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -20,14 +24,21 @@ interface UserDashboardProps {
 }
 
 export function UserDashboard({ bookings, userName }: UserDashboardProps) {
+  const [startChargingModal, setStartChargingModal] = useState<{
+    isOpen: boolean;
+    pointId?: number;
+    pointName?: string;
+    stationName?: string;
+    powerKw?: number;
+    pricePerKwh?: number;
+    bookingId?: number;
+  }>({
+    isOpen: false,
+  });
+
   const upcomingBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.date);
     return bookingDate >= new Date() && booking.status === "confirmed";
-  });
-
-  const pastBookings = bookings.filter((booking) => {
-    const bookingDate = new Date(booking.date);
-    return bookingDate < new Date() || booking.status === "completed";
   });
 
   const getStatusColor = (status: string) => {
@@ -118,12 +129,19 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
         </Card>
       </div>
 
-      <Tabs defaultValue="upcoming" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="current" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="current">Current</TabsTrigger>
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="current">
+          <div className="space-y-6">
+            <ActiveChargingSession />
+          </div>
+        </TabsContent>
 
         <TabsContent value="upcoming">
           <Card>
@@ -190,8 +208,22 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
                           variant="outline"
                           size="sm"
                           className="border-green-600 text-green-600 hover:bg-green-50"
+                          onClick={() => {
+                            // For demo purposes, using mock data
+                            // In real app, get from booking object
+                            setStartChargingModal({
+                              isOpen: true,
+                              pointId: 1, // Mock point ID
+                              pointName: "Point #1",
+                              stationName: booking.station.name,
+                              powerKw: booking.station.powerKw || 150,
+                              pricePerKwh: booking.station.pricePerKwh || 5000,
+                              bookingId: parseInt(booking.id),
+                            });
+                          }}
                         >
-                          Get Directions
+                          <Battery className="w-4 h-4 mr-2" />
+                          Start Charging
                         </Button>
                       </div>
                     </div>
@@ -203,66 +235,7 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
         </TabsContent>
 
         <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="w-5 h-5" />
-                Charging History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pastBookings.length === 0 ? (
-                <div className="text-center py-8">
-                  <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No charging history yet</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {pastBookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold">
-                          {booking.station.name}
-                        </h3>
-                        <Badge className={getStatusColor(booking.status)}>
-                          {booking.status}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {booking.date.toDateString()}
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-2" />
-                          {booking.time}
-                        </div>
-                        <div className="flex items-center">
-                          <Zap className="w-4 h-4 mr-2" />
-                          {booking.duration} hours
-                        </div>
-                        <div className="flex items-center">
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          ${booking.price}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm">
-                          View Receipt
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Rate Experience
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ChargingHistory limit={20} />
         </TabsContent>
 
         <TabsContent value="settings">
@@ -314,6 +287,24 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Start Charging Modal */}
+      {startChargingModal.isOpen && (
+        <StartChargingModal
+          isOpen={startChargingModal.isOpen}
+          onClose={() => setStartChargingModal({ isOpen: false })}
+          pointId={startChargingModal.pointId!}
+          pointName={startChargingModal.pointName!}
+          stationName={startChargingModal.stationName!}
+          powerKw={startChargingModal.powerKw!}
+          pricePerKwh={startChargingModal.pricePerKwh!}
+          bookingId={startChargingModal.bookingId}
+          onSuccess={() => {
+            // Refresh dashboard after starting session
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

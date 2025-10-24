@@ -37,6 +37,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { ChargingSessionsManagement } from './ChargingSessionsManagement';
 
 interface StationMetrics {
   todaysSessions: number;
@@ -278,13 +279,22 @@ export function EnhancedStaffDashboard() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="chargingSessions">Charging Sessions</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
           <TabsTrigger value="stations">Stations</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
+
+        {/* Charging Sessions Management */}
+        <TabsContent value="chargingSessions">
+          <ChargingSessionsManagement 
+            userRole="staff" 
+            stationId={selectedStation !== 'all' ? parseInt(selectedStation) : undefined}
+          />
+        </TabsContent>
 
         {/* Analytics */}
         <TabsContent value="analytics">

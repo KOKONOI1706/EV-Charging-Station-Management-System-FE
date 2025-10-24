@@ -42,6 +42,16 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
           >
             {t.findStations}
           </button>
+          {isAuthenticated && (
+            <button 
+              onClick={() => onNavigate("dashboard")} 
+              className={`hover:text-green-600 transition-colors ${
+                currentView === "dashboard" ? "text-green-600" : ""
+              }`}
+            >
+              Dashboard
+            </button>
+          )}
           <button 
             onClick={() => onNavigate("pricing")} 
             className={`hover:text-green-600 transition-colors ${

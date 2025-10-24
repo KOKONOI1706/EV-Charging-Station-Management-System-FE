@@ -20,7 +20,8 @@ export default function AuthRoute() {
         break;
       case "customer":
       default:
-        navigate("/dashboard");
+        // Customer goes to home page to find stations
+        navigate("/");
         break;
     }
   };

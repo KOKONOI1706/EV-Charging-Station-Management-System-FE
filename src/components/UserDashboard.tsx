@@ -13,6 +13,8 @@ import {
   History,
 } from "lucide-react";
 import { Booking } from "../data/mockDatabase";
+import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
+import { useAuth } from "../contexts/AuthContext";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -20,6 +22,7 @@ interface UserDashboardProps {
 }
 
 export function UserDashboard({ bookings, userName }: UserDashboardProps) {
+  const { user } = useAuth();
   const upcomingBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.date);
     return bookingDate >= new Date() && booking.status === "confirmed";
@@ -119,11 +122,19 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
       </div>
 
       <Tabs defaultValue="upcoming" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="sessions">Charging Sessions</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="sessions">
+          <ChargingSessionsManagement 
+            userRole="customer" 
+            userId={user?.id ? parseInt(user.id) : undefined}
+          />
+        </TabsContent>
 
         <TabsContent value="upcoming">
           <Card>

@@ -24,7 +24,9 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface FAQItem {
   id: string;
@@ -73,6 +75,8 @@ const FAQ_ITEMS: FAQItem[] = [
 ];
 
 export function SupportPage() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
@@ -119,9 +123,27 @@ export function SupportPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">
-          How can we <span className="text-green-600">help you?</span>
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <div></div>
+          <h1 className="text-4xl font-bold flex-1">
+            How can we <span className="text-green-600">help you?</span>
+          </h1>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success("Logged out");
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            Sign Out
+          </Button>
+        </div>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           Get quick answers to common questions or reach out to our support team.
         </p>

@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserDashboard } from "../components/UserDashboard";
 import { useAuth } from "../contexts/AuthContext";
 import { Booking, MockDatabaseService } from "../data/mockDatabase";
+import { Button } from "../components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,5 +46,24 @@ export default function DashboardPage() {
     );
   }
 
-  return <UserDashboard bookings={bookings} userName={user?.name || "User"} />;
+  return (
+    <div>
+      {/* Back to Home Button */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4">
+          <Button
+            onClick={() => navigate("/")}
+            variant="ghost"
+            className="flex items-center gap-2 text-green-600 hover:text-green-700"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Button>
+        </div>
+      </div>
+      
+      {/* Dashboard Content */}
+      <UserDashboard bookings={bookings} userName={user?.name || "User"} />
+    </div>
+  );
 }

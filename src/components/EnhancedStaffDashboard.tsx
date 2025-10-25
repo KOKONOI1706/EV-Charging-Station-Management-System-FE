@@ -19,18 +19,14 @@ import {
 import {
   Zap,
   AlertTriangle,
-  CheckCircle,
   Clock,
   Users,
   DollarSign,
   Activity,
   Settings,
-  MapPin,
-  Phone,
   Wrench,
   TrendingUp,
-  BarChart3,
-  Calendar
+  BarChart3
 } from 'lucide-react';
 import { Station, MockDatabaseService } from '../data/mockDatabase';
 import { useLanguage } from '../hooks/useLanguage';

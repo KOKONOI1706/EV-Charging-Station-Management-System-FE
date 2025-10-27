@@ -32,6 +32,7 @@ export function ReservationTimer({
 
   useEffect(() => {
     console.log('🔵 ReservationTimer mounted for:', reservation.id);
+    let hasCalledCallback = false; // Prevent double callback
     
     // Cập nhật state mỗi giây
     const interval = setInterval(() => {
@@ -40,22 +41,26 @@ export function ReservationTimer({
         console.log('🔄 Updating reservation state:', updated.remainingTime, 'status:', updated.status);
         
         // Nếu status không còn active, gọi callback tương ứng và dừng
-        if (updated.status === 'expired' && onExpired) {
+        if (updated.status === 'expired' && onExpired && !hasCalledCallback) {
           console.log('⏰ Reservation expired, calling onExpired');
+          hasCalledCallback = true;
           clearInterval(interval);
           onExpired();
           return;
         }
         
-        if (updated.status === 'completed' && onComplete) {
-          console.log('✅ Reservation completed, calling onComplete');
+        // KHÔNG tự động gọi onComplete khi status = completed
+        // Vì nút "Đã đến trạm" đã gọi completeReservation và handleCompleteReservation
+        // Chỉ clear interval và cập nhật UI
+        if (updated.status === 'completed') {
+          console.log('✅ Reservation completed, stopping timer (callback already handled by button)');
           clearInterval(interval);
-          onComplete();
           return;
         }
         
-        if (updated.status === 'cancelled' && onCancel) {
+        if (updated.status === 'cancelled' && onCancel && !hasCalledCallback) {
           console.log('❌ Reservation cancelled, calling onCancel');
+          hasCalledCallback = true;
           clearInterval(interval);
           onCancel();
           return;
@@ -93,14 +98,24 @@ export function ReservationTimer({
   };
 
   const handleComplete = () => {
-    console.log('🔵 handleComplete clicked');
+    console.log('🔵 handleComplete button clicked');
+    
+    // Kiểm tra status trước khi complete
+    const current = reservationService.getReservation(reservation.id);
+    if (current && current.status !== 'active') {
+      console.log(`⚠️ Reservation already processed (status: ${current.status}), not calling onComplete again`);
+      return; // Đừng gọi onComplete nữa vì đã xử lý rồi
+    }
+    
     const success = reservationService.completeReservation(reservation.id);
     console.log('📊 Service complete result:', success);
     if (success) {
-      console.log('✅ Calling onComplete callback');
+      console.log('✅ Successfully completed, calling onComplete callback once');
       if (onComplete) {
-        onComplete();
+        onComplete(); // Chỉ gọi 1 lần khi thành công
       }
+    } else {
+      console.log('⚠️ Complete failed, not calling onComplete');
     }
   };
 

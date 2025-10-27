@@ -86,6 +86,18 @@ export function ReservationConfirmModal({
 
           {/* Station Info */}
           <div className="space-y-3">
+            {/* Station Image */}
+            <div className="w-full h-48 rounded-lg overflow-hidden">
+              <img
+                src={station.image}
+                alt={station.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Charging+Station';
+                }}
+              />
+            </div>
+
             <div>
               <h3 className="font-semibold text-lg">{station.name}</h3>
               <p className="text-sm text-gray-600 flex items-start gap-1 mt-1">

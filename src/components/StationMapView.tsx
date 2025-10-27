@@ -67,7 +67,7 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
       </div>
 
       {/* Legend */}
-      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 z-[1000] border border-gray-200">
+      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 z-[150] border border-gray-200">
         <h4 className="font-semibold mb-3 text-sm">🗺️ Chú thích trạng thái</h4>
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
@@ -99,6 +99,18 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
         return (
           <Card key={station.id} className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-2 hover:border-green-500">
             <CardContent className="p-4">
+              {/* Station Image */}
+              <div className="w-full h-32 rounded-lg overflow-hidden mb-3">
+                <img
+                  src={station.image}
+                  alt={station.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=Charging+Station';
+                  }}
+                />
+              </div>
+
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-base">{station.name}</h3>
                 <Badge className={`${statusInfo.bgColor} ${statusInfo.textColor} flex items-center gap-1`}>

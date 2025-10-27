@@ -167,6 +167,18 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
             >
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  {/* Station Image */}
+                  <div className="w-full lg:w-48 h-40 flex-shrink-0">
+                    <img
+                      src={station.image}
+                      alt={station.name}
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Charging+Station';
+                      }}
+                    />
+                  </div>
+
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-semibold">{station.name}</h3>

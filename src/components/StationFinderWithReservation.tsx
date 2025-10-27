@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Station } from '../data/mockDatabase';
 import { reservationService, Reservation, ReservationResult } from '../services/reservationService';
 import { StationFinder } from './StationFinder';
@@ -12,6 +13,7 @@ interface StationFinderWithReservationProps {
 }
 
 export function StationFinderWithReservation({ userId }: StationFinderWithReservationProps) {
+  const navigate = useNavigate();
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargingPointId, setSelectedChargingPointId] = useState<string | undefined>(undefined);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -102,15 +104,71 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
       const success = reservationService.completeReservation(activeReservation.id);
       console.log('📊 Complete result:', success);
       if (success) {
-        console.log('✅ Setting activeReservation to null');
+        console.log('✅ Check-in successful, clearing activeReservation');
+        
+        // If no specific charging point was reserved, assign "any"
+        const chargingPointId = activeReservation.chargingPointId || 'any';
+        
+        // Save reservation data to localStorage for Dashboard to pick up
+        const reservationData = {
+          stationId: activeReservation.stationId,
+          stationName: activeReservation.stationName,
+          chargingPointId: chargingPointId,
+          reservationId: activeReservation.id,
+          autoStartCharging: true, // Flag to auto-open start charging modal
+        };
+        localStorage.setItem('pending-charging-session', JSON.stringify(reservationData));
+        
         setActiveReservation(null);
-        setNotification('✅ Check-in thành công! Bắt đầu sạc xe');
-        setTimeout(() => setNotification(null), 5000);
+        setNotification('✅ Check-in thành công! Đang chuyển đến trang bắt đầu sạc...');
+        
+        // Redirect to dashboard after 1 second
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       } else {
-        // Nếu complete thất bại (đã complete rồi hoặc status không hợp lệ)
-        // Vẫn clear activeReservation để ẩn timer
-        console.log('⚠️ Complete returned false, clearing activeReservation anyway');
+        // Nếu complete thất bại (đã completed/expired/cancelled)
+        console.log('⚠️ Complete returned false - reservation may already be processed');
+        
+        // Kiểm tra status thực tế
+        const currentRes = reservationService.getReservation(activeReservation.id);
+        if (currentRes) {
+          console.log('📋 Current status:', currentRes.status);
+          
+          if (currentRes.status === 'expired') {
+            setNotification('⏰ Reservation đã hết hạn. Vui lòng đặt chỗ lại.');
+          } else if (currentRes.status === 'completed') {
+            setNotification('✅ Đã check-in rồi! Đang chuyển đến trang bắt đầu sạc...');
+            
+            // If no specific charging point was reserved, assign "any"
+            const chargingPointId = currentRes.chargingPointId || 'any';
+            
+            // Save reservation data even if already completed
+            const reservationData = {
+              stationId: currentRes.stationId,
+              stationName: currentRes.stationName,
+              chargingPointId: chargingPointId,
+              reservationId: currentRes.id,
+              autoStartCharging: true,
+            };
+            localStorage.setItem('pending-charging-session', JSON.stringify(reservationData));
+            
+            // Vẫn redirect nếu đã completed
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 1000);
+          } else if (currentRes.status === 'cancelled') {
+            setNotification('❌ Reservation đã bị hủy.');
+          } else {
+            setNotification('⚠️ Không thể check-in. Vui lòng thử lại.');
+          }
+        } else {
+          setNotification('❌ Không tìm thấy reservation.');
+        }
+        
+        // Clear activeReservation sau khi xử lý
         setActiveReservation(null);
+        setTimeout(() => setNotification(null), 5000);
       }
     } else {
       console.log('⚠️ No active reservation to complete');

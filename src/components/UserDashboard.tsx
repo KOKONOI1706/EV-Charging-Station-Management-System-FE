@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
@@ -14,6 +14,8 @@ import {
   Battery,
 } from "lucide-react";
 import { Booking } from "../data/mockDatabase";
+import { MockDatabaseService } from "../data/mockDatabase";
+import { toast } from "sonner";
 import { ActiveChargingSession } from "./ActiveChargingSession";
 import { ChargingHistory } from "./ChargingHistory";
 import { StartChargingModal } from "./StartChargingModal";
@@ -21,9 +23,22 @@ import { StartChargingModal } from "./StartChargingModal";
 interface UserDashboardProps {
   bookings: Booking[];
   userName: string;
+  autoOpenStartCharging?: boolean;
+  pendingChargingData?: {
+    stationId: string;
+    stationName: string;
+    chargingPointId: string;
+    reservationId: string;
+    autoStartCharging: boolean;
+  };
 }
 
-export function UserDashboard({ bookings, userName }: UserDashboardProps) {
+export function UserDashboard({ 
+  bookings, 
+  userName,
+  autoOpenStartCharging = false,
+  pendingChargingData
+}: UserDashboardProps) {
   const [startChargingModal, setStartChargingModal] = useState<{
     isOpen: boolean;
     pointId?: number;
@@ -35,6 +50,61 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
   }>({
     isOpen: false,
   });
+
+  // Auto-open start charging modal if coming from check-in
+  useEffect(() => {
+    const loadStationDetailsAndOpenModal = async () => {
+      if (autoOpenStartCharging && pendingChargingData) {
+        console.log('🚀 Auto-opening start charging modal from check-in:', pendingChargingData);
+        
+        try {
+          // Fetch station details to get charging point info
+          const stations = await MockDatabaseService.getStations();
+          const station = stations.find(s => s.id === pendingChargingData.stationId);
+          
+          if (!station) {
+            console.error('❌ Station not found:', pendingChargingData.stationId);
+            return;
+          }
+          
+          // Find an available charging point
+          let targetPoint = station.chargingPoints?.find(
+            cp => pendingChargingData.chargingPointId !== 'any' 
+              ? cp.id === pendingChargingData.chargingPointId 
+              : cp.status === 'available'
+          );
+          
+          // If no point found or chargingPointId is "any", use first available
+          if (!targetPoint) {
+            targetPoint = station.chargingPoints?.find(cp => cp.status === 'available');
+          }
+          
+          if (!targetPoint) {
+            console.error('❌ No available charging point found');
+            return;
+          }
+          
+          console.log('✅ Found charging point:', targetPoint);
+          
+          // Extract numeric ID from string ID (e.g., 'cp-1' -> 1)
+          const numericPointId = parseInt(targetPoint.id.replace(/\D/g, '')) || targetPoint.number;
+          
+          setStartChargingModal({
+            isOpen: true,
+            stationName: pendingChargingData.stationName,
+            pointName: `Point ${targetPoint.number}`,
+            pointId: numericPointId,
+            powerKw: targetPoint.powerKw,
+            pricePerKwh: station.pricePerKwh, // Use station's price
+          });
+        } catch (error) {
+          console.error('❌ Error loading station details:', error);
+        }
+      }
+    };
+    
+    loadStationDetailsAndOpenModal();
+  }, [autoOpenStartCharging, pendingChargingData]);
 
   const upcomingBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.date);
@@ -292,7 +362,7 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
       {startChargingModal.isOpen && (
         <StartChargingModal
           isOpen={startChargingModal.isOpen}
-          onClose={() => setStartChargingModal({ isOpen: false })}
+          onClose={() => setStartChargingModal(prev => ({ ...prev, isOpen: false }))}
           pointId={startChargingModal.pointId!}
           pointName={startChargingModal.pointName!}
           stationName={startChargingModal.stationName!}
@@ -300,8 +370,12 @@ export function UserDashboard({ bookings, userName }: UserDashboardProps) {
           pricePerKwh={startChargingModal.pricePerKwh!}
           bookingId={startChargingModal.bookingId}
           onSuccess={() => {
-            // Refresh dashboard after starting session
-            window.location.reload();
+            // Clear pending session data
+            localStorage.removeItem('pending-charging-session');
+            // Close modal and let the dashboard refresh naturally
+            setStartChargingModal(prev => ({ ...prev, isOpen: false }));
+            // Show success message
+            toast.success('Charging session started successfully! 🔋⚡');
           }}
         />
       )}

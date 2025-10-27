@@ -6,6 +6,7 @@ import { BookingModal } from "./components/BookingModal";
 import { LoginModal } from "./components/LoginModal";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileModal } from "./components/ProfileModal";
+import { StartChargingModal } from "./components/StartChargingModal";
 import { UserDashboard } from "./components/UserDashboard";
 import { EnhancedStaffDashboard } from "./components/EnhancedStaffDashboard";
 import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
@@ -36,6 +37,17 @@ function AppContent() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [startChargingModal, setStartChargingModal] = useState<{
+    isOpen: boolean;
+    pointId?: number;
+    pointName?: string;
+    stationName?: string;
+    powerKw?: number;
+    pricePerKwh?: number;
+    bookingId?: number;
+  }>({
+    isOpen: false,
+  });
 
   useEffect(() => {
     if (isAuthenticated && user?.role === "customer" && user.id && bookings.length === 0) {
@@ -361,6 +373,28 @@ function AppContent() {
         isOpen={isBookingModalOpen}
         onClose={handleCloseBookingModal}
         onConfirmBooking={handleConfirmBooking}
+        onStartCharging={(data) => {
+          setStartChargingModal({
+            isOpen: true,
+            ...data,
+          });
+        }}
+      />
+
+      <StartChargingModal
+        isOpen={startChargingModal.isOpen}
+        onClose={() => setStartChargingModal({ isOpen: false })}
+        pointId={startChargingModal.pointId || 0}
+        pointName={startChargingModal.pointName || ""}
+        stationName={startChargingModal.stationName || ""}
+        powerKw={startChargingModal.powerKw || 0}
+        pricePerKwh={startChargingModal.pricePerKwh || 0}
+        bookingId={startChargingModal.bookingId}
+        onSuccess={() => {
+          toast.success("Charging session started successfully!");
+          setStartChargingModal({ isOpen: false });
+          setCurrentView("dashboard");
+        }}
       />
 
       <Toaster />

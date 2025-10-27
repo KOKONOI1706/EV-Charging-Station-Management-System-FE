@@ -372,8 +372,18 @@ class ReservationService {
    * Hoàn thành reservation (check-in)
    */
   completeReservation(reservationId: string): boolean {
+    console.log(`🎯 completeReservation called for: ${reservationId}`);
     const reservation = this.reservations.get(reservationId);
-    if (!reservation || reservation.status !== 'active') {
+    
+    if (!reservation) {
+      console.log(`❌ Reservation not found: ${reservationId}`);
+      return false;
+    }
+    
+    console.log(`📊 Current reservation status: ${reservation.status}`);
+    
+    if (reservation.status !== 'active') {
+      console.log(`⚠️ Reservation is not active (status: ${reservation.status}), cannot complete`);
       return false;
     }
 

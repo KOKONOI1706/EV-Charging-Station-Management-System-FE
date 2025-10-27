@@ -9,7 +9,6 @@ import {
   Battery,
   AlertCircle,
   Loader2,
-  Car,
   Gauge,
 } from 'lucide-react';
 import { chargingSessionApi, StartSessionRequest } from '../api/chargingSessionApi';
@@ -42,13 +41,11 @@ export function StartChargingModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [meterStart, setMeterStart] = useState<string>('');
-  const [vehiclePlate, setVehiclePlate] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
       // Reset form when modal opens
       setMeterStart('');
-      setVehiclePlate('');
       setError(null);
     }
   }, [isOpen]);
@@ -133,21 +130,6 @@ export function StartChargingModal({
                 {chargingSessionApi.formatCost(pricePerKwh)}/kWh
               </span>
             </div>
-          </div>
-
-          {/* Vehicle Plate (Optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="vehicle-plate" className="flex items-center gap-2">
-              <Car className="w-4 h-4" />
-              Vehicle Plate Number (Optional)
-            </Label>
-            <Input
-              id="vehicle-plate"
-              placeholder="e.g., 30A-12345"
-              value={vehiclePlate}
-              onChange={(e) => setVehiclePlate(e.target.value)}
-              disabled={loading}
-            />
           </div>
 
           {/* Meter Start Reading */}

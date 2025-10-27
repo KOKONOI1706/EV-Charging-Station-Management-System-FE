@@ -2,6 +2,23 @@ import { Station } from '../data/mockDatabase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Helper function to get default station images from Unsplash
+function getDefaultStationImage(stationId?: string): string {
+  // Array of high-quality EV charging station images from Unsplash
+  const images = [
+    'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&h=600&fit=crop', // Modern EV charger
+    'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&h=600&fit=crop', // Charging station at night
+    'https://images.unsplash.com/photo-1609429019995-8c40f49535a5?w=800&h=600&fit=crop', // White Tesla charging
+    'https://images.unsplash.com/photo-1551522435-a13afa10f103?w=800&h=600&fit=crop', // EV charging port
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop', // Multiple charging stations
+    'https://images.unsplash.com/photo-1612538498613-e0df2e0e6819?w=800&h=600&fit=crop', // Modern charging hub
+  ];
+  
+  // Use station ID to consistently pick same image for same station
+  const index = stationId ? parseInt(stationId.replace(/\D/g, '')) % images.length : 0;
+  return images[index] || images[0];
+}
+
 export interface StationApiResponse {
   success: boolean;
   data: any[];
@@ -125,7 +142,7 @@ function transformApiStation(apiStation: any): Station {
     connector: apiStation.connector || apiStation.connector_type || 'CCS',
     power: apiStation.power || apiStation.power_kw ? `${apiStation.power_kw} kW` : '150 kW',
     powerKw: apiStation.power_kw || 150,
-    image: apiStation.image || '/placeholder-station.jpg',
+    image: apiStation.image || getDefaultStationImage(apiStation.id || apiStation.station_id),
     amenities: apiStation.amenities || ['WiFi', 'Restroom', 'Cafe'],
     operatingHours: apiStation.operating_hours || apiStation.operatingHours || '24/7',
     phone: apiStation.phone || '+1 (555) 000-0000',

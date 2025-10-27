@@ -37,8 +37,7 @@ export default function ProfilePage() {
         isAuthenticated={!!user}
         userName={user.name}
         currentView="profile"
-        onNavigate={navigate}
-        onOpenProfile={() => {}}
+        onNavigate={(view) => navigate(`/${view === 'home' ? '' : view}`)}
       />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

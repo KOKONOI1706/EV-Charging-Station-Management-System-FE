@@ -564,7 +564,7 @@ export function EnhancedAdminDashboard() {
                     <Switch
                       id="maintenance"
                       checked={settings.maintenanceMode}
-                      onCheckedChange={(checked) => handleSettingChange('maintenanceMode', checked)}
+                      onCheckedChange={(checked: boolean) => handleSettingChange('maintenanceMode', checked)}
                     />
                   </div>
 
@@ -576,7 +576,7 @@ export function EnhancedAdminDashboard() {
                     <Switch
                       id="backup"
                       checked={settings.autoBackup}
-                      onCheckedChange={(checked) => handleSettingChange('autoBackup', checked)}
+                      onCheckedChange={(checked: boolean) => handleSettingChange('autoBackup', checked)}
                     />
                   </div>
 
@@ -588,7 +588,7 @@ export function EnhancedAdminDashboard() {
                     <Switch
                       id="email"
                       checked={settings.emailNotifications}
-                      onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
+                      onCheckedChange={(checked: boolean) => handleSettingChange('emailNotifications', checked)}
                     />
                   </div>
 
@@ -600,7 +600,7 @@ export function EnhancedAdminDashboard() {
                     <Switch
                       id="sms"
                       checked={settings.smsNotifications}
-                      onCheckedChange={(checked) => handleSettingChange('smsNotifications', checked)}
+                      onCheckedChange={(checked: boolean) => handleSettingChange('smsNotifications', checked)}
                     />
                   </div>
 
@@ -612,7 +612,7 @@ export function EnhancedAdminDashboard() {
                     <Switch
                       id="debug"
                       checked={settings.debugMode}
-                      onCheckedChange={(checked) => handleSettingChange('debugMode', checked)}
+                      onCheckedChange={(checked: boolean) => handleSettingChange('debugMode', checked)}
                     />
                   </div>
                 </div>

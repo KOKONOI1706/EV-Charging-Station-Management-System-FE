@@ -68,7 +68,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
     setSelectedStation(null);
   };
 
-  const handleBookChargingPoint = (station: Station, chargingPointId?: string) => {
+  const handleBookChargingPoint = (station: Station, _chargingPointId?: string) => {
     // In a real app, you could pass the specific charging point ID to the booking modal
     onBookStation(station);
   };
@@ -212,11 +212,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2 text-purple-600" />
-<<<<<<< HEAD
-                        <span>{station.available}/{station.total} {t.ports}</span>
-=======
-                        <span>{station.available_spots}/{station.total_spots} ports</span>
->>>>>>> Cong
+                        <span>{station.available_spots}/{station.total_spots} {t.ports}</span>
                       </div>
                     </div>
                   </div>
@@ -307,7 +303,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
           </p>
         </div>
 
-        <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'list' | 'map')}>
+        <Tabs value={currentView} onValueChange={(value: string) => setCurrentView(value as 'list' | 'map')}>
           <div className="flex justify-center mb-8">
             <TabsList className="grid w-full max-w-md grid-cols-2">
               <TabsTrigger value="list" className="flex items-center gap-2">

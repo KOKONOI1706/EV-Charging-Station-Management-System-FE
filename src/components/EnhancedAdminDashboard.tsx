@@ -74,17 +74,9 @@ export function EnhancedAdminDashboard() {
           name: "Alex Johnson",
           email: "alex.johnson@email.com",
           phone: "+1 (555) 123-4567",
-          memberSince: "2023-01-15",
-          totalSessions: 45,
-          totalSpent: 1250.75,
-          favoriteStations: ["1", "2"],
           role: "customer",
-          vehicleInfo: {
-            make: "Tesla",
-            model: "Model 3",
-            year: 2022,
-            batteryCapacity: 75
-          }
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }
       ]);
     } catch (error) {
@@ -100,7 +92,7 @@ export function EnhancedAdminDashboard() {
     toast.success(`${key} ${value ? 'enabled' : 'disabled'}`);
   };
 
-  const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
+  const totalRevenue = bookings.reduce((sum, booking) => sum + booking.total_cost, 0);
   const activeUsers = users.length; // In real app, filter active users
   const totalSessions = bookings.length;
 
@@ -406,9 +398,9 @@ export function EnhancedAdminDashboard() {
                         </div>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{new Date(user.memberSince).toLocaleDateString()}</TableCell>
-                      <TableCell>{user.totalSessions}</TableCell>
-                      <TableCell>${user.totalSpent.toFixed(2)}</TableCell>
+                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>-</TableCell>
                       <TableCell>
                         <Badge className="bg-green-100 text-green-800">Active</Badge>
                       </TableCell>
@@ -451,7 +443,7 @@ export function EnhancedAdminDashboard() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <span className="text-gray-600">Available:</span>
-                          <span className="font-medium ml-1">{station.available}/{station.total}</span>
+                          <span className="font-medium ml-1">{station.available_spots}/{station.total_spots}</span>
                         </div>
                         <div>
                           <span className="text-gray-600">Power:</span>

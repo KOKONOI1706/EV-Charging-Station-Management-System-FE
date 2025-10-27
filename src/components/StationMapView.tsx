@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Battery, Star, Navigation, Map as MapIcon, RefreshCw } from 'lucide-react';
+import { MapPin, Battery, Star, Navigation, Map as MapIcon } from 'lucide-react';
 import { SupabaseService, Station } from '../services/supabaseService';
 import { StationStatusService } from '../services/stationStatusService';
 
@@ -15,7 +15,7 @@ interface StationMapViewProps {
   userLocation?: { lat: number; lng: number } | null;
 }
 
-export function StationMapView({ onStationSelect, onViewDetails, stations: externalStations, selectedStation: externalSelectedStation, userLocation: externalUserLocation }: StationMapViewProps) {
+export function StationMapView({ onStationSelect, onViewDetails, stations: externalStations, selectedStation: _externalSelectedStation, userLocation: externalUserLocation }: StationMapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [filteredStations, setFilteredStations] = useState<Station[]>([]);
@@ -28,8 +28,7 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showMap, setShowMap] = useState(true); // Auto show map
   const [mapInitialized, setMapInitialized] = useState(false);
-  const [userVehicleType, setUserVehicleType] = useState<string>('Tesla Model 3');
-  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [userVehicleType] = useState<string>('Tesla Model 3');
 
   // Load Leaflet script
   useEffect(() => {
@@ -351,164 +350,17 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
     );
   };
 
-  const getStationAvailabilityText = (station: Station) => {
-    const statusInfo = StationStatusService.getStationDisplayStatus(station, userVehicleType);
-    return statusInfo.description;
-  };
-
-<<<<<<< HEAD
-        {/* Map Legend */}
-        <div className="absolute top-4 left-4 bg-white rounded-lg shadow-md p-3 z-10">
-          <h4 className="font-medium mb-2">{t.stationStatusLegend}</h4>
-          <div className="space-y-1 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>{t.availableStatus}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>{t.limitedStatus}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>{t.busyStatus}</span>
-            </div>
-          </div>
-        </div>
-=======
   const getChargerTypeIcon = (type: string) => {
     if (type?.toLowerCase().includes('ultra')) return '⚡⚡⚡';
     if (type?.toLowerCase().includes('fast')) return '⚡⚡';
     return '⚡';
   };
->>>>>>> Cong
 
   const getChargerTypeName = (type: string) => {
     if (!type) return 'Standard';
     return type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ');
   };
 
-<<<<<<< HEAD
-              {/* Expanded Info for Selected Station */}
-              {selectedStation?.id === station.id && (
-                <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-64 z-30">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{station.name}</h4>
-                      <Badge className={
-                        station.available > 0 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }>
-                        {station.available}/{station.total} available
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">{station.address}</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-4 h-4 text-green-600" />
-                        <span>{station.power}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <span>{station.rating}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Navigation className="w-4 h-4 text-blue-600" />
-                        <span>{station.distance}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        size="sm" 
-                        onClick={() => onViewDetails(station)}
-                        className="flex-1"
-                      >
-                        {t.viewLayout}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => onStationSelect(station)}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                      >
-                        Book Now
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Current Location Marker */}
-        <div className="absolute bottom-4 right-4 bg-blue-600 rounded-full p-2 shadow-lg">
-          <Navigation className="w-5 h-5 text-white" />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderListView = () => (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredStations.map((station) => (
-        <Card key={station.id} className="cursor-pointer hover:shadow-lg transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">{station.name}</h3>
-              <Badge className={
-                station.available > 0 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }>
-                {station.available}/{station.total}
-              </Badge>
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-3">{station.address}</p>
-            
-            <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-              <div className="flex items-center gap-1">
-                <Zap className="w-4 h-4 text-green-600" />
-                <span>{station.power}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-yellow-500" />
-                <span>{station.rating}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Navigation className="w-4 h-4 text-blue-600" />
-                <span>{station.distance}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 text-purple-600" />
-                <span>{station.operatingHours}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onViewDetails(station)}
-                className="flex-1"
-              >
-                {t.viewLayout}
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => onStationSelect(station)}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {t.bookNow}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-=======
   const handleSearch = async () => {
     if (searchQuery.trim()) {
       try {
@@ -546,7 +398,6 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
       setError('Unable to get your location');
     }
   };
->>>>>>> Cong
 
   if (isLoading) {
     return (
@@ -570,45 +421,15 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
 
   return (
     <div className="space-y-6">
-<<<<<<< HEAD
-      {/* Search and Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder={t.searchStationsPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-=======
       {/* View Toggle */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Charging Stations</h2>
         <div className="flex space-x-2">
->>>>>>> Cong
           <Button
             variant={!showMap ? "default" : "outline"}
             onClick={() => setShowMap(false)}
           >
-<<<<<<< HEAD
-            <Map className="w-4 h-4 mr-2" />
-            {t.mapView}
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-            className={viewMode === 'list' ? 'bg-green-600 hover:bg-green-700' : ''}
-          >
-            <List className="w-4 h-4 mr-2" />
-            {t.listView}
-=======
             List View
->>>>>>> Cong
           </Button>
           <Button
             variant={showMap ? "default" : "outline"}
@@ -621,18 +442,6 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* Results Summary */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          {t.foundStations.replace('{count}', filteredStations.length.toString())}
-          {searchQuery && ` for "${searchQuery}"`}
-        </p>
-        <Button variant="outline" size="sm">
-          <Filter className="w-4 h-4 mr-2" />
-          {t.filters}
-        </Button>
-=======
       {/* Search and Filters */}
       <div className="space-y-4">
         {/* Search Bar */}
@@ -696,7 +505,6 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
             </select>
           </div>
         </div>
->>>>>>> Cong
       </div>
 
       {/* Results Count */}
@@ -704,22 +512,6 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
         Found {filteredStations.length} charging station{filteredStations.length !== 1 ? 's' : ''}
       </div>
 
-<<<<<<< HEAD
-      {/* No Results */}
-      {filteredStations.length === 0 && searchQuery && (
-        <div className="text-center py-8">
-          <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{t.noStationsFound}</h3>
-          <p className="text-gray-600 mb-4">
-            {t.noStationsFoundDesc}
-          </p>
-          <Button 
-            variant="outline" 
-            onClick={() => setSearchQuery('')}
-          >
-            Clear Search
-          </Button>
-=======
       {/* Map View */}
       {showMap && (
         <Card>
@@ -824,7 +616,6 @@ export function StationMapView({ onStationSelect, onViewDetails, stations: exter
               </Card>
             ))
           )}
->>>>>>> Cong
         </div>
       )}
     </div>

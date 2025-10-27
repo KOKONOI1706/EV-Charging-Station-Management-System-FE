@@ -466,7 +466,7 @@ export function EnhancedStaffDashboard() {
                   <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                     <div>
                       <span className="text-gray-600">Available:</span>
-                      <span className="font-medium ml-1">{station.available}/{station.total}</span>
+                      <span className="font-medium ml-1">{station.available_spots}/{station.total_spots}</span>
                     </div>
                     <div>
                       <span className="text-gray-600">Power:</span>
@@ -475,7 +475,7 @@ export function EnhancedStaffDashboard() {
                     <div>
                       <span className="text-gray-600">Utilization:</span>
                       <span className="font-medium ml-1">
-                        {Math.floor(((station.total - station.available) / station.total) * 100)}%
+                        {Math.floor(((station.total_spots - station.available_spots) / station.total_spots) * 100)}%
                       </span>
                     </div>
                     <div>

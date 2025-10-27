@@ -1,12 +1,6 @@
-<<<<<<< HEAD
-                                                                                                    {
-  "name": "ev-charging-frontend",
-  "version": "0.1.0",
-=======
 {
   "name": "ev-charging-management-frontend",
   "version": "1.0.0",
->>>>>>> Cong
   "private": true,
   "type": "module",
   "description": "Frontend for EV Charging Station Management System with Supabase integration",

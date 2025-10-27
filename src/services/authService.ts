@@ -1,4 +1,4 @@
-import { User, MOCK_USERS } from "../data/mockDatabase";
+import { User } from "../data/mockDatabase";
 
 // Get API URL from environment or default
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
@@ -23,7 +23,7 @@ export interface RegisterData {
 
 export class AuthService {
   private static readonly STORAGE_KEY = "chargetech_user";
-  private static users: User[] = [...MOCK_USERS];
+  private static users: User[] = [];
 
   // Login with email and password
   static async login(email: string, password: string): Promise<User> {
@@ -57,17 +57,9 @@ export class AuthService {
         name: apiUser.name,
         email: apiUser.email,
         phone: apiUser.phone || '',
-        memberSince: new Date(apiUser.createdAt).toISOString().split('T')[0],
-        totalSessions: 0,
-        totalSpent: 0,
-        favoriteStations: [],
         role: apiUser.role as "customer" | "staff" | "admin",
-        vehicleInfo: {
-          make: "N/A",
-          model: "N/A",
-          year: 2020,
-          batteryCapacity: 50
-        }
+        created_at: apiUser.createdAt,
+        updated_at: apiUser.updatedAt || apiUser.createdAt
       };
 
       this.saveUserToStorage(user);
@@ -152,12 +144,9 @@ export class AuthService {
         name: apiUser.name,
         email: apiUser.email,
         phone: apiUser.phone || '',
-        memberSince: new Date(apiUser.createdAt).toISOString().split('T')[0],
-        totalSessions: 0,
-        totalSpent: 0,
-        favoriteStations: [],
         role: apiUser.role as "customer" | "staff" | "admin",
-        vehicleInfo: data.vehicleInfo
+        created_at: apiUser.createdAt,
+        updated_at: apiUser.updatedAt || apiUser.createdAt
       };
 
       // Add to local users array for demo compatibility
@@ -258,8 +247,7 @@ export class AuthService {
         body: JSON.stringify({
           name: updates.name,
           email: updates.email,
-          phone: updates.phone,
-          vehicleInfo: updates.vehicleInfo
+          phone: updates.phone
         }),
       });
 

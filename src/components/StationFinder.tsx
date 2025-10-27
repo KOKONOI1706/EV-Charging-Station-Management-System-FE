@@ -15,7 +15,10 @@ import {
   Map,
   List
 } from "lucide-react";
-import { Station, MockDatabaseService } from "../data/mockDatabase";
+import { Station } from "../services/supabaseService";
+import { StationStatusService } from "../services/stationStatusService";
+import { vietnamStations } from "../data/vietnamStations";
+import { ColorCodingNotification } from "./ColorCodingNotification";
 import { StationMapView } from "./StationMapView";
 import { StationDetailView } from "./StationDetailView";
 import { useLanguage } from "../hooks/useLanguage";
@@ -30,14 +33,16 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [stations, setStations] = useState<Station[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<'list' | 'map' | 'detail'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'map' | 'detail'>('map'); // Default to map view for testing
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
 
   useEffect(() => {
     const loadStations = async () => {
       try {
         setIsLoading(true);
-        const stationData = await MockDatabaseService.getStations();
+        // Use Vietnam stations to focus on Thủ Đức area
+        const stationData = vietnamStations;
+        console.log(`🇻🇳 StationFinder loaded ${stationData.length} Vietnam stations:`, stationData.map((s: Station) => ({ name: s.name, lat: s.lat, lng: s.lng })));
         setStations(stationData);
       } catch (error) {
         console.error("Failed to load stations:", error);
@@ -75,10 +80,20 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
       station.address.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
       selectedFilter === "all" ||
-      (selectedFilter === "available" && station.available > 0) ||
-      (selectedFilter === "fast" && station.powerKw >= 150);
+      (selectedFilter === "available" && station.available_spots > 0) ||
+      (selectedFilter === "fast" && station.power_kw >= 150);
     return matchesSearch && matchesFilter;
   });
+
+  console.log(`🔍 StationFinder filtered ${filteredStations.length} stations from ${stations.length} total`);
+  
+  // Debug: Show station names in browser title for debugging
+  useEffect(() => {
+    if (stations.length > 0) {
+      document.title = `EV Stations (${stations.length}) - Vietnam Focus`;
+      console.log('🎯 Station names for debugging:', stations.map(s => s.name).join(', '));
+    }
+  }, [stations]);
 
   const renderListView = () => (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -158,6 +173,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
 
       {/* Station List */}
       <div className="lg:w-2/3">
+        <ColorCodingNotification />
         <div className="grid gap-6">
           {filteredStations.map((station) => (
             <Card
@@ -170,13 +186,9 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-semibold">{station.name}</h3>
                       <Badge
-                        className={
-                          station.available > 0
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }
+                        style={{ backgroundColor: StationStatusService.getStationDisplayStatus(station, 'Tesla Model 3').color, color: 'white' }}
                       >
-                        {station.available > 0 ? t.availableNow : "Full"}
+                        {StationStatusService.getStationDisplayStatus(station, 'Tesla Model 3').statusText}
                       </Badge>
                     </div>
 
@@ -200,7 +212,11 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2 text-purple-600" />
+<<<<<<< HEAD
                         <span>{station.available}/{station.total} {t.ports}</span>
+=======
+                        <span>{station.available_spots}/{station.total_spots} ports</span>
+>>>>>>> Cong
                       </div>
                     </div>
                   </div>
@@ -223,7 +239,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
                       <Button
                         size="sm"
                         onClick={() => handleStationSelect(station)}
-                        disabled={station.available === 0}
+                        disabled={station.available_spots === 0}
                         className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
                       >
                         {t.bookNow}
@@ -311,6 +327,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
 
           <TabsContent value="map">
             <StationMapView
+              stations={filteredStations}
               onStationSelect={handleStationSelect}
               onViewDetails={handleViewDetails}
             />

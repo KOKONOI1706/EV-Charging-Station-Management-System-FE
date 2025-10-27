@@ -1,3 +1,9 @@
+/* Import Tailwind CSS */
+@import "tailwindcss";
+
+/* Import Leaflet CSS for maps */
+@import 'leaflet/dist/leaflet.css';
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

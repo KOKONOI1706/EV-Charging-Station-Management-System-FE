@@ -87,6 +87,29 @@ export function Hero({ onFindStations, onLearnMore }: HeroProps) {
                 </div>
               </div>
             </div>
+            
+            {/* Color-coding Legend */}
+            <div className="absolute -bottom-12 -right-6 bg-white rounded-xl shadow-lg p-4 border">
+              <h4 className="font-semibold text-sm mb-3">Station Status</h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span>Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span>Full</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <span>Soon Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+                  <span>Maintenance</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

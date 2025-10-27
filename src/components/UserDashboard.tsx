@@ -12,6 +12,17 @@ import {
   Settings,
   CreditCard,
   Battery,
+  History,
+  User,
+  Mail,
+  Phone,
+  Car,
+  Shield,
+  Edit3,
+  Save,
+  X,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Booking } from "../data/mockDatabase";
 import { MockDatabaseService } from "../data/mockDatabase";

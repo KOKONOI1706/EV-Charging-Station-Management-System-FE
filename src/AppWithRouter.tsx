@@ -25,10 +25,6 @@ const router = createBrowserRouter([
     element: <AuthPage />,
   },
   {
-    path: "/profile",
-    element: <ProfilePage />,
-  },
-  {
     path: "/dashboard",
     element: <DashboardPage />,
   },

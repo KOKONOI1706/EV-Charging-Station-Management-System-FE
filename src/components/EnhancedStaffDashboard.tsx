@@ -33,8 +33,13 @@ import {
   Calendar
 } from 'lucide-react';
 import { Station, MockDatabaseService } from '../data/mockDatabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { ChargingSessionsManagement } from './ChargingSessionsManagement';
 
 interface StationMetrics {
   todaysSessions: number;
@@ -54,6 +59,8 @@ interface StaffAnalytics {
 
 export function EnhancedStaffDashboard() {
   const { t } = useLanguage();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<string>('all');
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
@@ -174,6 +181,21 @@ export function EnhancedStaffDashboard() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success(t.signOut || 'Logged out');
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            {t.signOut}
+          </Button>
         </div>
       </div>
 
@@ -259,13 +281,22 @@ export function EnhancedStaffDashboard() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="chargingSessions">Charging Sessions</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
           <TabsTrigger value="stations">Stations</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
+
+        {/* Charging Sessions Management */}
+        <TabsContent value="chargingSessions">
+          <ChargingSessionsManagement 
+            userRole="staff" 
+            stationId={selectedStation !== 'all' ? parseInt(selectedStation) : undefined}
+          />
+        </TabsContent>
 
         {/* Analytics */}
         <TabsContent value="analytics">

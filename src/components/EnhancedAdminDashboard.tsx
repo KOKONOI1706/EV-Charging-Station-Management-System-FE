@@ -24,8 +24,13 @@ import {
   Activity
 } from "lucide-react";
 import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabase";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -37,11 +42,12 @@ interface SystemSettings {
 
 export function EnhancedAdminDashboard() {
   const { t } = useLanguage();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [settings, setSettings] = useState<SystemSettings>({
     maintenanceMode: false,
     autoBackup: true,
@@ -112,9 +118,28 @@ export function EnhancedAdminDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t.adminDashboard}</h1>
-        <p className="text-gray-600">Complete system overview and management with advanced analytics</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{t.adminDashboard}</h1>
+          <p className="text-gray-600">Complete system overview and management with advanced analytics</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success(t.signOut || "Logged out");
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            {t.signOut}
+          </Button>
+        </div>
       </div>
 
       {/* Enhanced Executive Summary */}
@@ -205,13 +230,19 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+          <TabsTrigger value="chargingSessions">Charging Sessions</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
           <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
         </TabsList>
+
+        {/* Charging Sessions Management */}
+        <TabsContent value="chargingSessions">
+          <ChargingSessionsManagement userRole="admin" />
+        </TabsContent>
 
         {/* Overview */}
         <TabsContent value="overview">

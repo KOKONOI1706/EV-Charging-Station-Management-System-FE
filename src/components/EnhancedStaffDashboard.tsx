@@ -37,8 +37,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { toast } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { ChargingSessionsManagement } from './ChargingSessionsManagement';
 
 interface StationMetrics {

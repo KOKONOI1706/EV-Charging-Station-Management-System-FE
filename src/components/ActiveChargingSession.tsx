@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { chargingSessionApi, ChargingSession } from '../api/chargingSessionApi';
 import { useAuth } from '../contexts/AuthContext';
+import { PaymentModal } from './PaymentModal';
 
 interface ActiveChargingSessionProps {
   onSessionEnd?: () => void;
@@ -26,7 +26,6 @@ interface ActiveChargingSessionProps {
 
 export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [session, setSession] = useState<ChargingSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [stopping, setStopping] = useState(false);
@@ -34,6 +33,20 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
   const [currentMeter, setCurrentMeter] = useState<number>(0);
   const [estimatedCost, setEstimatedCost] = useState<number>(0);
   const [duration, setDuration] = useState<string>('0m');
+  
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    sessionId: number;
+    stationName: string;
+    pointName: string;
+    startTime: string;
+    endTime: string;
+    energyConsumed: number;
+    duration: string;
+    amount: number;
+    pricePerKwh: number;
+  } | null>(null);
 
   // Poll for active session
   useEffect(() => {
@@ -125,22 +138,28 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         idle_minutes: 0, // Could be calculated based on last charge vs current time
       });
 
-      // Session stopped successfully
+      // Prepare payment data
+      const sessionPaymentData = {
+        sessionId: session.session_id,
+        stationName: session.charging_points?.stations?.name || 'Unknown Station',
+        pointName: session.charging_points?.name || `Point #${session.point_id}`,
+        startTime: session.start_time,
+        endTime: new Date().toISOString(),
+        energyConsumed: result.energy_consumed_kwh || 0,
+        duration: chargingSessionApi.formatDuration(session.start_time),
+        amount: result.cost || 0,
+        pricePerKwh: session.charging_points?.stations?.price_per_kwh || 0,
+      };
+
+      // Set payment data and show modal
+      setPaymentData(sessionPaymentData);
+      setShowPaymentModal(true);
+
+      // Clear session
       setSession(null);
       if (onSessionEnd) {
         onSessionEnd();
       }
-
-      // Redirect to payment page with session data
-      navigate('/payments', {
-        state: {
-          sessionId: session.session_id,
-          energyConsumed: result.energy_consumed_kwh,
-          totalCost: result.cost,
-          stationName: session.charging_points?.stations?.name,
-          pointName: session.charging_points?.name,
-        },
-      });
     } catch (err) {
       console.error('Error stopping session:', err);
       setError(err instanceof Error ? err.message : 'Failed to stop session');
@@ -355,6 +374,24 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
           </Alert>
         </CardContent>
       </Card>
+
+      {/* Payment Modal */}
+      {paymentData && (
+        <PaymentModal
+          open={showPaymentModal}
+          onOpenChange={setShowPaymentModal}
+          sessionId={paymentData.sessionId}
+          sessionData={paymentData}
+          onPaymentSuccess={() => {
+            setShowPaymentModal(false);
+            setPaymentData(null);
+            // Could refresh the dashboard or show success message
+            if (onSessionEnd) {
+              onSessionEnd();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

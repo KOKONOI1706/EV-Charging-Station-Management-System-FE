@@ -82,7 +82,7 @@ export interface SessionFilters {
 }
 
 class ChargingSessionApiService {
-  private baseUrl = `${API_BASE_URL}/charging-sessions`;
+  private baseUrl = `${API_BASE_URL}/charging`;
 
   /**
    * Start a new charging session

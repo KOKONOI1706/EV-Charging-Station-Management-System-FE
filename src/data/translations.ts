@@ -110,7 +110,6 @@ export interface Translation {
   createAccount: string;
   email: string;
   password: string;
-  confirmPassword: string;
   fullName: string;
   phoneNumber: string;
   vehicleInfo: string;
@@ -153,9 +152,6 @@ export interface Translation {
   updateVehicleDetails: string;
   security: string;
   securitySettings: string;
-  changePassword: string;
-  currentPassword: string;
-  newPassword: string;
   accountStats: string;
   accessDenied: string;
   pleaseLoginToViewProfile: string;
@@ -163,7 +159,6 @@ export interface Translation {
   updateVehicleSuccess: string;
   updateFailed: string;
   passwordChangedSuccess: string;
-  passwordsDoNotMatch: string;
   passwordTooShort: string;
   fillAllPasswordFields: string;
   saving: string;
@@ -204,6 +199,21 @@ export interface Translation {
   expires: string;
   primary: string;
   addPaymentMethod: string;
+  profileUpdated: string;
+  profileUpdateFailed: string;
+  saveChanges: string;
+  changePassword: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+  currentPasswordRequired: string;
+  newPasswordRequired: string;
+  confirmPasswordRequired: string;
+  passwordsDoNotMatch: string;
+  passwordChanged: string;
+  passwordChangeFailed: string;
+  passwordRequirements: string;
+  changing: string;
   confirmed: string;
   completed: string;
   cancelled: string;
@@ -644,7 +654,6 @@ export const translations: Record<Language, Translation> = {
     createAccount: "Create Account",
     email: "Email",
     password: "Password",
-    confirmPassword: "Confirm Password",
     fullName: "Full Name",
     phoneNumber: "Phone Number",
     vehicleInfo: "Vehicle Information",
@@ -687,9 +696,6 @@ export const translations: Record<Language, Translation> = {
     updateVehicleDetails: "Update Vehicle Details",
     security: "Security",
     securitySettings: "Security Settings",
-    changePassword: "Change Password",
-    currentPassword: "Current Password",
-    newPassword: "New Password",
     accountStats: "Account Stats",
     accessDenied: "Access Denied",
     pleaseLoginToViewProfile: "Please log in to view your profile",
@@ -697,7 +703,6 @@ export const translations: Record<Language, Translation> = {
     updateVehicleSuccess: "Vehicle information updated successfully!",
     updateFailed: "Update failed",
     passwordChangedSuccess: "Password changed successfully!",
-    passwordsDoNotMatch: "Passwords do not match",
     passwordTooShort: "Password must be at least 6 characters",
     fillAllPasswordFields: "Please fill in all password fields",
     saving: "Saving...",
@@ -738,6 +743,21 @@ export const translations: Record<Language, Translation> = {
     expires: "Expires",
     primary: "Primary",
     addPaymentMethod: "Add Payment Method",
+    profileUpdated: "Profile updated successfully",
+    profileUpdateFailed: "Failed to update profile",
+    saveChanges: "Save Changes",
+    changePassword: "Change Password",
+    currentPassword: "Current Password",
+    newPassword: "New Password",
+    confirmPassword: "Confirm New Password",
+    currentPasswordRequired: "Current password is required",
+    newPasswordRequired: "New password is required",
+    confirmPasswordRequired: "Please confirm your new password",
+    passwordsDoNotMatch: "Passwords do not match",
+    passwordChanged: "Password changed successfully",
+    passwordChangeFailed: "Failed to change password",
+    passwordRequirements: "Password must be at least 6 characters with 1 uppercase and 1 number",
+    changing: "Changing...",
     confirmed: "Confirmed",
     completed: "Completed",
     cancelled: "Cancelled",
@@ -1176,7 +1196,6 @@ export const translations: Record<Language, Translation> = {
     createAccount: "Tạo tài khoản",
     email: "Email",
     password: "Mật khẩu",
-    confirmPassword: "Xác nhận mật khẩu",
     fullName: "Họ và tên",
     phoneNumber: "Số điện thoại",
     vehicleInfo: "Thông tin xe",
@@ -1219,9 +1238,6 @@ export const translations: Record<Language, Translation> = {
     updateVehicleDetails: "Cập nhật thông tin xe",
     security: "Bảo mật",
     securitySettings: "Cài đặt bảo mật",
-    changePassword: "Đổi mật khẩu",
-    currentPassword: "Mật khẩu hiện tại",
-    newPassword: "Mật khẩu mới",
     accountStats: "Thống kê tài khoản",
     accessDenied: "Truy cập bị từ chối",
     pleaseLoginToViewProfile: "Vui lòng đăng nhập để xem hồ sơ của bạn",
@@ -1229,7 +1245,6 @@ export const translations: Record<Language, Translation> = {
     updateVehicleSuccess: "Cập nhật thông tin xe thành công!",
     updateFailed: "Cập nhật thất bại",
     passwordChangedSuccess: "Đổi mật khẩu thành công!",
-    passwordsDoNotMatch: "Mật khẩu không khớp",
     passwordTooShort: "Mật khẩu phải có ít nhất 6 ký tự",
     fillAllPasswordFields: "Vui lòng điền tất cả các trường mật khẩu",
     saving: "Đang lưu...",
@@ -1270,6 +1285,21 @@ export const translations: Record<Language, Translation> = {
     expires: "Hết hạn",
     primary: "Chính",
     addPaymentMethod: "Thêm phương thức thanh toán",
+    profileUpdated: "Cập nhật hồ sơ thành công",
+    profileUpdateFailed: "Không thể cập nhật hồ sơ",
+    saveChanges: "Lưu thay đổi",
+    changePassword: "Đổi mật khẩu",
+    currentPassword: "Mật khẩu hiện tại",
+    newPassword: "Mật khẩu mới",
+    confirmPassword: "Xác nhận mật khẩu mới",
+    currentPasswordRequired: "Yêu cầu mật khẩu hiện tại",
+    newPasswordRequired: "Yêu cầu mật khẩu mới",
+    confirmPasswordRequired: "Vui lòng xác nhận mật khẩu mới",
+    passwordsDoNotMatch: "Mật khẩu không khớp",
+    passwordChanged: "Đổi mật khẩu thành công",
+    passwordChangeFailed: "Không thể đổi mật khẩu",
+    passwordRequirements: "Mật khẩu phải có ít nhất 6 ký tự, 1 chữ hoa và 1 số",
+    changing: "Đang thay đổi...",
     confirmed: "Đã xác nhận",
     completed: "Đã hoàn thành",
     cancelled: "Đã hủy",

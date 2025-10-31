@@ -20,7 +20,9 @@ import { ActiveChargingSession } from "./ActiveChargingSession";
 import { ChargingHistory } from "./ChargingHistory";
 import { StartChargingModal } from "./StartChargingModal";
 import { useLanguage } from "../hooks/useLanguage";
-import { LanguageSelector } from "./LanguageSelector";
+import { ProfileModal } from "./ProfileModal";
+import { ChangePasswordModal } from "./ChangePasswordModal";
+import { AuthService } from "../services/authService";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -42,6 +44,18 @@ export function UserDashboard({
   pendingChargingData
 }: UserDashboardProps) {
   const { t } = useLanguage();
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  
+  // Get current user info
+  const currentUser = AuthService.getCurrentUser();
+  
+  const [userProfile, setUserProfile] = useState({
+    name: userName,
+    email: currentUser?.email || "user@example.com",
+    phone: currentUser?.phone || "+1 (555) 123-4567"
+  });
+  
   const [startChargingModal, setStartChargingModal] = useState<{
     isOpen: boolean;
     pointId?: number;
@@ -109,6 +123,19 @@ export function UserDashboard({
     loadStationDetailsAndOpenModal();
   }, [autoOpenStartCharging, pendingChargingData]);
 
+  const handleProfileUpdate = async (name: string, email: string, phone: string) => {
+    const currentUser = AuthService.getCurrentUser();
+    if (!currentUser) {
+      throw new Error("No user logged in");
+    }
+    
+    // Call API to update profile
+    await AuthService.updateProfile(currentUser.id, { name, email, phone });
+    
+    // Update local state
+    setUserProfile({ name, email, phone });
+  };
+
   const upcomingBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.date);
     return bookingDate >= new Date() && booking.status === "confirmed";
@@ -129,14 +156,11 @@ export function UserDashboard({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{t.welcomeBack}, {userName}!</h1>
-          <p className="text-gray-600">
-            {t.manageYourCharging}
-          </p>
-        </div>
-        <LanguageSelector />
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">{t.welcomeBack}, {userName}!</h1>
+        <p className="text-gray-600">
+          {t.manageYourCharging}
+        </p>
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6 mb-8">
@@ -326,17 +350,20 @@ export function UserDashboard({
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">{t.fullName}</label>
-                  <p className="text-gray-600">{userName}</p>
+                  <p className="text-gray-600">{userProfile.name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">{t.email}</label>
-                  <p className="text-gray-600">user@example.com</p>
+                  <p className="text-gray-600">{userProfile.email}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">{t.phone}</label>
-                  <p className="text-gray-600">+1 (555) 123-4567</p>
+                  <p className="text-gray-600">{userProfile.phone}</p>
                 </div>
-                <Button variant="outline">{t.editProfile}</Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setProfileModalOpen(true)}>{t.editProfile}</Button>
+                  <Button variant="outline" onClick={() => setPasswordModalOpen(true)}>{t.changePassword}</Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -385,6 +412,25 @@ export function UserDashboard({
           }}
         />
       )}
+
+      {/* Profile Edit Modal */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        userName={userProfile.name}
+        userEmail={userProfile.email}
+        userPhone={userProfile.phone}
+        onUpdate={(name: string, email: string, phone: string) => {
+          handleProfileUpdate(name, email, phone);
+        }}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+        userId={AuthService.getCurrentUser()?.id || ""}
+      />
     </div>
   );
 }

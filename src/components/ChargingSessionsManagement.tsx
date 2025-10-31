@@ -138,11 +138,11 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
         return;
       }
 
-      const response = await fetch(`${API_URL}/charging/sessions?${params}`);
+      const response = await fetch(`${API_URL}/charging-sessions?${params}`);
       if (!response.ok) throw new Error("Failed to fetch sessions");
 
-      const data = await response.json();
-      setSessions(data);
+      const result = await response.json();
+      setSessions(result.data || result);
     } catch (error) {
       console.error("Error fetching sessions:", error);
       toast.error("Không thể tải danh sách phiên sạc");
@@ -165,11 +165,11 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
         params.append("stationId", stationId.toString());
       }
 
-      const response = await fetch(`${API_URL}/charging/sessions/stats/summary?${params}`);
+      const response = await fetch(`${API_URL}/charging-sessions/stats/summary?${params}`);
       if (!response.ok) throw new Error("Failed to fetch stats");
 
-      const data = await response.json();
-      setStats(data);
+      const result = await response.json();
+      setStats(result.data || result);
     } catch (error) {
       console.error("Error fetching stats:", error);
     }

@@ -24,6 +24,7 @@ import { ProfileModal } from "./ProfileModal";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { AuthService } from "../services/authService";
 import { VehicleManagement } from "./VehicleManagement";
+import { userStatsApi, UserStats } from "../api/userStatsApi";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -47,6 +48,10 @@ export function UserDashboard({
   const { t } = useLanguage();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  
+  console.log('🔄 UserDashboard render:', { loadingStats, hasStats: !!userStats, stats: userStats });
   
   // Get current user info
   const currentUser = AuthService.getCurrentUser();
@@ -68,6 +73,45 @@ export function UserDashboard({
   }>({
     isOpen: false,
   });
+
+  // Load user statistics from API
+  useEffect(() => {
+    const loadUserStats = async (retryCount = 0) => {
+      if (!currentUser) {
+        console.log('❌ No current user');
+        return;
+      }
+      
+      try {
+        console.log('🔄 Loading user stats for user:', currentUser.id, 'retry:', retryCount);
+        setLoadingStats(true);
+        
+        const stats = await userStatsApi.getUserStats(parseInt(currentUser.id));
+        console.log('✅ Stats fetched:', stats);
+        
+        setUserStats(stats);
+        setLoadingStats(false);
+        
+        console.log('✅ State updated - loadingStats:', false, 'userStats:', stats);
+      } catch (error) {
+        console.error('❌ Error loading user stats:', error);
+        
+        // Retry up to 2 times if failed
+        if (retryCount < 2) {
+          console.log('🔄 Retrying...', retryCount + 1);
+          setTimeout(() => loadUserStats(retryCount + 1), 1000);
+        } else {
+          // Only show error toast if we don't have data and all retries failed
+          if (!userStats) {
+            toast.error('Không thể tải thống kê người dùng');
+          }
+          setLoadingStats(false);
+        }
+      }
+    };
+
+    loadUserStats();
+  }, [currentUser]);
 
   // Auto-open start charging modal if coming from check-in
   useEffect(() => {
@@ -168,11 +212,16 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.totalSessions}</p>
-                <p className="text-2xl font-bold">{bookings.length}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {userStats ? userStats.totalSessions : (loadingStats ? "..." : "0")}
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  +{userStats ? userStats.sessionsThisMonth : (loadingStats ? "..." : "0")} {t.thisMonth}
+                </p>
               </div>
-              <Zap className="w-8 h-8 text-green-600" />
+              <Zap className="w-8 h-8 text-green-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -180,22 +229,14 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.thisMonth}</p>
-                <p className="text-2xl font-bold">
-                  {
-                    bookings.filter((b) => {
-                      const bookingDate = new Date(b.date);
-                      const now = new Date();
-                      return (
-                        bookingDate.getMonth() === now.getMonth() &&
-                        bookingDate.getFullYear() === now.getFullYear()
-                      );
-                    }).length
-                  }
+                <p className="text-2xl font-bold text-gray-900">
+                  {userStats ? userStats.sessionsThisMonth : (loadingStats ? "..." : "0")}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">Phiên sạc</p>
               </div>
-              <Calendar className="w-8 h-8 text-blue-600" />
+              <Calendar className="w-8 h-8 text-blue-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -203,16 +244,16 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.totalSpent}</p>
-                <p className="text-2xl font-bold">
-                  $
-                  {bookings
-                    .reduce((sum, b) => sum + parseFloat(b.price), 0)
-                    .toFixed(2)}
+                <p className="text-2xl font-bold text-gray-900">
+                  ${userStats ? userStats.totalSpent.toFixed(2) : (loadingStats ? "..." : "0.00")}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {userStats ? userStats.totalEnergyConsumed.toFixed(1) : (loadingStats ? "..." : "0.0")} kWh
                 </p>
               </div>
-              <CreditCard className="w-8 h-8 text-purple-600" />
+              <CreditCard className="w-8 h-8 text-purple-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -220,11 +261,14 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.avgRating}</p>
-                <p className="text-2xl font-bold">4.8</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {userStats ? userStats.averageRating.toFixed(1) : (loadingStats ? "..." : "4.8")}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Đánh giá TB</p>
               </div>
-              <Star className="w-8 h-8 text-yellow-500" />
+              <Star className="w-8 h-8 text-yellow-500 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>

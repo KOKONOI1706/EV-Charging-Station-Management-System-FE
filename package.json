@@ -1,4 +1,4 @@
-                                                                                                    {
+{
   "name": "ev-charging-frontend",
   "version": "0.1.0",
   "private": true,
@@ -48,7 +48,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.55.0",
-    "react-leaflet": "^5.0.0",
+    "react-leaflet": "^4.2.1",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^6.28.0",
     "recharts": "^2.15.2",

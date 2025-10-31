@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
+const PackageManagement = React.lazy(() => import("./PackageManagement"));
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
@@ -230,13 +231,14 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview">{t.overview}</TabsTrigger>
-          <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
-          <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
-          <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
-          <TabsTrigger value="reports">{t.reports}</TabsTrigger>
-          <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
+        <TabsList className="flex w-full justify-between items-center border-b">
+          <TabsTrigger value="overview" className="flex-1 px-4 py-2 text-center">{t.overview}</TabsTrigger>
+          <TabsTrigger value="chargingSessions" className="flex-1 px-4 py-2 text-center">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="users" className="flex-1 px-4 py-2 text-center">{t.userManagement}</TabsTrigger>
+          <TabsTrigger value="packageService" className="flex-1 px-4 py-2 text-center">Package Service Management</TabsTrigger>
+          <TabsTrigger value="stations" className="flex-1 px-4 py-2 text-center">{t.stationManagement}</TabsTrigger>
+          <TabsTrigger value="reports" className="flex-1 px-4 py-2 text-center">{t.reports}</TabsTrigger>
+          <TabsTrigger value="settings" className="flex-1 px-4 py-2 text-center">{t.systemSettings}</TabsTrigger>
         </TabsList>
 
         {/* Charging Sessions Management */}
@@ -430,6 +432,15 @@ export function EnhancedAdminDashboard() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Package Service Management */}
+        <TabsContent value="packageService">
+          <Suspense fallback={<div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          </div>}>
+            <PackageManagement />
+          </Suspense>
         </TabsContent>
 
         {/* Station Management */}

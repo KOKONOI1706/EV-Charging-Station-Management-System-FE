@@ -2,11 +2,14 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/sonner";
+import AdminLayout from "./components/AdminLayout";
+import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
+import UserManagement from "./components/UserManagement";
+import PackageManagement from "./components/PackageManagement";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
-import DashboardPage from "./pages/DashboardPage";
 import StaffPage from "./pages/StaffPage";
-import AdminPage from "./pages/AdminPage";
+import DashboardPage from "./pages/DashboardPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
 import UserHistoryPage from "./pages/UserHistoryPage";
@@ -34,7 +37,13 @@ const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminPage />,
+    element: <AdminLayout />,
+    children: [
+      { path: "", element: <EnhancedAdminDashboard /> },
+      { path: "dashboard", element: <EnhancedAdminDashboard /> },
+      { path: "users", element: <UserManagement /> },
+      { path: "packages", element: <PackageManagement /> }
+    ]
   },
   {
     path: "/pricing",

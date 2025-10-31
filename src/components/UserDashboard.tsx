@@ -11,18 +11,7 @@ import {
   Star,
   Settings,
   CreditCard,
-  Battery,
-  History,
-  User,
-  Mail,
-  Phone,
-  Car,
-  Shield,
-  Edit3,
-  Save,
-  X,
-  Eye,
-  EyeOff
+  Battery
 } from "lucide-react";
 import { Booking } from "../data/mockDatabase";
 import { MockDatabaseService } from "../data/mockDatabase";
@@ -30,6 +19,8 @@ import { toast } from "sonner";
 import { ActiveChargingSession } from "./ActiveChargingSession";
 import { ChargingHistory } from "./ChargingHistory";
 import { StartChargingModal } from "./StartChargingModal";
+import { useLanguage } from "../hooks/useLanguage";
+import { LanguageSelector } from "./LanguageSelector";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -50,6 +41,7 @@ export function UserDashboard({
   autoOpenStartCharging = false,
   pendingChargingData
 }: UserDashboardProps) {
+  const { t } = useLanguage();
   const [startChargingModal, setStartChargingModal] = useState<{
     isOpen: boolean;
     pointId?: number;
@@ -137,11 +129,14 @@ export function UserDashboard({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Welcome back, {userName}!</h1>
-        <p className="text-gray-600">
-          Manage your charging sessions and account settings.
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{t.welcomeBack}, {userName}!</h1>
+          <p className="text-gray-600">
+            {t.manageYourCharging}
+          </p>
+        </div>
+        <LanguageSelector />
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6 mb-8">
@@ -149,7 +144,7 @@ export function UserDashboard({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Sessions</p>
+                <p className="text-sm text-gray-600">{t.totalSessions}</p>
                 <p className="text-2xl font-bold">{bookings.length}</p>
               </div>
               <Zap className="w-8 h-8 text-green-600" />
@@ -161,7 +156,7 @@ export function UserDashboard({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">This Month</p>
+                <p className="text-sm text-gray-600">{t.thisMonth}</p>
                 <p className="text-2xl font-bold">
                   {
                     bookings.filter((b) => {
@@ -184,7 +179,7 @@ export function UserDashboard({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Spent</p>
+                <p className="text-sm text-gray-600">{t.totalSpent}</p>
                 <p className="text-2xl font-bold">
                   $
                   {bookings
@@ -201,7 +196,7 @@ export function UserDashboard({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg. Rating</p>
+                <p className="text-sm text-gray-600">{t.avgRating}</p>
                 <p className="text-2xl font-bold">4.8</p>
               </div>
               <Star className="w-8 h-8 text-yellow-500" />
@@ -212,10 +207,10 @@ export function UserDashboard({
 
       <Tabs defaultValue="current" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="current">Current</TabsTrigger>
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="current">{t.current}</TabsTrigger>
+          <TabsTrigger value="upcoming">{t.upcoming}</TabsTrigger>
+          <TabsTrigger value="history">{t.history}</TabsTrigger>
+          <TabsTrigger value="settings">{t.settings}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="current">
@@ -229,16 +224,16 @@ export function UserDashboard({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Upcoming Sessions
+                {t.upcomingSessions}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {upcomingBookings.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No upcoming bookings</p>
+                  <p className="text-gray-500">{t.noUpcomingBookings}</p>
                   <p className="text-sm text-gray-400">
-                    Book a charging session to get started
+                    {t.bookChargingToGetStarted}
                   </p>
                 </div>
               ) : (
@@ -304,7 +299,7 @@ export function UserDashboard({
                           }}
                         >
                           <Battery className="w-4 h-4 mr-2" />
-                          Start Charging
+                          {t.startCharging}
                         </Button>
                       </div>
                     </div>
@@ -325,23 +320,23 @@ export function UserDashboard({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5" />
-                  Account Settings
+                  {t.accountSettings}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Full Name</label>
+                  <label className="text-sm font-medium">{t.fullName}</label>
                   <p className="text-gray-600">{userName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Email</label>
+                  <label className="text-sm font-medium">{t.email}</label>
                   <p className="text-gray-600">user@example.com</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Phone</label>
+                  <label className="text-sm font-medium">{t.phone}</label>
                   <p className="text-gray-600">+1 (555) 123-4567</p>
                 </div>
-                <Button variant="outline">Edit Profile</Button>
+                <Button variant="outline">{t.editProfile}</Button>
               </CardContent>
             </Card>
 
@@ -349,20 +344,20 @@ export function UserDashboard({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Payment Methods
+                  {t.paymentMethods}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">Visa ending in 1234</p>
-                      <p className="text-sm text-gray-600">Expires 12/25</p>
+                      <p className="font-medium">{t.visaEndingIn} 1234</p>
+                      <p className="text-sm text-gray-600">{t.expires} 12/25</p>
                     </div>
-                    <Badge variant="outline">Primary</Badge>
+                    <Badge variant="outline">{t.primary}</Badge>
                   </div>
                 </div>
-                <Button variant="outline">Add Payment Method</Button>
+                <Button variant="outline">{t.addPaymentMethod}</Button>
               </CardContent>
             </Card>
           </div>

@@ -175,14 +175,35 @@ export interface Translation {
   
   // Dashboard
   myDashboard: string;
+  welcomeBack: string;
+  manageYourCharging: string;
   overview: string;
   bookings: string;
   settings: string;
   totalSessions: string;
+  thisMonth: string;
   totalSpent: string;
+  avgRating: string;
   memberSince: string;
   upcomingBookings: string;
   recentBookings: string;
+  current: string;
+  upcoming: string;
+  history: string;
+  noActiveChargingSession: string;
+  startChargingAtStation: string;
+  upcomingSessions: string;
+  noUpcomingBookings: string;
+  bookChargingToGetStarted: string;
+  startCharging: string;
+  accountSettings: string;
+  editProfile: string;
+  phone: string;
+  paymentMethods: string;
+  visaEndingIn: string;
+  expires: string;
+  primary: string;
+  addPaymentMethod: string;
   confirmed: string;
   completed: string;
   cancelled: string;
@@ -404,12 +425,104 @@ export interface Translation {
   
   // Staff/Admin
   staffDashboard: string;
+  stationOperations: string;
+  todaysSessions: string;
+  todaysRevenue: string;
+  utilization: string;
+  avgDuration: string;
+  perSession: string;
+  satisfaction: string;
+  alerts: string;
+  maintenanceLabel: string;
+  vsYesterday: string;
+  currentLoad: string;
+  customerRating: string;
+  allStations: string;
+  dailyUsageTrend: string;
+  hourlyUsagePattern: string;
+  weeklyPerformance: string;
+  performanceSummary: string;
+  weeklyRevenue: string;
+  peakHour: string;
+  avgRevenuePerDay: string;
+  sessions: string;
+  stations: string;
+  
+  // Staff Dashboard - Reports Tab
+  stationReports: string;
+  dailyUsageSummary: string;
+  revenueReport: string;
+  maintenanceLog: string;
+  customerFeedback: string;
+  startNewSession: string;
+  manualPaymentProcessing: string;
+  stationEmergencyStop: string;
+  contactTechnicalSupport: string;
+  
+  // Staff Dashboard - Maintenance Tab
+  maintenanceSchedule: string;
+  scheduledMaintenanceDueTomorrow: string;
+  maintenanceCompleted2DaysAgo: string;
+  quarterlyInspectionNextWeek: string;
+  reportIncident: string;
+  emergency: string;
+  technical: string;
+  createIncidentReport: string;
+  pending: string;
+  scheduled: string;
+  new: string;
+  uptime: string;
+  today: string;
+  thisWeek: string;
+  yearToDate: string;
+  ago: string;
+  
+  // Staff Dashboard - Sessions Tab
+  recentChargingSessions: string;
+  amount: string;
+  status: string;
+  actions: string;
+  view: string;
+  stop: string;
+  
+  // Staff Dashboard - Stations Tab
+  online: string;
+  power: string;
+  monitor: string;
+  control: string;
+  
   adminDashboard: string;
   stationManagement: string;
   userManagement: string;
   bookingManagement: string;
   reports: string;
   systemSettings: string;
+  
+  // Admin Dashboard
+  completeSystemOverview: string;
+  totalStations: string;
+  normalLevels: string;
+  revenueTrends: string;
+  topPerformingStations: string;
+  systemAlerts: string;
+  station2MaintenanceDue: string;
+  scheduledMaintenance2Days: string;
+  highUsageAlert: string;
+  downtownHub95Capacity: string;
+  recentUserActivity: string;
+  completedChargingSession: string;
+  newUserRegistration: string;
+  maintenanceMode: string;
+  temporarilyDisableAccess: string;
+  autoBackup: string;
+  autoBackupDaily: string;
+  emailNotifications: string;
+  receiveImportantUpdates: string;
+  smsNotifications: string;
+  sendCriticalAlerts: string;
+  debugMode: string;
+  enableDetailedLogging: string;
+  
   addStation: string;
   editStation: string;
   deleteStation: string;
@@ -596,14 +709,35 @@ export const translations: Record<Language, Translation> = {
     
     // Dashboard
     myDashboard: "My Dashboard",
+    welcomeBack: "Welcome back",
+    manageYourCharging: "Manage your charging sessions and account settings.",
     overview: "Overview",
     bookings: "Bookings",
     settings: "Settings",
     totalSessions: "Total Sessions",
+    thisMonth: "This Month",
     totalSpent: "Total Spent",
+    avgRating: "Avg. Rating",
     memberSince: "Member Since",
     upcomingBookings: "Upcoming Bookings",
     recentBookings: "Recent Bookings",
+    current: "Current",
+    upcoming: "Upcoming",
+    history: "History",
+    noActiveChargingSession: "No active charging session",
+    startChargingAtStation: "Start charging at a station to monitor your session here",
+    upcomingSessions: "Upcoming Sessions",
+    noUpcomingBookings: "No upcoming bookings",
+    bookChargingToGetStarted: "Book a charging session to get started",
+    startCharging: "Start Charging",
+    accountSettings: "Account Settings",
+    editProfile: "Edit Profile",
+    phone: "Phone",
+    paymentMethods: "Payment Methods",
+    visaEndingIn: "Visa ending in",
+    expires: "Expires",
+    primary: "Primary",
+    addPaymentMethod: "Add Payment Method",
     confirmed: "Confirmed",
     completed: "Completed",
     cancelled: "Cancelled",
@@ -825,12 +959,104 @@ export const translations: Record<Language, Translation> = {
     
     // Staff/Admin
     staffDashboard: "Staff Dashboard",
+    stationOperations: "Station operations and analytics",
+    todaysSessions: "Today's Sessions",
+    todaysRevenue: "Today's Revenue",
+    utilization: "Utilization",
+    avgDuration: "Avg Duration",
+    perSession: "per session",
+    satisfaction: "Satisfaction",
+    alerts: "Alerts",
+    maintenanceLabel: "maintenance",
+    vsYesterday: "vs yesterday",
+    currentLoad: "current load",
+    customerRating: "customer rating",
+    allStations: "All Stations",
+    dailyUsageTrend: "Daily Usage Trend",
+    hourlyUsagePattern: "Hourly Usage Pattern",
+    weeklyPerformance: "Weekly Performance",
+    performanceSummary: "Performance Summary",
+    weeklyRevenue: "Weekly Revenue",
+    peakHour: "Peak Hour",
+    avgRevenuePerDay: "Avg Revenue/Day",
+    sessions: "Sessions",
+    stations: "Stations",
+    
+    // Staff Dashboard - Reports Tab
+    stationReports: "Station Reports",
+    dailyUsageSummary: "Daily Usage Summary",
+    revenueReport: "Revenue Report",
+    maintenanceLog: "Maintenance Log",
+    customerFeedback: "Customer Feedback",
+    startNewSession: "Start New Session",
+    manualPaymentProcessing: "Manual Payment Processing",
+    stationEmergencyStop: "Station Emergency Stop",
+    contactTechnicalSupport: "Contact Technical Support",
+    
+    // Staff Dashboard - Maintenance Tab
+    maintenanceSchedule: "Maintenance Schedule",
+    scheduledMaintenanceDueTomorrow: "Scheduled maintenance due tomorrow",
+    maintenanceCompleted2DaysAgo: "Maintenance completed 2 days ago",
+    quarterlyInspectionNextWeek: "Quarterly inspection next week",
+    reportIncident: "Report Incident",
+    emergency: "Emergency",
+    technical: "Technical",
+    createIncidentReport: "Create Incident Report",
+    pending: "Pending",
+    scheduled: "Scheduled",
+    new: "new",
+    uptime: "uptime",
+    today: "Today",
+    thisWeek: "This Week",
+    yearToDate: "Year to Date",
+    ago: "ago",
+    
+    // Staff Dashboard - Sessions Tab
+    recentChargingSessions: "Recent Charging Sessions",
+    amount: "Amount",
+    status: "Status",
+    actions: "Actions",
+    view: "View",
+    stop: "Stop",
+    
+    // Staff Dashboard - Stations Tab
+    online: "Online",
+    power: "Power",
+    monitor: "Monitor",
+    control: "Control",
+    
     adminDashboard: "Admin Dashboard",
     stationManagement: "Station Management",
     userManagement: "User Management",
     bookingManagement: "Booking Management",
     reports: "Reports",
     systemSettings: "System Settings",
+    
+    // Admin Dashboard
+    completeSystemOverview: "Complete system overview and management with advanced analytics",
+    totalStations: "Total Stations",
+    normalLevels: "Normal levels",
+    revenueTrends: "Revenue Trends",
+    topPerformingStations: "Top Performing Stations",
+    systemAlerts: "System Alerts",
+    station2MaintenanceDue: "Station #2 Maintenance Due",
+    scheduledMaintenance2Days: "Scheduled maintenance in 2 days",
+    highUsageAlert: "High Usage Alert",
+    downtownHub95Capacity: "Downtown Hub at 95% capacity",
+    recentUserActivity: "Recent User Activity",
+    completedChargingSession: "Completed charging session",
+    newUserRegistration: "New user registration",
+    maintenanceMode: "Maintenance Mode",
+    temporarilyDisableAccess: "Temporarily disable system access",
+    autoBackup: "Auto Backup",
+    autoBackupDaily: "Automatically backup data daily",
+    emailNotifications: "Email Notifications",
+    receiveImportantUpdates: "Receive important updates via email",
+    smsNotifications: "SMS Notifications",
+    sendCriticalAlerts: "Send critical alerts via SMS",
+    debugMode: "Debug Mode",
+    enableDetailedLogging: "Enable detailed logging",
+    
     addStation: "Add Station",
     editStation: "Edit Station",
     deleteStation: "Delete Station",
@@ -1015,18 +1241,39 @@ export const translations: Record<Language, Translation> = {
     
     // Dashboard
     myDashboard: "Bảng điều khiển của tôi",
+    welcomeBack: "Chào mừng trở lại",
+    manageYourCharging: "Quản lý các phiên sạc và cài đặt tài khoản của bạn.",
     overview: "Tổng quan",
     bookings: "Đặt chỗ",
     settings: "Cài đặt",
     totalSessions: "Tổng số phiên",
+    thisMonth: "Tháng này",
     totalSpent: "Tổng chi tiêu",
+    avgRating: "Đánh giá TB",
     memberSince: "Thành viên từ",
     upcomingBookings: "Đặt chỗ sắp tới",
     recentBookings: "Đặt chỗ gần đây",
+    current: "Hiện tại",
+    upcoming: "Sắp tới",
+    history: "Lịch sử",
+    noActiveChargingSession: "Không có phiên sạc đang hoạt động",
+    startChargingAtStation: "Bắt đầu sạc tại trạm để theo dõi phiên sạc của bạn tại đây",
+    upcomingSessions: "Phiên sạc sắp tới",
+    noUpcomingBookings: "Không có đặt chỗ sắp tới",
+    bookChargingToGetStarted: "Đặt phiên sạc để bắt đầu",
+    startCharging: "Bắt đầu sạc",
+    accountSettings: "Cài đặt tài khoản",
+    editProfile: "Chỉnh sửa hồ sơ",
+    phone: "Điện thoại",
+    paymentMethods: "Phương thức thanh toán",
+    visaEndingIn: "Thẻ Visa kết thúc bằng",
+    expires: "Hết hạn",
+    primary: "Chính",
+    addPaymentMethod: "Thêm phương thức thanh toán",
     confirmed: "Đã xác nhận",
-    completed: "Hoàn thành",
+    completed: "Đã hoàn thành",
     cancelled: "Đã hủy",
-    inProgress: "Đang tiến hành",
+    inProgress: "Đang thực hiện",
     
     // Analytics
     analytics: "Phân tích",
@@ -1244,12 +1491,104 @@ export const translations: Record<Language, Translation> = {
     
     // Staff/Admin
     staffDashboard: "Bảng điều khiển nhân viên",
+    stationOperations: "Vận hành trạm và phân tích",
+    todaysSessions: "Phiên hôm nay",
+    todaysRevenue: "Doanh thu hôm nay",
+    utilization: "Tỷ lệ sử dụng",
+    avgDuration: "Thời lượng TB",
+    perSession: "mỗi phiên",
+    satisfaction: "Hài lòng",
+    alerts: "Cảnh báo",
+    maintenanceLabel: "bảo trì",
+    vsYesterday: "so với hôm qua",
+    currentLoad: "tải hiện tại",
+    customerRating: "đánh giá khách hàng",
+    allStations: "Tất cả trạm",
+    dailyUsageTrend: "Xu hướng sử dụng hàng ngày",
+    hourlyUsagePattern: "Mẫu sử dụng theo giờ",
+    weeklyPerformance: "Hiệu suất hàng tuần",
+    performanceSummary: "Tóm tắt hiệu suất",
+    weeklyRevenue: "Doanh thu hàng tuần",
+    peakHour: "Giờ cao điểm",
+    avgRevenuePerDay: "Doanh thu TB/Ngày",
+    sessions: "Phiên",
+    stations: "Trạm",
+    
+    // Staff Dashboard - Reports Tab
+    stationReports: "Báo cáo trạm",
+    dailyUsageSummary: "Tóm tắt sử dụng hàng ngày",
+    revenueReport: "Báo cáo doanh thu",
+    maintenanceLog: "Nhật ký bảo trì",
+    customerFeedback: "Phản hồi khách hàng",
+    startNewSession: "Bắt đầu phiên mới",
+    manualPaymentProcessing: "Xử lý thanh toán thủ công",
+    stationEmergencyStop: "Dừng khẩn cấp trạm",
+    contactTechnicalSupport: "Liên hệ hỗ trợ kỹ thuật",
+    
+    // Staff Dashboard - Maintenance Tab
+    maintenanceSchedule: "Lịch bảo trì",
+    scheduledMaintenanceDueTomorrow: "Bảo trì đã lên lịch sẽ đến hạn vào ngày mai",
+    maintenanceCompleted2DaysAgo: "Bảo trì đã hoàn thành 2 ngày trước",
+    quarterlyInspectionNextWeek: "Kiểm tra hàng quý vào tuần tới",
+    reportIncident: "Báo cáo sự cố",
+    emergency: "Khẩn cấp",
+    technical: "Kỹ thuật",
+    createIncidentReport: "Tạo báo cáo sự cố",
+    pending: "Đang chờ",
+    scheduled: "Đã lên lịch",
+    new: "mới",
+    uptime: "thời gian hoạt động",
+    today: "Hôm nay",
+    thisWeek: "Tuần này",
+    yearToDate: "Từ đầu năm",
+    ago: "trước",
+    
+    // Staff Dashboard - Sessions Tab
+    recentChargingSessions: "Phiên sạc gần đây",
+    amount: "Số tiền",
+    status: "Trạng thái",
+    actions: "Hành động",
+    view: "Xem",
+    stop: "Dừng",
+    
+    // Staff Dashboard - Stations Tab
+    online: "Trực tuyến",
+    power: "Công suất",
+    monitor: "Giám sát",
+    control: "Điều khiển",
+    
     adminDashboard: "Bảng điều khiển quản trị",
     stationManagement: "Quản lý trạm",
     userManagement: "Quản lý người dùng",
     bookingManagement: "Quản lý đặt chỗ",
     reports: "Báo cáo",
     systemSettings: "Cài đặt hệ thống",
+    
+    // Admin Dashboard
+    completeSystemOverview: "Tổng quan hệ thống hoàn chỉnh và quản lý với phân tích nâng cao",
+    totalStations: "Tổng số trạm",
+    normalLevels: "Mức bình thường",
+    revenueTrends: "Xu hướng doanh thu",
+    topPerformingStations: "Trạm hoạt động tốt nhất",
+    systemAlerts: "Cảnh báo hệ thống",
+    station2MaintenanceDue: "Trạm #2 đến hạn bảo trì",
+    scheduledMaintenance2Days: "Bảo trì đã lên lịch trong 2 ngày",
+    highUsageAlert: "Cảnh báo sử dụng cao",
+    downtownHub95Capacity: "Trung tâm Downtown đang ở 95% công suất",
+    recentUserActivity: "Hoạt động người dùng gần đây",
+    completedChargingSession: "Hoàn thành phiên sạc",
+    newUserRegistration: "Đăng ký người dùng mới",
+    maintenanceMode: "Chế độ bảo trì",
+    temporarilyDisableAccess: "Tạm thời vô hiệu hóa quyền truy cập hệ thống",
+    autoBackup: "Sao lưu tự động",
+    autoBackupDaily: "Tự động sao lưu dữ liệu hàng ngày",
+    emailNotifications: "Thông báo Email",
+    receiveImportantUpdates: "Nhận thông tin cập nhật quan trọng qua email",
+    smsNotifications: "Thông báo SMS",
+    sendCriticalAlerts: "Gửi cảnh báo quan trọng qua SMS",
+    debugMode: "Chế độ gỡ lỗi",
+    enableDetailedLogging: "Bật ghi log chi tiết",
+    
     addStation: "Thêm trạm",
     editStation: "Chỉnh sửa trạm",
     deleteStation: "Xóa trạm",

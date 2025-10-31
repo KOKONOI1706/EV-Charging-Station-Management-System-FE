@@ -21,7 +21,7 @@ import { StationDetailView } from "./StationDetailView";
 import { useLanguage } from "../hooks/useLanguage";
 
 interface StationFinderProps {
-  onBookStation: (station: Station) => void;
+  onBookStation: (station: Station, chargingPointId?: string) => void;
 }
 
 export function StationFinder({ onBookStation }: StationFinderProps) {
@@ -64,8 +64,9 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
   };
 
   const handleBookChargingPoint = (station: Station, chargingPointId?: string) => {
-    // In a real app, you could pass the specific charging point ID to the booking modal
-    onBookStation(station);
+    console.log('📍 handleBookChargingPoint called with pointId:', chargingPointId);
+    // Pass the charging point ID to the booking handler
+    onBookStation(station, chargingPointId);
   };
 
   const filteredStations = stations.filter((station) => {
@@ -166,6 +167,18 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
             >
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  {/* Station Image */}
+                  <div className="w-full lg:w-48 h-40 flex-shrink-0">
+                    <img
+                      src={station.image}
+                      alt={station.name}
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Charging+Station';
+                      }}
+                    />
+                  </div>
+
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-semibold">{station.name}</h3>
@@ -291,7 +304,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
           </p>
         </div>
 
-        <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'list' | 'map')}>
+        <Tabs value={currentView} onValueChange={(value: string) => setCurrentView(value as 'list' | 'map')}>
           <div className="flex justify-center mb-8">
             <TabsList className="grid w-full max-w-md grid-cols-2">
               <TabsTrigger value="list" className="flex items-center gap-2">

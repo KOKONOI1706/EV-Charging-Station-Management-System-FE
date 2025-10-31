@@ -19,22 +19,22 @@ import {
 import {
   Zap,
   AlertTriangle,
-  CheckCircle,
   Clock,
   Users,
   DollarSign,
   Activity,
   Settings,
-  MapPin,
-  Phone,
   Wrench,
   TrendingUp,
-  BarChart3,
-  Calendar
+  BarChart3
 } from 'lucide-react';
 import { Station, MockDatabaseService } from '../data/mockDatabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
-import { toast } from 'sonner@2.0.3';
+import { LanguageSelector } from './LanguageSelector';
+import { toast } from 'sonner';
+import { ChargingSessionsManagement } from './ChargingSessionsManagement';
 
 interface StationMetrics {
   todaysSessions: number;
@@ -54,6 +54,8 @@ interface StaffAnalytics {
 
 export function EnhancedStaffDashboard() {
   const { t } = useLanguage();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<string>('all');
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
@@ -158,15 +160,16 @@ export function EnhancedStaffDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">{t.staffDashboard}</h1>
-          <p className="text-gray-600">Station operations and analytics</p>
+          <p className="text-gray-600">{t.stationOperations}</p>
         </div>
         <div className="flex items-center gap-3">
+          <LanguageSelector />
           <Select value={selectedStation} onValueChange={setSelectedStation}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Stations</SelectItem>
+              <SelectItem value="all">{t.allStations}</SelectItem>
               {stations.map((station) => (
                 <SelectItem key={station.id} value={station.id}>
                   {station.name}
@@ -174,6 +177,21 @@ export function EnhancedStaffDashboard() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success(t.signOut || 'Logged out');
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            {t.signOut}
+          </Button>
         </div>
       </div>
 
@@ -183,9 +201,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Today's Sessions</p>
+                <p className="text-sm text-gray-600">{t.todaysSessions}</p>
                 <p className="text-2xl font-bold">{metrics.todaysSessions}</p>
-                <p className="text-xs text-green-600">+15% vs yesterday</p>
+                <p className="text-xs text-green-600">+15% {t.vsYesterday}</p>
               </div>
               <Zap className="w-8 h-8 text-green-600" />
             </div>
@@ -196,9 +214,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Today's Revenue</p>
+                <p className="text-sm text-gray-600">{t.todaysRevenue}</p>
                 <p className="text-2xl font-bold">${metrics.todaysRevenue}</p>
-                <p className="text-xs text-green-600">+8% vs yesterday</p>
+                <p className="text-xs text-green-600">+8% {t.vsYesterday}</p>
               </div>
               <DollarSign className="w-8 h-8 text-blue-600" />
             </div>
@@ -209,9 +227,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Utilization</p>
+                <p className="text-sm text-gray-600">{t.utilization}</p>
                 <p className="text-2xl font-bold">{metrics.currentUtilization}%</p>
-                <p className="text-xs text-gray-500">current load</p>
+                <p className="text-xs text-gray-500">{t.currentLoad}</p>
               </div>
               <Activity className="w-8 h-8 text-purple-600" />
             </div>
@@ -222,9 +240,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg Duration</p>
+                <p className="text-sm text-gray-600">{t.avgDuration}</p>
                 <p className="text-2xl font-bold">{metrics.averageSessionDuration}h</p>
-                <p className="text-xs text-gray-500">per session</p>
+                <p className="text-xs text-gray-500">{t.perSession}</p>
               </div>
               <Clock className="w-8 h-8 text-orange-600" />
             </div>
@@ -235,9 +253,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Satisfaction</p>
+                <p className="text-sm text-gray-600">{t.satisfaction}</p>
                 <p className="text-2xl font-bold">{metrics.customerSatisfaction}</p>
-                <p className="text-xs text-green-600">customer rating</p>
+                <p className="text-xs text-green-600">{t.customerRating}</p>
               </div>
               <Users className="w-8 h-8 text-green-600" />
             </div>
@@ -248,9 +266,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Alerts</p>
+                <p className="text-sm text-gray-600">{t.alerts}</p>
                 <p className="text-2xl font-bold">{metrics.maintenanceAlerts}</p>
-                <p className="text-xs text-yellow-600">maintenance</p>
+                <p className="text-xs text-yellow-600">{t.maintenanceLabel}</p>
               </div>
               <AlertTriangle className="w-8 h-8 text-yellow-600" />
             </div>
@@ -259,13 +277,22 @@ export function EnhancedStaffDashboard() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="stations">Stations</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
+          <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="sessions">{t.sessions}</TabsTrigger>
+          <TabsTrigger value="stations">{t.stations}</TabsTrigger>
+          <TabsTrigger value="maintenance">{t.maintenance}</TabsTrigger>
+          <TabsTrigger value="reports">{t.reports}</TabsTrigger>
         </TabsList>
+
+        {/* Charging Sessions Management */}
+        <TabsContent value="chargingSessions">
+          <ChargingSessionsManagement 
+            userRole="staff" 
+            stationId={selectedStation !== 'all' ? parseInt(selectedStation) : undefined}
+          />
+        </TabsContent>
 
         {/* Analytics */}
         <TabsContent value="analytics">
@@ -274,7 +301,7 @@ export function EnhancedStaffDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="w-5 h-5" />
-                  Daily Usage Trend
+                  {t.dailyUsageTrend}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -292,7 +319,7 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Hourly Usage Pattern</CardTitle>
+                <CardTitle>{t.hourlyUsagePattern}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -309,7 +336,7 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Weekly Performance</CardTitle>
+                <CardTitle>{t.weeklyPerformance}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -326,14 +353,14 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Performance Summary</CardTitle>
+                <CardTitle>{t.performanceSummary}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <TrendingUp className="w-5 h-5 text-green-600" />
-                      <span>Weekly Revenue</span>
+                      <span>{t.weeklyRevenue}</span>
                     </div>
                     <span className="font-bold">
                       ${analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0).toLocaleString()}
@@ -342,7 +369,7 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Zap className="w-5 h-5 text-blue-600" />
-                      <span>Total Sessions</span>
+                      <span>{t.totalSessions}</span>
                     </div>
                     <span className="font-bold">
                       {analytics.weeklyTrend.reduce((sum, day) => sum + day.sessions, 0)}
@@ -351,7 +378,7 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Activity className="w-5 h-5 text-purple-600" />
-                      <span>Peak Hour</span>
+                      <span>{t.peakHour}</span>
                     </div>
                     <span className="font-bold">
                       {analytics.hourlyPattern.reduce((max, curr) => 
@@ -362,7 +389,7 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <DollarSign className="w-5 h-5 text-green-600" />
-                      <span>Avg Revenue/Day</span>
+                      <span>{t.avgRevenuePerDay}</span>
                     </div>
                     <span className="font-bold">
                       ${(analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0) / 7).toFixed(0)}
@@ -380,18 +407,18 @@ export function EnhancedStaffDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Recent Charging Sessions
+                {t.recentChargingSessions}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t.customer}</TableHead>
+                    <TableHead>{t.duration}</TableHead>
+                    <TableHead>{t.amount}</TableHead>
+                    <TableHead>{t.status}</TableHead>
+                    <TableHead>{t.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -408,11 +435,11 @@ export function EnhancedStaffDashboard() {
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm">
-                            View
+                            {t.view}
                           </Button>
                           {session.status === 'in-progress' && (
                             <Button variant="outline" size="sm">
-                              Stop
+                              {t.stop}
                             </Button>
                           )}
                         </div>
@@ -434,36 +461,36 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-semibold">{station.name}</h3>
                     <Badge className="bg-green-100 text-green-800">
-                      Online
+                      {t.online}
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{station.address}</p>
                   <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                     <div>
-                      <span className="text-gray-600">Available:</span>
+                      <span className="text-gray-600">{t.available}:</span>
                       <span className="font-medium ml-1">{station.available}/{station.total}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Power:</span>
+                      <span className="text-gray-600">{t.power}:</span>
                       <span className="font-medium ml-1">{station.power}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Utilization:</span>
+                      <span className="text-gray-600">{t.utilization}:</span>
                       <span className="font-medium ml-1">
                         {Math.floor(((station.total - station.available) / station.total) * 100)}%
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Rating:</span>
+                      <span className="text-gray-600">{t.rating}:</span>
                       <span className="font-medium ml-1">{station.rating}/5</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1">
-                      Monitor
+                      {t.monitor}
                     </Button>
                     <Button variant="outline" size="sm" className="flex-1">
-                      Control
+                      {t.control}
                     </Button>
                   </div>
                 </CardContent>
@@ -479,7 +506,7 @@ export function EnhancedStaffDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Wrench className="w-5 h-5" />
-                  Maintenance Schedule
+                  {t.maintenanceSchedule}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -487,23 +514,23 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg bg-yellow-50">
                     <div>
                       <p className="font-medium">Downtown Hub - Connector 3</p>
-                      <p className="text-sm text-gray-600">Scheduled maintenance due tomorrow</p>
+                      <p className="text-sm text-gray-600">{t.scheduledMaintenanceDueTomorrow}</p>
                     </div>
-                    <Badge variant="secondary">Pending</Badge>
+                    <Badge variant="secondary">{t.pending}</Badge>
                   </div>
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <p className="font-medium">Mall Center - Connector 1</p>
-                      <p className="text-sm text-gray-600">Maintenance completed 2 days ago</p>
+                      <p className="text-sm text-gray-600">{t.maintenanceCompleted2DaysAgo}</p>
                     </div>
-                    <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                    <Badge className="bg-green-100 text-green-800">{t.completed}</Badge>
                   </div>
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <p className="font-medium">Airport Station - All Connectors</p>
-                      <p className="text-sm text-gray-600">Quarterly inspection next week</p>
+                      <p className="text-sm text-gray-600">{t.quarterlyInspectionNextWeek}</p>
                     </div>
-                    <Badge variant="outline">Scheduled</Badge>
+                    <Badge variant="outline">{t.scheduled}</Badge>
                   </div>
                 </div>
               </CardContent>
@@ -511,30 +538,30 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Report Incident</CardTitle>
+                <CardTitle>{t.reportIncident}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Button variant="outline" className="h-20 flex-col">
                       <AlertTriangle className="w-6 h-6 mb-2 text-red-600" />
-                      <span>Emergency</span>
+                      <span>{t.emergency}</span>
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <Wrench className="w-6 h-6 mb-2 text-orange-600" />
-                      <span>Maintenance</span>
+                      <span>{t.maintenance}</span>
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <Settings className="w-6 h-6 mb-2 text-blue-600" />
-                      <span>Technical</span>
+                      <span>{t.technical}</span>
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <Users className="w-6 h-6 mb-2 text-green-600" />
-                      <span>Customer</span>
+                      <span>{t.customer}</span>
                     </Button>
                   </div>
                   <Button className="w-full bg-green-600 hover:bg-green-700">
-                    Create Incident Report
+                    {t.createIncidentReport}
                   </Button>
                 </div>
               </CardContent>
@@ -547,44 +574,44 @@ export function EnhancedStaffDashboard() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Station Reports</CardTitle>
+                <CardTitle>{t.stationReports}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Button variant="outline" className="w-full justify-start">
                   <BarChart3 className="w-4 h-4 mr-2" />
-                  Daily Usage Summary
+                  {t.dailyUsageSummary}
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   <DollarSign className="w-4 h-4 mr-2" />
-                  Revenue Report
+                  {t.revenueReport}
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   <Wrench className="w-4 h-4 mr-2" />
-                  Maintenance Log
+                  {t.maintenanceLog}
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="w-4 h-4 mr-2" />
-                  Customer Feedback
+                  {t.customerFeedback}
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>{t.quickActions}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Button className="w-full bg-green-600 hover:bg-green-700">
-                  Start New Session
+                  {t.startNewSession}
                 </Button>
                 <Button variant="outline" className="w-full">
-                  Manual Payment Processing
+                  {t.manualPaymentProcessing}
                 </Button>
                 <Button variant="outline" className="w-full">
-                  Station Emergency Stop
+                  {t.stationEmergencyStop}
                 </Button>
                 <Button variant="outline" className="w-full">
-                  Contact Technical Support
+                  {t.contactTechnicalSupport}
                 </Button>
               </CardContent>
             </Card>

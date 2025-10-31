@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Users } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import { AuthService } from "../services/authService";
 import { toast } from "sonner";
 import { useLanguage } from "../hooks/useLanguage";
@@ -24,7 +23,6 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("login");
-  const [selectedRole, setSelectedRole] = useState<string>("");
 
   // Reset tab to login whenever modal opens
   useEffect(() => {
@@ -119,24 +117,8 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     }
   };
 
-  const handleRoleSelect = (role: string) => {
-    setSelectedRole(role);
-    
-    // Show a message to guide user
-    const roleNames = {
-      customer: 'Khách hàng',
-      staff: 'Nhân viên', 
-      admin: 'Quản trị viên'
-    };
-    
-    if (role && role in roleNames) {
-      toast.info(`Đã chọn vai trò ${roleNames[role as keyof typeof roleNames]}.`);
-    }
-  };
-
   const resetForms = () => {
     setLoginForm({ email: "", password: "" });
-    setSelectedRole("");
     setRegisterForm({
       name: "",
       email: "",
@@ -215,41 +197,6 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                  </div>
-
-                  {/* Role Selection */}
-                  <div className="space-y-2">
-                    <Label htmlFor="role-select" className="text-sm font-medium">
-                      {t.roleSelection}
-                    </Label>
-                    <Select value={selectedRole} onValueChange={handleRoleSelect}>
-                      <SelectTrigger className="w-full">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder={t.selectRole} />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="customer">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span>{t.customer}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="staff">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span>{t.staff}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span>{t.admin}</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   {error && (

@@ -10,11 +10,11 @@ interface HeaderProps {
   userName?: string;
   currentView: string;
   onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void;
-  onOpenProfile?: () => void;
 }
 
-export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate, onOpenProfile }: HeaderProps) {
+export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate }: HeaderProps) {
   const { t } = useLanguage();
+  
   return (
     <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -42,6 +42,16 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
           >
             {t.findStations}
           </button>
+          {isAuthenticated && (
+            <button 
+              onClick={() => onNavigate("dashboard")} 
+              className={`hover:text-green-600 transition-colors ${
+                currentView === "dashboard" ? "text-green-600" : ""
+              }`}
+            >
+              Dashboard
+            </button>
+          )}
           <button 
             onClick={() => onNavigate("pricing")} 
             className={`hover:text-green-600 transition-colors ${
@@ -62,29 +72,18 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
 
         <div className="flex items-center space-x-4">
           <LanguageSelector />
+          
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
               <User className="w-5 h-5" />
               <span className="hidden sm:inline">{t.welcome}, {userName}</span>
-              {onOpenProfile && (
-                <Button
-                  onClick={onOpenProfile}
-                  variant="ghost"
-                  size="sm"
-                  className="text-green-600 hover:text-green-700"
-                >
-                  Profile
-                </Button>
-              )}
               <Button
                 onClick={async () => {
                   try {
-                    // Ensure local storage is cleared and force a reload so AuthProvider re-initializes
                     await AuthService.logout();
                   } catch (err) {
                     console.error('Logout from header failed:', err);
                   }
-                  // reload to reset app state (AuthProvider will detect no user in storage)
                   window.location.href = '/';
                 }}
                 variant="outline"

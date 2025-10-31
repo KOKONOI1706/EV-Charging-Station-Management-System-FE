@@ -1,13 +1,25 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Hero } from "../components/Hero";
-import { StationFinder } from "../components/StationFinder";
+import { StationFinderWithReservation } from "../components/StationFinderWithReservation";
 import { Footer } from "../components/Footer";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const [guestUserId, setGuestUserId] = useState<string>('');
+
+  useEffect(() => {
+    // Generate or retrieve guest user ID
+    let guestId = localStorage.getItem('guest-user-id');
+    if (!guestId) {
+      guestId = `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('guest-user-id', guestId);
+    }
+    setGuestUserId(guestId);
+  }, []);
 
   // Redirect admin users to admin page
   if (user?.role === "admin") {
@@ -38,19 +50,32 @@ export default function HomePage() {
         onAuthClick={handleAuthClick}
         isAuthenticated={isAuthenticated}
         userName={user?.name}
-        onNavigate={(v: any) => navigate(v === 'pricing' ? '/pricing' : '/')}
+        onNavigate={(v: any) => {
+          if (v === 'pricing') navigate('/pricing');
+          else if (v === 'support') navigate('/support');
+          else if (v === 'dashboard') navigate('/dashboard');
+          else navigate('/');
+        }}
         currentView="home"
-        onOpenProfile={() => navigate('/profile')}
       />
 
       <main>
         <Hero onFindStations={handleFindStations} onLearnMore={handleLearnMore} />
         <div id="station-finder">
-          <StationFinder onBookStation={() => { if (!isAuthenticated) navigate('/auth'); }} />
+          {guestUserId && (
+            <StationFinderWithReservation 
+              userId={isAuthenticated ? (user?.id || guestUserId) : guestUserId} 
+            />
+          )}
         </div>
       </main>
 
-      <Footer onNavigate={(v: any) => navigate(v === 'pricing' ? '/pricing' : '/') } />
+      <Footer onNavigate={(v: any) => {
+        if (v === 'pricing') navigate('/pricing');
+        else if (v === 'support') navigate('/support');
+        else if (v === 'dashboard') navigate('/dashboard');
+        else navigate('/');
+      }} />
     </div>
   );
 }

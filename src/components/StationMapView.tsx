@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { 
   MapPin, 
   Search, 
-  Navigation, 
   Zap, 
-  Clock, 
   Star,
   Filter,
   List,
@@ -16,16 +14,20 @@ import {
 } from 'lucide-react';
 import { Station, MockDatabaseService } from '../data/mockDatabase';
 import { useLanguage } from '../hooks/useLanguage';
+import { LeafletMap } from './LeafletMap';
+import { getStationStatus } from '../utils/stationStatus';
 
 interface StationMapViewProps {
   onStationSelect: (station: Station) => void;
   onViewDetails: (station: Station) => void;
 }
 
+const defaultCenter: [number, number] = [10.762622, 106.660172]; // TP.HCM
+const defaultZoom = 13;
+
 export function StationMapView({ onStationSelect, onViewDetails }: StationMapViewProps) {
   const { t } = useLanguage();
   const [stations, setStations] = useState<Station[]>([]);
-  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [isLoading, setIsLoading] = useState(true);
@@ -52,129 +54,38 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
     station.city.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getStatusColor = (available: number, total: number) => {
-    const ratio = available / total;
-    if (ratio > 0.5) return 'bg-green-500';
-    if (ratio > 0.2) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
   const renderMapView = () => (
     <div className="relative">
-      {/* Simulated Map Container */}
-      <div className="w-full h-96 bg-gray-100 rounded-lg relative overflow-hidden border">
-        {/* Map Background Grid */}
-        <div className="absolute inset-0 opacity-20">
-          <svg width="100%" height="100%">
-            <defs>
-              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#gray" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
+      <div className="rounded-lg overflow-hidden" style={{ height: '24rem' }}>
+        <LeafletMap
+          stations={filteredStations}
+          center={defaultCenter}
+          zoom={defaultZoom}
+          onStationSelect={onStationSelect}
+          onViewDetails={onViewDetails}
+        />
+      </div>
 
-        {/* Map Legend */}
-        <div className="absolute top-4 left-4 bg-white rounded-lg shadow-md p-3 z-10">
-          <h4 className="font-medium mb-2">{t.stationStatusLegend}</h4>
-          <div className="space-y-1 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>{t.availableStatus}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>{t.limitedStatus}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>{t.busyStatus}</span>
-            </div>
+      {/* Legend */}
+      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 z-[150] border border-gray-200">
+        <h4 className="font-semibold mb-3 text-sm">🗺️ Chú thích trạng thái</h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-green-500 shadow-sm"></div>
+            <span className="text-gray-700">✅ Còn nhiều chỗ</span>
           </div>
-        </div>
-
-        {/* Station Markers */}
-        {filteredStations.map((station, index) => {
-          const x = 20 + (index % 3) * 120 + Math.random() * 60;
-          const y = 50 + Math.floor(index / 3) * 80 + Math.random() * 40;
-          
-          return (
-            <div
-              key={station.id}
-              className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 hover:scale-110 ${
-                selectedStation?.id === station.id ? 'z-20 scale-110' : 'z-10'
-              }`}
-              style={{ left: `${x}px`, top: `${y}px` }}
-              onClick={() => setSelectedStation(station)}
-            >
-              {/* Station Marker */}
-              <div className={`w-6 h-6 rounded-full border-2 border-white shadow-lg ${
-                getStatusColor(station.available, station.total)
-              }`}>
-                <MapPin className="w-full h-full text-white p-1" />
-              </div>
-              
-              {/* Station Label */}
-              <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded shadow-md text-xs font-medium whitespace-nowrap">
-                {station.name}
-              </div>
-
-              {/* Expanded Info for Selected Station */}
-              {selectedStation?.id === station.id && (
-                <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-64 z-30">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{station.name}</h4>
-                      <Badge className={
-                        station.available > 0 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }>
-                        {station.available}/{station.total} available
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">{station.address}</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-4 h-4 text-green-600" />
-                        <span>{station.power}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <span>{station.rating}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Navigation className="w-4 h-4 text-blue-600" />
-                        <span>{station.distance}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        size="sm" 
-                        onClick={() => onViewDetails(station)}
-                        className="flex-1"
-                      >
-                        {t.viewLayout}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => onStationSelect(station)}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                      >
-                        Book Now
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Current Location Marker */}
-        <div className="absolute bottom-4 right-4 bg-blue-600 rounded-full p-2 shadow-lg">
-          <Navigation className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-yellow-500 shadow-sm"></div>
+            <span className="text-gray-700">⚠️ Sắp đầy / Sắp có chỗ</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-red-500 shadow-sm"></div>
+            <span className="text-gray-700">🔴 Hết chỗ</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-gray-400 shadow-sm"></div>
+            <span className="text-gray-700">🔧 Bảo trì</span>
+          </div>
         </div>
       </div>
     </div>
@@ -182,61 +93,86 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
 
   const renderListView = () => (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredStations.map((station) => (
-        <Card key={station.id} className="cursor-pointer hover:shadow-lg transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">{station.name}</h3>
-              <Badge className={
-                station.available > 0 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }>
-                {station.available}/{station.total}
-              </Badge>
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-3">{station.address}</p>
-            
-            <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-              <div className="flex items-center gap-1">
-                <Zap className="w-4 h-4 text-green-600" />
-                <span>{station.power}</span>
+      {filteredStations.map((station) => {
+        const statusInfo = getStationStatus(station);
+        
+        return (
+          <Card key={station.id} className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-2 hover:border-green-500">
+            <CardContent className="p-4">
+              {/* Station Image */}
+              <div className="w-full h-32 rounded-lg overflow-hidden mb-3">
+                <img
+                  src={station.image}
+                  alt={station.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=Charging+Station';
+                  }}
+                />
               </div>
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-yellow-500" />
-                <span>{station.rating}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Navigation className="w-4 h-4 text-blue-600" />
-                <span>{station.distance}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 text-purple-600" />
-                <span>{station.operatingHours}</span>
-              </div>
-            </div>
 
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onViewDetails(station)}
-                className="flex-1"
-              >
-                {t.viewLayout}
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => onStationSelect(station)}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {t.bookNow}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-base">{station.name}</h3>
+                <Badge className={`${statusInfo.bgColor} ${statusInfo.textColor} flex items-center gap-1`}>
+                  <span>{statusInfo.icon}</span>
+                  <span>{statusInfo.label}</span>
+                </Badge>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-3 flex items-start gap-2">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
+                <span>{station.address}</span>
+              </p>
+              
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Chỗ trống:</span>
+                  <span className="font-semibold">{station.available}/{station.total}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 flex items-center gap-1">
+                    <Zap className="w-3 h-3" /> Công suất:
+                  </span>
+                  <span className="font-semibold">{station.power}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Giá:</span>
+                  <span className="font-semibold text-green-600">{station.price}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" /> Đánh giá:
+                  </span>
+                  <span className="font-semibold">{station.rating} ⭐</span>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => onViewDetails(station)}
+                >
+                  Chi tiết
+                </Button>
+                <Button
+                  size="sm"
+                  className={`flex-1 ${
+                    statusInfo.status === 'available' || statusInfo.status === 'limited'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-gray-400 cursor-not-allowed'
+                  }`}
+                  disabled={statusInfo.status === 'full' || statusInfo.status === 'maintenance'}
+                  onClick={() => onStationSelect(station)}
+                >
+                  {statusInfo.status === 'maintenance' ? 'Bảo trì' : 'Đặt chỗ'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,8 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Calendar } from "./ui/calendar";
-import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import {
-  CalendarIcon,
-  Clock,
   Zap,
   MapPin,
   CreditCard,
@@ -69,7 +66,7 @@ export function BookingModal({
       time: selectedTime,
       duration: duration,
       status: "confirmed" as const,
-      price: calculatePrice(),
+      price: String(calculatePrice()),
     };
 
     onConfirmBooking(booking);
@@ -146,7 +143,7 @@ export function BookingModal({
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date: Date) => date < new Date()}
                     className="rounded-md"
                   />
                 </div>

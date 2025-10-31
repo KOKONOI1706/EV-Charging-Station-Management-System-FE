@@ -1,12 +1,7 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/sonner";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import AdminLayout from "./components/AdminLayout";
-import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
-import UserManagement from "./components/UserManagement";
-import PackageManagement from "./components/PackageManagement";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -14,8 +9,11 @@ import StaffPage from "./pages/StaffPage";
 import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
-import ProfilePage from "./pages/ProfilePage";
-import AdminProfilePage from "./pages/AdminProfilePage";
+import UserHistoryPage from "./pages/UserHistoryPage";
+import PersonalReportPage from "./pages/PersonalReportPage";
+import ChargingSessionPage from "./pages/ChargingSessionPage";
+import { ReservationTestPage } from "./pages/ReservationTestPage";
+import PaymentCallback from "./pages/PaymentCallback";
 
 const router = createBrowserRouter([
   {
@@ -27,27 +25,16 @@ const router = createBrowserRouter([
     element: <AuthPage />,
   },
   {
-    path: "/profile",
-    element: <ProtectedRoute allowedRoles={["staff", "customer"]}><ProfilePage /></ProtectedRoute>,
-  },
-  {
     path: "/dashboard",
-    element: <Navigate to="/" replace />,
+    element: <DashboardPage />,
   },
   {
     path: "/staff",
-    element: <ProtectedRoute allowedRoles={["staff"]}><StaffPage /></ProtectedRoute>,
+    element: <StaffPage />,
   },
   {
     path: "/admin",
-    element: <ProtectedRoute allowedRoles={["admin"]}><AdminLayout /></ProtectedRoute>,
-    children: [
-      { path: "", element: <EnhancedAdminDashboard /> },
-      { path: "dashboard", element: <EnhancedAdminDashboard /> },
-      { path: "users", element: <UserManagement /> },
-      { path: "packages", element: <PackageManagement /> },
-      { path: "profile", element: <AdminProfilePage /> }
-    ]
+    element: <AdminPage />,
   },
   {
     path: "/pricing",
@@ -56,6 +43,26 @@ const router = createBrowserRouter([
   {
     path: "/support",
     element: <SupportPage />,
+  },
+  {
+    path: "/user-history",
+    element: <UserHistoryPage />,
+  },
+  {
+    path: "/personal-report",
+    element: <PersonalReportPage />,
+  },
+  {
+    path: "/charging-session",
+    element: <ChargingSessionPage />,
+  },
+  {
+    path: "/payment/callback",
+    element: <PaymentCallback />,
+  },
+  {
+    path: "/reservation-test",
+    element: <ReservationTestPage />,
   },
   {
     path: "*",

@@ -1,16 +1,21 @@
 import { useState } from 'react';
-import { Card, CardContent } from './ui/card';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Badge } from './ui/badge';
-import { Check, CreditCard, Wallet } from 'lucide-react';
+import { Button } from './ui/button';
+import { Alert, AlertDescription } from './ui/alert';
+import { Check, CreditCard, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export type PaymentMethod = 'momo' | 'vnpay' | 'zalopay' | 'card';
 
 interface PaymentMethodSelectorProps {
-  selectedMethod: PaymentMethod;
+  selectedMethod?: PaymentMethod;
   onMethodChange: (method: PaymentMethod) => void;
+  onContinue?: (method: PaymentMethod) => void;
+  defaultMethod?: PaymentMethod;
   disabled?: boolean;
+  showContinueButton?: boolean;
 }
 
 const paymentMethods = [
@@ -57,19 +62,55 @@ const paymentMethods = [
 ];
 
 export function PaymentMethodSelector({ 
-  selectedMethod, 
+  selectedMethod: propSelectedMethod,
   onMethodChange,
-  disabled = false 
+  onContinue,
+  defaultMethod,
+  disabled = false,
+  showContinueButton = true
 }: PaymentMethodSelectorProps) {
+  const [localSelected, setLocalSelected] = useState<PaymentMethod | undefined>(
+    propSelectedMethod || defaultMethod
+  );
+  const [showError, setShowError] = useState(false);
+
+  const currentMethod = propSelectedMethod !== undefined ? propSelectedMethod : localSelected;
+
+  const handleMethodChange = (method: PaymentMethod) => {
+    if (disabled) return;
+    
+    setLocalSelected(method);
+    setShowError(false);
+    onMethodChange(method);
+    
+    // Show success feedback
+    const methodInfo = paymentMethods.find(m => m.id === method);
+    if (methodInfo) {
+      toast.success(`Đã chọn ${methodInfo.name}`);
+    }
+  };
+
+  const handleContinue = () => {
+    if (!currentMethod) {
+      setShowError(true);
+      toast.error('Vui lòng chọn phương thức thanh toán!');
+      return;
+    }
+
+    if (onContinue) {
+      onContinue(currentMethod);
+    }
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <Label className="text-base font-semibold">
         Chọn phương thức thanh toán
       </Label>
       
       <RadioGroup
-        value={selectedMethod}
-        onValueChange={(value) => onMethodChange(value as PaymentMethod)}
+        value={currentMethod}
+        onValueChange={(value: string) => handleMethodChange(value as PaymentMethod)}
         disabled={disabled}
         className="space-y-3"
       >
@@ -84,7 +125,7 @@ export function PaymentMethodSelector({
               htmlFor={method.id}
               className={`
                 flex cursor-pointer rounded-lg border-2 p-4 transition-all
-                ${selectedMethod === method.id 
+                ${currentMethod === method.id 
                   ? 'border-green-500 bg-green-50 shadow-sm' 
                   : method.color
                 }
@@ -95,7 +136,7 @@ export function PaymentMethodSelector({
                 {/* Payment Icon */}
                 <div className={`
                   w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0
-                  ${selectedMethod === method.id ? 'bg-green-100' : method.iconBg}
+                  ${currentMethod === method.id ? 'bg-green-100' : method.iconBg}
                 `}>
                   {method.id === 'momo' && (
                     <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
@@ -148,7 +189,7 @@ export function PaymentMethodSelector({
                 </div>
 
                 {/* Selected Indicator */}
-                {selectedMethod === method.id && (
+                {currentMethod === method.id && (
                   <div className="flex-shrink-0">
                     <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
                       <Check className="w-4 h-4 text-white" />
@@ -161,8 +202,39 @@ export function PaymentMethodSelector({
         ))}
       </RadioGroup>
 
+      {/* Error Alert */}
+      {showError && !currentMethod && (
+        <Alert className="border-red-200 bg-red-50 animate-in slide-in-from-top-2">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Vui lòng chọn một phương thức thanh toán để tiếp tục
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Continue Button */}
+      {showContinueButton && onContinue && (
+        <div className="flex justify-end pt-2">
+          <Button
+            onClick={handleContinue}
+            disabled={disabled}
+            size="lg"
+            className="min-w-[200px] bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+          >
+            {currentMethod ? (
+              <>
+                <Check className="w-5 h-5 mr-2" />
+                Tiếp tục thanh toán
+              </>
+            ) : (
+              'Chọn phương thức thanh toán'
+            )}
+          </Button>
+        </div>
+      )}
+
       {/* Security Notice */}
-      <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mt-4">
+      <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
           <Check className="w-3 h-3 text-white" />
         </div>
@@ -174,3 +246,11 @@ export function PaymentMethodSelector({
     </div>
   );
 }
+
+// Export helper function to get payment method info
+export const getPaymentMethodInfo = (method: PaymentMethod) => {
+  return paymentMethods.find(m => m.id === method);
+};
+
+// Export payment methods array for external use
+export { paymentMethods as PAYMENT_METHODS };

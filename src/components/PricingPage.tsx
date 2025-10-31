@@ -7,6 +7,7 @@ import { Separator } from "./ui/separator";
 import { Check, Zap, Calculator, TrendingUp, Users } from "lucide-react";
 import { PRICING_PLANS } from "../data/mockDatabase";
 import { useLanguage } from "../hooks/useLanguage";
+import { LanguageSelector } from "./LanguageSelector";
 
 interface PricingPageProps {
   onGetStarted: (planId: string) => void;
@@ -71,6 +72,11 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-16">
+      {/* Language Selector - Top Right */}
+      <div className="flex justify-end mb-4">
+        <LanguageSelector />
+      </div>
+      
       {/* Header */}
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold mb-4">

@@ -123,12 +123,33 @@ export function SupportPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <div></div>
-          <h1 className="text-4xl font-bold flex-1">
+    <div className="min-h-screen">
+      {/* Header with buttons - Top Right of Screen */}
+      <div className="w-full px-8 py-6 text-right">
+        <div className="inline-flex items-center gap-3">
+          <LanguageSelector />
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success("Logged out");
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            {t.signOut}
+          </Button>
+        </div>
+      </div>
+      
+      <div className="container mx-auto px-4 pb-8">
+        {/* Title Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">
             {t.howCanWeHelp.split(" ").map((word, i, arr) => 
               i === arr.length - 2 ? (
                 <span key={i} className="text-green-600">{word} </span>
@@ -137,32 +158,13 @@ export function SupportPage() {
               )
             )}
           </h1>
-          <div className="flex gap-2">
-            <LanguageSelector />
-            <Button
-              variant="outline"
-              onClick={async () => {
-                try {
-                  await logout();
-                  toast.success("Logged out");
-                  navigate('/');
-                } catch (err) {
-                  console.error('Logout failed:', err);
-                  toast.error('Logout failed');
-                }
-              }}
-            >
-              {t.signOut}
-            </Button>
-          </div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            {t.howCanWeHelpDesc}
+          </p>
         </div>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          {t.howCanWeHelpDesc}
-        </p>
-      </div>
 
-      {/* Quick Contact Options */}
-      <div className="grid md:grid-cols-3 gap-6 mb-12">
+        {/* Quick Contact Options */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6 text-center">
             <Phone className="w-8 h-8 text-green-600 mx-auto mb-4" />
@@ -527,6 +529,7 @@ export function SupportPage() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
     </div>
   );
 }

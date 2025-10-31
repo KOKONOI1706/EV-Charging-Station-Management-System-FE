@@ -71,14 +71,17 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      {/* Language Selector - Top Right */}
-      <div className="flex justify-end mb-4">
-        <LanguageSelector />
+    <div className="min-h-screen">
+      {/* Language Selector - Top Right of Screen */}
+      <div className="w-full px-8 py-6 text-right">
+        <div className="inline-block">
+          <LanguageSelector />
+        </div>
       </div>
       
-      {/* Header */}
-      <div className="text-center mb-16">
+      <div className="container mx-auto px-4 pb-8">
+        {/* Header */}
+        <div className="text-center mb-16">
         <h1 className="text-4xl font-bold mb-4">
           <span className="text-green-600">{t.choosePlan}</span>
         </h1>
@@ -313,6 +316,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
           </div>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

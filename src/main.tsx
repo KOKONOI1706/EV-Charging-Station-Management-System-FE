@@ -1,10 +1,17 @@
-
-// MUST BE FIRST: Clear auth data before anything else loads
-// This ensures clean state when running npm run dev
+// Clear localStorage only on first dev server start, not on every hot reload
 if (import.meta.env.DEV) {
-  console.log('🧹 DEV MODE: Clearing all auth data for clean start');
-  localStorage.clear(); // Clear ALL localStorage, not just currentUser
-  sessionStorage.clear();
+  const devSessionKey = 'dev_session_started';
+  const currentDevSession = sessionStorage.getItem(devSessionKey);
+  
+  if (!currentDevSession) {
+    // This is the first load of dev server
+    console.log('🧹 DEV MODE: First start - Clearing localStorage');
+    localStorage.clear();
+    // Mark this dev session as started (will be cleared when browser/tab closes)
+    sessionStorage.setItem(devSessionKey, 'true');
+  } else {
+    console.log('✅ DEV MODE: Hot reload detected - Keeping localStorage');
+  }
 }
 
 import { createRoot } from "react-dom/client";

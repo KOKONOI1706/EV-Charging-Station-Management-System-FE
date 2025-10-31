@@ -94,3 +94,19 @@ export async function getStaffAnalytics(stationId?: string): Promise<StaffAnalyt
     };
   }
 }
+
+/**
+ * Calculate percentage change between two values
+ * @param current - Current value
+ * @param previous - Previous value
+ * @returns Formatted string with + or - sign (e.g., "+15%" or "-5%")
+ */
+export function calculatePercentageChange(current: number, previous: number): string {
+  if (previous === 0) {
+    return current > 0 ? '+100%' : '0%';
+  }
+  
+  const change = ((current - previous) / previous) * 100;
+  const sign = change >= 0 ? '+' : '';
+  return `${sign}${change.toFixed(1)}%`;
+}

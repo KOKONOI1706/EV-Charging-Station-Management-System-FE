@@ -36,6 +36,7 @@ import { LanguageSelector } from './LanguageSelector';
 import { toast } from 'sonner';
 import { ChargingSessionsManagement } from './ChargingSessionsManagement';
 import * as staffStatsApi from '../api/staffStatsApi';
+import * as userStationsApi from '../api/userStationsApi';
 
 interface StationMetrics {
   todaysSessions: number;
@@ -57,34 +58,100 @@ interface StaffAnalytics {
 
 export function EnhancedStaffDashboard() {
   const { t } = useLanguage();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
-  const [selectedStation, setSelectedStation] = useState<string>('all');
+  const [selectedStation, setSelectedStation] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('analytics');
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
   const [analytics, setAnalytics] = useState<StaffAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load stations and user's assigned station
   useEffect(() => {
-    loadData();
-  }, [selectedStation]);
+    const initStations = async () => {
+      try {
+        const stationsData = await MockDatabaseService.getStations();
+        setStations(stationsData);
+        
+        // Try to load user's assigned station from database
+        if (user?.id) {
+          try {
+            const userStationData = await userStationsApi.getUserStation(parseInt(user.id));
+            
+            if (userStationData.stationId && stationsData.some(s => s.id === userStationData.stationId)) {
+              // User has an assigned station in database, use it
+              console.log(`[Staff Dashboard] User assigned to station: ${userStationData.station?.name}`);
+              setSelectedStation(userStationData.stationId);
+            } else {
+              // No assigned station, try localStorage as fallback
+              const savedStationId = localStorage.getItem('staff_selected_station');
+              if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+                setSelectedStation(savedStationId);
+              } else if (stationsData.length > 0) {
+                // Default to first station
+                setSelectedStation(stationsData[0].id);
+              }
+            }
+          } catch (error) {
+            console.error('[Staff Dashboard] Failed to load user station from database, using fallback:', error);
+            // Fallback to localStorage
+            const savedStationId = localStorage.getItem('staff_selected_station');
+            if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+              setSelectedStation(savedStationId);
+            } else if (stationsData.length > 0) {
+              setSelectedStation(stationsData[0].id);
+            }
+          }
+        } else {
+          // No user ID, use localStorage fallback
+          const savedStationId = localStorage.getItem('staff_selected_station');
+          if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+            setSelectedStation(savedStationId);
+          } else if (stationsData.length > 0) {
+            setSelectedStation(stationsData[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load stations:', error);
+        toast.error('Không thể tải danh sách trạm');
+      }
+    };
+    initStations();
+  }, [user]);
+
+  // Load data when station changes
+  useEffect(() => {
+    if (selectedStation) {
+      // Save to localStorage as backup
+      localStorage.setItem('staff_selected_station', selectedStation);
+      
+      // Save to database if user is logged in
+      if (user?.id) {
+        userStationsApi.updateUserStation(parseInt(user.id), selectedStation)
+          .then(() => {
+            console.log(`[Staff Dashboard] Saved station ${selectedStation} to database for user ${user.id}`);
+          })
+          .catch(error => {
+            console.error('[Staff Dashboard] Failed to save station to database:', error);
+            // Continue anyway, localStorage is the fallback
+          });
+      }
+      
+      loadData();
+    }
+  }, [selectedStation, user]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const stationsData = await MockDatabaseService.getStations();
-      setStations(stationsData);
       
       // Fetch REAL staff metrics from database
-      const metricsData = await staffStatsApi.getStaffMetrics(
-        selectedStation === 'all' ? undefined : selectedStation
-      );
+      const metricsData = await staffStatsApi.getStaffMetrics(selectedStation);
       setMetrics(metricsData);
 
       // Fetch REAL analytics data from database
-      const analyticsData = await staffStatsApi.getStaffAnalytics(
-        selectedStation === 'all' ? undefined : selectedStation
-      );
+      const analyticsData = await staffStatsApi.getStaffAnalytics(selectedStation);
       setAnalytics(analyticsData);
 
     } catch (error) {
@@ -129,10 +196,9 @@ export function EnhancedStaffDashboard() {
           <LanguageSelector />
           <Select value={selectedStation} onValueChange={setSelectedStation}>
             <SelectTrigger className="w-48">
-              <SelectValue />
+              <SelectValue placeholder="Chọn trạm..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t.allStations}</SelectItem>
               {stations.map((station) => (
                 <SelectItem key={station.id} value={station.id}>
                   {station.name}
@@ -249,7 +315,7 @@ export function EnhancedStaffDashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="analytics" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
@@ -263,7 +329,7 @@ export function EnhancedStaffDashboard() {
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement 
             userRole="staff" 
-            stationId={selectedStation !== 'all' ? parseInt(selectedStation) : undefined}
+            stationId={selectedStation}
           />
         </TabsContent>
 

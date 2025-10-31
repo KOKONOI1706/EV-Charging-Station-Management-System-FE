@@ -34,7 +34,8 @@ import {
   Activity,
   CheckCircle2,
   XCircle,
-  Eye
+  Eye,
+  AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -94,7 +95,7 @@ interface SessionStats {
 interface ChargingSessionsManagementProps {
   userRole: "admin" | "staff" | "customer";
   userId?: number;
-  stationId?: number;
+  stationId?: string; // UUID for stations table
 }
 
 export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProps> = ({
@@ -114,7 +115,13 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
   useEffect(() => {
     // Only fetch if we have the required IDs based on role
     if (userRole === "customer" && !userId) return;
-    if (userRole === "staff" && !stationId) return;
+    if (userRole === "staff" && (!stationId || stationId === "all")) {
+      // Staff must select a specific station
+      setLoading(false);
+      setSessions([]);
+      setStats(null);
+      return;
+    }
     
     fetchSessions();
     fetchStats();
@@ -130,19 +137,27 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
 
       if (userRole === "customer" && userId) {
         params.append("userId", userId.toString());
-      } else if (userRole === "staff" && stationId) {
-        params.append("stationId", stationId.toString());
+      } else if (userRole === "staff" && stationId && stationId !== "all") {
+        params.append("stationId", stationId); // Already a string (UUID)
+        console.log('[ChargingSessionsManagement] Fetching for station:', stationId);
       } else if (userRole === "customer" || userRole === "staff") {
         // Missing required ID, don't fetch
+        console.log('[ChargingSessionsManagement] Missing required ID, userRole:', userRole, 'stationId:', stationId);
         setLoading(false);
         return;
       }
 
-      const response = await fetch(`${API_URL}/charging-sessions?${params}`);
+      const url = `${API_URL}/charging-sessions?${params}`;
+      console.log('[ChargingSessionsManagement] Fetching URL:', url);
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch sessions");
 
       const result = await response.json();
+      console.log('[ChargingSessionsManagement] API response:', result);
+      
       setSessions(result.data || result);
+      console.log('[ChargingSessionsManagement] Sessions set:', result.data?.length || 0, 'items');
     } catch (error) {
       console.error("Error fetching sessions:", error);
       toast.error("Không thể tải danh sách phiên sạc");
@@ -155,20 +170,28 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
     try {
       // Only fetch if we have required IDs
       if (userRole === "customer" && !userId) return;
-      if (userRole === "staff" && !stationId) return;
+      if (userRole === "staff" && (!stationId || stationId === "all")) {
+        console.log('[ChargingSessionsManagement] Stats: Station not selected');
+        return;
+      }
 
       const params = new URLSearchParams({ role: userRole });
 
       if (userRole === "customer" && userId) {
         params.append("userId", userId.toString());
-      } else if (userRole === "staff" && stationId) {
-        params.append("stationId", stationId.toString());
+      } else if (userRole === "staff" && stationId && stationId !== "all") {
+        params.append("stationId", stationId); // Already a string (UUID)
       }
 
-      const response = await fetch(`${API_URL}/charging-sessions/stats/summary?${params}`);
+      const url = `${API_URL}/charging-sessions/stats/summary?${params}`;
+      console.log('[ChargingSessionsManagement] Fetching stats URL:', url);
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch stats");
 
       const result = await response.json();
+      console.log('[ChargingSessionsManagement] Stats response:', result);
+      
       setStats(result.data || result);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -220,8 +243,28 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
 
   return (
     <div className="space-y-6 p-6">
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải dữ liệu phiên sạc...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {!loading && !stats && (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardContent className="p-6 text-center">
+            <AlertTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
+            <p className="text-lg font-semibold">Chưa chọn trạm</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Statistics Cards */}
-      {stats && (
+      {!loading && stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -271,14 +314,15 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
       )}
 
       {/* Sessions Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>
-              {userRole === "admin" && "Tất cả phiên sạc"}
-              {userRole === "staff" && "Phiên sạc tại trạm"}
-              {userRole === "customer" && "Lịch sử sạc của bạn"}
-            </CardTitle>
+      {!loading && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                {userRole === "admin" && "Tất cả phiên sạc"}
+                {userRole === "staff" && "Phiên sạc tại trạm"}
+                {userRole === "customer" && "Lịch sử sạc của bạn"}
+              </CardTitle>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Lọc theo trạng thái" />
@@ -401,6 +445,7 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Session Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>

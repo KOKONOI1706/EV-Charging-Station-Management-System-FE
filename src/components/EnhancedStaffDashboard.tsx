@@ -33,6 +33,8 @@ import {
   Calendar
 } from 'lucide-react';
 import { Station, MockDatabaseService } from '../data/mockDatabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';

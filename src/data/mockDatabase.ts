@@ -1,4 +1,5 @@
 // Mock Database Service for EV Charging System
+import { fetchStations as fetchStationsFromApi, fetchStationById as fetchStationByIdFromApi } from '../api/stationApi';
 
 export interface ChargingPoint {
   id: string;
@@ -16,6 +17,8 @@ export interface ChargingPoint {
 }
 
 export interface Station {
+  longitude: number | (() => number);
+  latitude: number | (() => number);
   id: string;
   name: string;
   address: string;
@@ -38,6 +41,7 @@ export interface Station {
   lat: number;
   lng: number;
   network: string;
+  status?: 'active' | 'maintenance' | 'offline';
   chargingPoints: ChargingPoint[];
   layout: {
     width: number; // grid width
@@ -121,8 +125,10 @@ export interface SupportTicket {
 // Import enhanced stations data
 import { ENHANCED_MOCK_STATIONS } from './mockStationsData';
 
-// Mock Data
-export const MOCK_STATIONS: Station[] = ENHANCED_MOCK_STATIONS;
+// Mock Data — keep a mutable array that callers read from. We'll attempt to hydrate
+// it from the backend when `getStations()` is called; if that fails we use the
+// in-file ENHANCED_MOCK_STATIONS fallback.
+export let MOCK_STATIONS: Station[] = ENHANCED_MOCK_STATIONS;
 
 
 export const MOCK_USERS: User[] = [
@@ -284,13 +290,38 @@ export const MOCK_BOOKINGS: Booking[] = [
 // Mock Database Service Functions
 export class MockDatabaseService {
   static async getStations(): Promise<Station[]> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      // Try to fetch from backend API first
+      const stations = await fetchStationsFromApi();
+      
+      if (Array.isArray(stations) && stations.length > 0) {
+        // Update local cache with backend data
+        MOCK_STATIONS = stations;
+        console.log(`✅ Loaded ${stations.length} stations from backend API`);
+        return stations;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch from backend API, using mock data:', error);
+    }
+
+    // Fallback to mock data
     return MOCK_STATIONS;
   }
 
   static async getStationById(id: string): Promise<Station | null> {
-    await new Promise(resolve => setTimeout(resolve, 200));
+    try {
+      // Try to fetch from backend API first
+      const station = await fetchStationByIdFromApi(id);
+      
+      if (station) {
+        console.log(`✅ Loaded station ${id} from backend API`);
+        return station;
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to fetch station ${id} from backend API, using mock data:`, error);
+    }
+
+    // Fallback to mock data
     return MOCK_STATIONS.find(station => station.id === id) || null;
   }
 

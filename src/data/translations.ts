@@ -301,6 +301,79 @@ export interface Translation {
   contactUs: string;
   systemStatus: string;
   
+  // Support FAQ
+  frequentlyAskedQuestions: string;
+  searchForAnswers: string;
+  selectCategory: string;
+  allTopics: string;
+  chargingSessions: string;
+  technicalIssues: string;
+  billingPayment: string;
+  reservations: string;
+  noFaqsFound: string;
+  
+  // FAQ Items
+  faqQ1: string;
+  faqA1: string;
+  faqQ2: string;
+  faqA2: string;
+  faqQ3: string;
+  faqA3: string;
+  faqQ4: string;
+  faqA4: string;
+  faqQ5: string;
+  faqA5: string;
+  faqQ6: string;
+  faqA6: string;
+  
+  // Contact Form
+  submitSupportTicket: string;
+  subject: string;
+  subjectPlaceholder: string;
+  category: string;
+  selectIssueCategory: string;
+  categoryCharging: string;
+  categoryBilling: string;
+  categoryTechnical: string;
+  categoryAccount: string;
+  categoryOther: string;
+  priority: string;
+  priorityLow: string;
+  priorityMedium: string;
+  priorityHigh: string;
+  priorityUrgent: string;
+  message: string;
+  messagePlaceholder: string;
+  submitTicket: string;
+  fillAllFields: string;
+  ticketSubmitted: string;
+  
+  // Contact Info
+  contactInformation: string;
+  supportHotline: string;
+  headquarters: string;
+  supportHours: string;
+  emergencyContacts: string;
+  stationEmergency: string;
+  emergencyMessage: string;
+  
+  // System Status
+  allSystemsOperational: string;
+  operationalStatus: string;
+  coreServices: string;
+  chargingNetwork: string;
+  mobileApp: string;
+  paymentSystem: string;
+  supportServices: string;
+  customerSupport: string;
+  accountManagement: string;
+  webPortal: string;
+  recentUpdates: string;
+  statusUpdate1Title: string;
+  statusUpdate1Desc: string;
+  statusUpdate2Title: string;
+  statusUpdate2Desc: string;
+  
   // Footer
   powering: string;
   quickLinks: string;
@@ -649,6 +722,79 @@ export const translations: Record<Language, Translation> = {
     contactUs: "Contact Us",
     systemStatus: "System Status",
     
+    // Support FAQ
+    frequentlyAskedQuestions: "Frequently Asked Questions",
+    searchForAnswers: "Search for answers...",
+    selectCategory: "Select category",
+    allTopics: "All Topics",
+    chargingSessions: "Charging Sessions",
+    technicalIssues: "Technical Issues",
+    billingPayment: "Billing & Payment",
+    reservations: "Reservations",
+    noFaqsFound: "No FAQs found matching your search criteria.",
+    
+    // FAQ Items
+    faqQ1: "How do I start a charging session?",
+    faqA1: "To start a charging session, locate your reserved charging station using the app, plug in your vehicle, and tap 'Start Session' in the app. The session will begin automatically.",
+    faqQ2: "What if a charging station is not working?",
+    faqA2: "If you encounter a faulty station, please report it immediately through the app or call our 24/7 support line. We'll help you find an alternative station and may provide charging credits for the inconvenience.",
+    faqQ3: "How are charging fees calculated?",
+    faqA3: "Charging fees are calculated based on the amount of electricity consumed (kWh) and the station's per-kWh rate. Your plan discount is automatically applied. You can view detailed pricing before starting each session.",
+    faqQ4: "Can I cancel or modify my reservation?",
+    faqA4: "Yes, you can cancel or modify reservations up to 15 minutes before your scheduled time through the app or website. No cancellation fees apply for changes made with sufficient notice.",
+    faqQ5: "What types of connectors are available?",
+    faqA5: "Our stations support CCS, CHAdeMO, and Type 2 connectors. The app shows available connector types for each station. Most newer EVs use CCS connectors.",
+    faqQ6: "How do I update my payment method?",
+    faqA6: "You can update your payment method in the app under Settings > Payment Methods or in your account dashboard. Changes take effect immediately for future sessions.",
+    
+    // Contact Form
+    submitSupportTicket: "Submit a Support Ticket",
+    subject: "Subject",
+    subjectPlaceholder: "Brief description of your issue",
+    category: "Category",
+    selectIssueCategory: "Select issue category",
+    categoryCharging: "Charging Issues",
+    categoryBilling: "Billing & Payment",
+    categoryTechnical: "Technical Problems",
+    categoryAccount: "Account Management",
+    categoryOther: "Other",
+    priority: "Priority",
+    priorityLow: "Low",
+    priorityMedium: "Medium",
+    priorityHigh: "High",
+    priorityUrgent: "Urgent",
+    message: "Message",
+    messagePlaceholder: "Please provide detailed information about your issue...",
+    submitTicket: "Submit Ticket",
+    fillAllFields: "Please fill in all required fields.",
+    ticketSubmitted: "Support ticket submitted! We'll get back to you within 24 hours.",
+    
+    // Contact Info
+    contactInformation: "Contact Information",
+    supportHotline: "24/7 Support Hotline",
+    headquarters: "Headquarters",
+    supportHours: "Support Hours",
+    emergencyContacts: "Emergency Contacts",
+    stationEmergency: "Station Emergency",
+    emergencyMessage: "If you're stuck at a station or experiencing safety issues, call: 1-800-EMERGENCY",
+    
+    // System Status
+    allSystemsOperational: "All Systems Operational",
+    operationalStatus: "Operational",
+    coreServices: "Core Services",
+    chargingNetwork: "Charging Network",
+    mobileApp: "Mobile App",
+    paymentSystem: "Payment System",
+    supportServices: "Support Services",
+    customerSupport: "Customer Support",
+    accountManagement: "Account Management",
+    webPortal: "Web Portal",
+    recentUpdates: "Recent Updates",
+    statusUpdate1Title: "System Performance Optimization",
+    statusUpdate1Desc: "Improved app loading times and charging session reliability.",
+    statusUpdate2Title: "New Station Locations Added",
+    statusUpdate2Desc: "15 new charging stations now available across the network.",
+    
     // Footer
     powering: "Powering the future of electric mobility with reliable, fast, and accessible charging solutions.",
     quickLinks: "Quick Links",
@@ -994,6 +1140,79 @@ export const translations: Record<Language, Translation> = {
     faq: "Câu hỏi thường gặp",
     contactUs: "Liên hệ",
     systemStatus: "Trạng thái hệ thống",
+    
+    // Support FAQ
+    frequentlyAskedQuestions: "Câu hỏi thường gặp",
+    searchForAnswers: "Tìm kiếm câu trả lời...",
+    selectCategory: "Chọn danh mục",
+    allTopics: "Tất cả chủ đề",
+    chargingSessions: "Phiên sạc",
+    technicalIssues: "Vấn đề kỹ thuật",
+    billingPayment: "Thanh toán & Hóa đơn",
+    reservations: "Đặt chỗ",
+    noFaqsFound: "Không tìm thấy câu hỏi nào phù hợp với tiêu chí tìm kiếm của bạn.",
+    
+    // FAQ Items
+    faqQ1: "Làm thế nào để bắt đầu phiên sạc?",
+    faqA1: "Để bắt đầu phiên sạc, hãy tìm trạm sạc đã đặt của bạn bằng ứng dụng, cắm xe của bạn vào và nhấn 'Bắt đầu phiên' trong ứng dụng. Phiên sẽ tự động bắt đầu.",
+    faqQ2: "Nếu trạm sạc không hoạt động thì sao?",
+    faqA2: "Nếu bạn gặp trạm bị lỗi, vui lòng báo cáo ngay qua ứng dụng hoặc gọi đường dây hỗ trợ 24/7 của chúng tôi. Chúng tôi sẽ giúp bạn tìm trạm thay thế và có thể cung cấp tín dụng sạc để bù đắp sự bất tiện.",
+    faqQ3: "Phí sạc được tính như thế nào?",
+    faqA3: "Phí sạc được tính dựa trên lượng điện tiêu thụ (kWh) và giá mỗi kWh của trạm. Giảm giá theo gói của bạn được tự động áp dụng. Bạn có thể xem giá chi tiết trước khi bắt đầu mỗi phiên.",
+    faqQ4: "Tôi có thể hủy hoặc thay đổi đặt chỗ không?",
+    faqA4: "Có, bạn có thể hủy hoặc thay đổi đặt chỗ tới 15 phút trước giờ đã lên lịch qua ứng dụng hoặc trang web. Không áp dụng phí hủy cho các thay đổi được thực hiện với thông báo đầy đủ.",
+    faqQ5: "Có những loại đầu sạc nào?",
+    faqA5: "Các trạm của chúng tôi hỗ trợ đầu sạc CCS, CHAdeMO và Type 2. Ứng dụng hiển thị các loại đầu sạc có sẵn cho mỗi trạm. Hầu hết xe điện mới hơn sử dụng đầu sạc CCS.",
+    faqQ6: "Làm thế nào để cập nhật phương thức thanh toán?",
+    faqA6: "Bạn có thể cập nhật phương thức thanh toán trong ứng dụng tại Cài đặt > Phương thức thanh toán hoặc trong bảng điều khiển tài khoản. Thay đổi có hiệu lực ngay lập tức cho các phiên trong tương lai.",
+    
+    // Contact Form
+    submitSupportTicket: "Gửi yêu cầu hỗ trợ",
+    subject: "Chủ đề",
+    subjectPlaceholder: "Mô tả ngắn gọn vấn đề của bạn",
+    category: "Danh mục",
+    selectIssueCategory: "Chọn danh mục vấn đề",
+    categoryCharging: "Vấn đề sạc",
+    categoryBilling: "Thanh toán & Hóa đơn",
+    categoryTechnical: "Vấn đề kỹ thuật",
+    categoryAccount: "Quản lý tài khoản",
+    categoryOther: "Khác",
+    priority: "Độ ưu tiên",
+    priorityLow: "Thấp",
+    priorityMedium: "Trung bình",
+    priorityHigh: "Cao",
+    priorityUrgent: "Khẩn cấp",
+    message: "Tin nhắn",
+    messagePlaceholder: "Vui lòng cung cấp thông tin chi tiết về vấn đề của bạn...",
+    submitTicket: "Gửi yêu cầu",
+    fillAllFields: "Vui lòng điền đầy đủ các trường bắt buộc.",
+    ticketSubmitted: "Yêu cầu hỗ trợ đã được gửi! Chúng tôi sẽ phản hồi trong vòng 24 giờ.",
+    
+    // Contact Info
+    contactInformation: "Thông tin liên hệ",
+    supportHotline: "Đường dây nóng hỗ trợ 24/7",
+    headquarters: "Trụ sở chính",
+    supportHours: "Giờ hỗ trợ",
+    emergencyContacts: "Liên hệ khẩn cấp",
+    stationEmergency: "Trạm khẩn cấp",
+    emergencyMessage: "Nếu bạn bị mắc kẹt tại trạm hoặc gặp vấn đề an toàn, hãy gọi: 1-800-EMERGENCY",
+    
+    // System Status
+    allSystemsOperational: "Tất cả hệ thống hoạt động bình thường",
+    operationalStatus: "Hoạt động",
+    coreServices: "Dịch vụ cốt lõi",
+    chargingNetwork: "Mạng lưới sạc",
+    mobileApp: "Ứng dụng di động",
+    paymentSystem: "Hệ thống thanh toán",
+    supportServices: "Dịch vụ hỗ trợ",
+    customerSupport: "Hỗ trợ khách hàng",
+    accountManagement: "Quản lý tài khoản",
+    webPortal: "Cổng web",
+    recentUpdates: "Cập nhật gần đây",
+    statusUpdate1Title: "Tối ưu hóa hiệu suất hệ thống",
+    statusUpdate1Desc: "Cải thiện thời gian tải ứng dụng và độ tin cậy của phiên sạc.",
+    statusUpdate2Title: "Thêm vị trí trạm mới",
+    statusUpdate2Desc: "15 trạm sạc mới hiện có sẵn trên toàn mạng lưới.",
     
     // Footer
     powering: "Thúc đẩy tương lai của di chuyển điện với các giải pháp sạc đáng tin cậy, nhanh chóng và dễ tiếp cận.",

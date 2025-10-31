@@ -1,46 +1,72 @@
 import { useEffect, useState } from "react";
 import { UserDashboard } from "../components/UserDashboard";
 import { useAuth } from "../contexts/AuthContext";
-import { Booking, MockDatabaseService } from "../data/mockDatabase";
+import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
+import { useNavigate } from "react-router-dom";
+
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
+  // Redirect to auth if not logged in
   useEffect(() => {
-    if (user?.id) {
-      loadUserBookings();
+    if (!isAuthenticated) {
+      navigate('/auth');
     }
-  }, [user]);
+  }, [isAuthenticated, navigate]);
 
-  const loadUserBookings = async () => {
-    try {
-      setIsLoading(true);
-      if (!user?.id) {
-        setBookings([]);
-        return;
-      }
-      const userBookings = await MockDatabaseService.getUserBookings(user.id);
-      setBookings(userBookings);
-    } catch (error) {
-      console.error("Error loading bookings:", error);
-      setBookings([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return null;
   }
 
-  return <UserDashboard bookings={bookings} userName={user?.name || "User"} />;
+  // Check for pending charging session from reservation check-in
+  const checkPendingSession = () => {
+    const pendingData = localStorage.getItem('pending-charging-session');
+    if (pendingData) {
+      try {
+        const data = JSON.parse(pendingData);
+        // Don't clear yet - will be cleared after session starts successfully
+        return data;
+      } catch (e) {
+        console.error('Error parsing pending session:', e);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const pendingSession = checkPendingSession();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header
+        onAuthClick={() => navigate('/auth')}
+        isAuthenticated={isAuthenticated}
+        userName={user?.name}
+        currentView="dashboard"
+        onNavigate={(view) => {
+          if (view === 'home') navigate('/');
+          else if (view === 'pricing') navigate('/pricing');
+          else if (view === 'support') navigate('/support');
+        }}
+        onOpenProfile={() => navigate('/profile')}
+      />
+      
+      <main className="py-8">
+        <UserDashboard 
+          bookings={[]} 
+          userName={user?.name || "User"}
+          autoOpenStartCharging={pendingSession?.autoStartCharging}
+          pendingChargingData={pendingSession}
+        />
+      </main>
+
+      <Footer onNavigate={(view) => {
+        if (view === 'pricing') navigate('/pricing');
+        else navigate('/');
+      }} />
+    </div>
+  );
 }

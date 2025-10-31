@@ -28,6 +28,14 @@ interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirmBooking: (booking: Partial<Booking>) => void;
+  onStartCharging?: (bookingData: {
+    pointId: number;
+    pointName: string;
+    stationName: string;
+    powerKw: number;
+    pricePerKwh: number;
+    bookingId?: number;
+  }) => void;
 }
 
 export function BookingModal({
@@ -35,6 +43,7 @@ export function BookingModal({
   isOpen,
   onClose,
   onConfirmBooking,
+  onStartCharging,
 }: BookingModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date()
@@ -76,9 +85,9 @@ export function BookingModal({
     setStep(3);
   };
 
-  const calculatePrice = () => {
-    if (!station) return 0;
-    const pricePerKwh = station.pricePerKwh || parseFloat(station.price.replace("$", "").replace("/kWh", ""));
+  const calculatePrice = (): string => {
+    if (!station) return "0.00";
+    const pricePerKwh = station.pricePerKwh ?? parseFloat(station.price.replace("$", "").replace("/kWh", ""));
     const estimatedKwh = parseInt(duration) * 25; // Assuming 25kWh per hour
     return (pricePerKwh * estimatedKwh).toFixed(2);
   };
@@ -286,11 +295,41 @@ export function BookingModal({
                   Duration: {duration} hours
                 </p>
               </div>
+              
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                <h4 className="font-semibold text-green-800 mb-2">✨ Ready to Charge?</h4>
+                <p className="text-sm text-green-700 mb-3">
+                  Are you already at the station? Start charging now!
+                </p>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                  onClick={() => {
+                    if (onStartCharging && station) {
+                      // Mock data - in production, get from actual booking
+                      onStartCharging({
+                        pointId: 1, // Should come from booking/station
+                        pointName: "Point #1",
+                        stationName: station.name,
+                        powerKw: station.powerKw || 150,
+                        pricePerKwh: station.pricePerKwh || 5000,
+                        bookingId: Date.now(), // Should be actual booking ID
+                      });
+                      resetModal();
+                    }
+                  }}
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  Yes, Start Charging Now
+                </Button>
+              </div>
+
               <Button
                 onClick={resetModal}
-                className="w-full bg-green-600 hover:bg-green-700"
+                variant="outline"
+                className="w-full"
               >
-                Done
+                No, I'll Start Later
               </Button>
             </div>
           )}

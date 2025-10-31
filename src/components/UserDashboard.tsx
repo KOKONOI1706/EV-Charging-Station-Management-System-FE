@@ -23,6 +23,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { ProfileModal } from "./ProfileModal";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { AuthService } from "../services/authService";
+import { VehicleManagement } from "./VehicleManagement";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -230,10 +231,11 @@ export function UserDashboard({
       </div>
 
       <Tabs defaultValue="current" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="current">{t.current}</TabsTrigger>
           <TabsTrigger value="upcoming">{t.upcoming}</TabsTrigger>
           <TabsTrigger value="history">{t.history}</TabsTrigger>
+          <TabsTrigger value="vehicles">{t.myVehicles}</TabsTrigger>
           <TabsTrigger value="settings">{t.settings}</TabsTrigger>
         </TabsList>
 
@@ -336,6 +338,10 @@ export function UserDashboard({
 
         <TabsContent value="history">
           <ChargingHistory limit={20} />
+        </TabsContent>
+
+        <TabsContent value="vehicles">
+          <VehicleManagement />
         </TabsContent>
 
         <TabsContent value="settings">

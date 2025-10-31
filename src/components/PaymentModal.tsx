@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Separator } from './ui/separator';
@@ -14,6 +14,9 @@ import {
 } from 'lucide-react';
 import { PaymentMethodSelector, PaymentMethod } from './PaymentMethodSelector';
 import { toast } from 'sonner';
+
+// API configuration
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 interface PaymentModalProps {
   open: boolean;
@@ -39,6 +42,13 @@ export function PaymentModal({
   sessionData,
   onPaymentSuccess
 }: PaymentModalProps) {
+  console.log('🎨 PaymentModal rendered:', {
+    open,
+    sessionId,
+    hasSessionData: !!sessionData,
+    sessionData
+  });
+
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('momo');
   const [loading, setLoading] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
@@ -73,7 +83,7 @@ export function PaymentModal({
       // Call appropriate payment API based on selected method
       switch (selectedMethod) {
         case 'momo':
-          response = await fetch('http://localhost:5000/api/payments/momo/create', {
+          response = await fetch(`${API_BASE_URL}/payments/momo/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -147,7 +157,7 @@ export function PaymentModal({
       attempts++;
       
       try {
-        const response = await fetch(`http://localhost:5000/api/payments/momo/status/${orderId}`);
+        const response = await fetch(`${API_BASE_URL}/payments/momo/status/${orderId}`);
         const data = await response.json();
         
         if (data.success && data.data.status === 'Completed') {
@@ -179,6 +189,9 @@ export function PaymentModal({
             <CreditCard className="w-6 h-6 text-green-600" />
             Thanh toán phiên sạc
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Thanh toán cho phiên sạc xe điện của bạn
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">

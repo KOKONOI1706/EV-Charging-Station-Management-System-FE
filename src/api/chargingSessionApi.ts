@@ -31,7 +31,7 @@ export interface ChargingSession {
       id: string;
       name: string;
       address: string;
-      price_rate: number;
+      price_per_kwh: number;
     };
   };
   vehicles?: {

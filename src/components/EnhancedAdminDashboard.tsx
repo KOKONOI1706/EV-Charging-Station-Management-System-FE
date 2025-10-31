@@ -606,7 +606,7 @@ export function EnhancedAdminDashboard() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="debug">Debug Mode</Label>
                       <p className="text-sm text-gray-600">Enable detailed logging</p>
@@ -616,7 +616,7 @@ export function EnhancedAdminDashboard() {
                       checked={settings.debugMode}
                       onCheckedChange={(checked: boolean) => handleSettingChange('debugMode', checked)}
                     />
-                  </div>
+                    </div>
                 </div>
               </CardContent>
             </Card>

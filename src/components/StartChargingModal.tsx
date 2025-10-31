@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -56,8 +56,9 @@ export function StartChargingModal({
       return;
     }
 
-    if (!meterStart || parseFloat(meterStart) <= 0) {
-      setError('Please enter a valid meter reading');
+    const parsedValue = parseFloat(meterStart);
+    if (!meterStart || isNaN(parsedValue) || parsedValue < 0 || parsedValue > 10000) {
+      setError('Please enter a valid meter reading (0-10,000 kWh)');
       return;
     }
 
@@ -104,6 +105,9 @@ export function StartChargingModal({
             <Zap className="w-5 h-5 text-green-600" />
             Start Charging Session
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Bắt đầu phiên sạc xe điện của bạn
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -143,14 +147,15 @@ export function StartChargingModal({
               type="number"
               step="0.01"
               min="0"
-              placeholder="e.g., 12500.5"
+              max="10000"
+              placeholder="e.g., 0 or 150.5"
               value={meterStart}
               onChange={(e) => setMeterStart(e.target.value)}
               disabled={loading}
               required
             />
             <p className="text-xs text-gray-500">
-              Enter the meter reading shown on the charging point display
+              Enter the meter reading shown on the charging point (typically 0 to start fresh, or current vehicle meter reading if continuing)
             </p>
           </div>
 

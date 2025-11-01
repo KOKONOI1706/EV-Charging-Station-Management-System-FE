@@ -35,6 +35,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { LanguageSelector } from './LanguageSelector';
 import { toast } from 'sonner';
 import { ChargingSessionsManagement } from './ChargingSessionsManagement';
+import { ChargingPointsManagement } from './ChargingPointsManagement';
 import * as staffStatsApi from '../api/staffStatsApi';
 import * as userStationsApi from '../api/userStationsApi';
 
@@ -316,9 +317,10 @@ export function EnhancedStaffDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
           <TabsTrigger value="sessions">{t.sessions}</TabsTrigger>
           <TabsTrigger value="stations">{t.stations}</TabsTrigger>
           <TabsTrigger value="maintenance">{t.maintenance}</TabsTrigger>
@@ -329,6 +331,14 @@ export function EnhancedStaffDashboard() {
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement 
             userRole="staff" 
+            stationId={selectedStation}
+          />
+        </TabsContent>
+
+        {/* Charging Points Management */}
+        <TabsContent value="chargingPoints">
+          <ChargingPointsManagement
+            userRole="staff"
             stationId={selectedStation}
           />
         </TabsContent>

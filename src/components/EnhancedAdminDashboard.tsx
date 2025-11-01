@@ -30,6 +30,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { LanguageSelector } from "./LanguageSelector";
 import { toast } from "sonner";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
+import { ChargingPointsManagement } from "./ChargingPointsManagement";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -230,9 +231,10 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
           <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
           <TabsTrigger value="reports">{t.reports}</TabsTrigger>
@@ -242,6 +244,11 @@ export function EnhancedAdminDashboard() {
         {/* Charging Sessions Management */}
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement userRole="admin" />
+        </TabsContent>
+
+        {/* Charging Points Management */}
+        <TabsContent value="chargingPoints">
+          <ChargingPointsManagement userRole="admin" />
         </TabsContent>
 
         {/* Overview */}

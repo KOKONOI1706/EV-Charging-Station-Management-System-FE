@@ -170,7 +170,14 @@ export function SupportPage() {
             <Phone className="w-8 h-8 text-green-600 mx-auto mb-4" />
             <h3 className="font-semibold mb-2">{t.callUs}</h3>
             <p className="text-gray-600 mb-4">{t.supportAvailable}</p>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                window.location.href = 'tel:1-800-CHARGE-1';
+                toast.success('Đang mở ứng dụng điện thoại...');
+              }}
+            >
               <Phone className="w-4 h-4 mr-2" />
               1-800-CHARGE-1
             </Button>
@@ -182,7 +189,18 @@ export function SupportPage() {
             <MessageCircle className="w-8 h-8 text-blue-600 mx-auto mb-4" />
             <h3 className="font-semibold mb-2">{t.liveChat}</h3>
             <p className="text-gray-600 mb-4">{t.avgResponse}</p>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                // Switch to contact tab
+                const contactTab = document.querySelector('[value="contact"]') as HTMLElement;
+                if (contactTab) {
+                  contactTab.click();
+                  toast.success('Chuyển sang form liên hệ');
+                }
+              }}
+            >
               <MessageCircle className="w-4 h-4 mr-2" />
               {t.startChat}
             </Button>
@@ -194,7 +212,14 @@ export function SupportPage() {
             <Mail className="w-8 h-8 text-purple-600 mx-auto mb-4" />
             <h3 className="font-semibold mb-2">{t.emailSupport}</h3>
             <p className="text-gray-600 mb-4">{t.responseTime}</p>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                window.location.href = 'mailto:support@chargetech.com?subject=Support Request';
+                toast.success('Đang mở ứng dụng email...');
+              }}
+            >
               <Mail className="w-4 h-4 mr-2" />
               {t.sendEmail}
             </Button>
@@ -352,21 +377,39 @@ export function SupportPage() {
                   <CardTitle>{t.contactInformation}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    onClick={() => {
+                      window.location.href = 'tel:1-800-CHARGE-1';
+                      toast.success('Đang gọi hotline hỗ trợ...');
+                    }}
+                  >
                     <Phone className="w-5 h-5 text-green-600" />
                     <div>
                       <p className="font-medium">{t.supportHotline}</p>
                       <p className="text-gray-600">1-800-CHARGE-1</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    onClick={() => {
+                      window.location.href = 'mailto:support@chargetech.com?subject=Support Request';
+                      toast.success('Đang mở email...');
+                    }}
+                  >
                     <Mail className="w-5 h-5 text-blue-600" />
                     <div>
                       <p className="font-medium">{t.emailSupport}</p>
                       <p className="text-gray-600">support@chargetech.com</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    onClick={() => {
+                      window.open('https://www.google.com/maps/search/123+Electric+Ave,+San+Francisco,+CA+94105', '_blank');
+                      toast.success('Đang mở Google Maps...');
+                    }}
+                  >
                     <MapPin className="w-5 h-5 text-purple-600" />
                     <div>
                       <p className="font-medium">{t.headquarters}</p>

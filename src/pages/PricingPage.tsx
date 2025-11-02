@@ -1,20 +1,20 @@
 ﻿import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { PricingPage as P } from "../components/PricingPage";
+import { NewPricingPage } from "../components/NewPricingPage";
 import { toast } from "sonner";
 
 export default function PricingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const handleGetStarted = (planId: number) => {
+  const handleGetStarted = (packageId: number) => {
     if (!isAuthenticated) {
       toast.error("Bạn cần đăng nhập để mua gói dịch vụ");
       navigate("/auth");
       return;
     }
-    toast.success(`Đã chọn gói ${planId}`);
+    toast.success(`Đã chọn gói ${packageId}`);
   };
 
-  return <P onGetStarted={handleGetStarted} />;
+  return <NewPricingPage onGetStarted={handleGetStarted} />;
 }

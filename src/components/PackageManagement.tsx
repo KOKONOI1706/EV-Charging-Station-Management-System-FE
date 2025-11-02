@@ -73,28 +73,72 @@ const PackageManagement: React.FC = () => {
     setIsDialogOpen(false);
   };
 
-  const extractBenefits = (jsonString: string): string[] => {
-    try {
-      const data = JSON.parse(jsonString);
-      if (data.features && Array.isArray(data.features)) {
-        return data.features;
-      } else if (Array.isArray(data)) {
-        return data;
+  interface BenefitsStructure {
+    label: string;
+    features: string[];
+    max_sessions: number | null;
+    discount_rate: number;
+    charging_speed: string;
+    priority_support: boolean;
+  }
+
+  // Function to parse text input into benefits structure
+  const parseBenefitsInput = (text: string): BenefitsStructure => {
+    // Split by newlines and remove empty lines
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    let max_sessions: number | null = null;
+    let discount_rate = 0;
+    let charging_speed = '';
+    let priority_support = false;
+
+    // Parse each line for specific information
+    lines.forEach(line => {
+      const lowerLine = line.toLowerCase().trim();
+      if (lowerLine.includes('phiên sạc')) {
+        if (lowerLine.includes('không giới hạn')) {
+          max_sessions = null;
+        } else {
+          const match = line.match(/(\d+)/);
+          if (match) {
+            max_sessions = parseInt(match[1]);
+          }
+        }
       }
-      throw new Error();
-    } catch {
-      throw new Error("Lỗi định dạng quyền lợi. Vui lòng nhập đúng định dạng JSON");
-    }
+      if (lowerLine.includes('giảm') && lowerLine.includes('%')) {
+        const match = line.match(/(\d+)%/);
+        if (match) {
+          discount_rate = parseInt(match[1]);
+        }
+      }
+      if (lowerLine.includes('siêu nhanh')) {
+        charging_speed = 'Ultra Fast (≤ 350kW)';
+      } else if (lowerLine.includes('nhanh')) {
+        charging_speed = 'Fast (≤ 60kW)';
+      }
+      if (lowerLine.includes('24/7') || lowerLine.includes('ưu tiên')) {
+        priority_support = true;
+      }
+    });
+
+    return {
+      label: "Standard",
+      features: lines,
+      max_sessions,
+      discount_rate,
+      charging_speed,
+      priority_support
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let benefitsData: string[] = [];
+    let benefitsData: BenefitsStructure;
     try {
-      benefitsData = formData.benefits ? extractBenefits(formData.benefits) : [];
+      benefitsData = parseBenefitsInput(formData.benefits);
     } catch (err: any) {
-      setError(err.message);
+      setError("Lỗi khi xử lý quyền lợi. Vui lòng kiểm tra lại định dạng.");
       return;
     }
 
@@ -145,7 +189,7 @@ const PackageManagement: React.FC = () => {
       description: pkg.description || "",
       price: pkg.price.toString(),
       duration_days: pkg.duration_days?.toString() || "",
-      benefits: JSON.stringify(pkg.benefits ?? [], null, 2),
+      benefits: pkg.benefits?.features?.join('\n') || "",
       status: pkg.status,
     });
     setIsDialogOpen(true);
@@ -224,7 +268,12 @@ const PackageManagement: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                     <Textarea
-                      placeholder='Quyền lợi (["Ưu tiên sạc", "Giảm giá"])'
+                      placeholder="Nhập quyền lợi (mỗi dòng một quyền lợi)
+Ví dụ:
+Không giới hạn số phiên sạc
+Sạc siêu nhanh
+Giảm 10% phí sạc
+Hỗ trợ kỹ thuật 24/7"
                       value={formData.benefits}
                       onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                     />
@@ -300,9 +349,7 @@ const PackageManagement: React.FC = () => {
                       </TableCell>
                       <TableCell>{pkg.duration_days}</TableCell>
                       <TableCell className="text-sm">
-                        {Array.isArray(pkg.benefits)
-                          ? pkg.benefits.join(", ")
-                          : "-"}
+                        {pkg.benefits?.features?.join(", ") || "-"}
                       </TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-sm ${

@@ -1,12 +1,21 @@
 import { apiService } from './apiService';
 
+export interface BenefitsStructure {
+  label: string;
+  features: string[];
+  max_sessions: number | null;
+  discount_rate: number;
+  charging_speed: string;
+  priority_support: boolean;
+}
+
 export interface ServicePackage {
   package_id: number;
   name: string;
   description?: string;
   price: number;
   duration_days?: number;
-  benefits?: string[];
+  benefits: BenefitsStructure;
   status: 'Active' | 'Inactive';
   created_at?: string;
   updated_at?: string;

@@ -144,8 +144,8 @@ export class AnalyticsService {
 
   private static generateRevenueAnalytics(): RevenueAnalytics {
     // Mock data - replace with Supabase queries
-    const dailyData = [];
-    const monthlyData = [];
+    const dailyData: Array<{date: string; revenue: number; sessions: number}> = [];
+    const monthlyData: Array<{month: string; revenue: number; growth: number}> = [];
     
     // Generate mock daily data for last 30 days
     for (let i = 29; i >= 0; i--) {

@@ -130,6 +130,9 @@ import { ENHANCED_MOCK_STATIONS } from './mockStationsData';
 // in-file ENHANCED_MOCK_STATIONS fallback.
 export let MOCK_STATIONS: Station[] = ENHANCED_MOCK_STATIONS;
 
+// Debug: Log the initial station count
+console.log('🚀 Mock stations initialized:', MOCK_STATIONS.length, 'stations loaded');
+
 
 export const MOCK_USERS: User[] = [
   {
@@ -291,15 +294,20 @@ export const MOCK_BOOKINGS: Booking[] = [
 export class MockDatabaseService {
   static async getStations(): Promise<Station[]> {
     try {
-      // Try to fetch from backend API first
+      // Temporarily skip API call and use mock data directly
+      console.log(`✅ Using mock data - ${MOCK_STATIONS.length} stations available`);
+      return MOCK_STATIONS;
+      
+      // Original API call code (temporarily disabled)
+      /*
       const stations = await fetchStationsFromApi();
       
       if (Array.isArray(stations) && stations.length > 0) {
-        // Update local cache with backend data
         MOCK_STATIONS = stations;
         console.log(`✅ Loaded ${stations.length} stations from backend API`);
         return stations;
       }
+      */
     } catch (error) {
       console.warn('⚠️ Failed to fetch from backend API, using mock data:', error);
     }
@@ -310,13 +318,22 @@ export class MockDatabaseService {
 
   static async getStationById(id: string): Promise<Station | null> {
     try {
-      // Try to fetch from backend API first
+      // Temporarily skip API call and use mock data directly
+      const station = MOCK_STATIONS.find(station => station.id === id) || null;
+      if (station) {
+        console.log(`✅ Using mock data for station ${id}`);
+        return station;
+      }
+      
+      // Original API call code (temporarily disabled)
+      /*
       const station = await fetchStationByIdFromApi(id);
       
       if (station) {
         console.log(`✅ Loaded station ${id} from backend API`);
         return station;
       }
+      */
     } catch (error) {
       console.warn(`⚠️ Failed to fetch station ${id} from backend API, using mock data:`, error);
     }

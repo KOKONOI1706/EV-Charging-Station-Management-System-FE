@@ -285,7 +285,7 @@ export class PaymentService {
 
   // Get supported payment methods
   static getSupportedMethods(): string[] {
-    const methods = [];
+    const methods: string[] = [];
     
     if ((import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY) {
       methods.push('stripe');

@@ -252,7 +252,7 @@ function transformApiStation(apiStation: any, realChargingPoints?: any[]): Stati
 
 // Generate charging points based on total and available
 function generateChargingPoints(total: number, available: number, stationId?: string) {
-  const points = [];
+  const points: any[] = [];
   const inUse = total - available;
   
   for (let i = 0; i < total; i++) {

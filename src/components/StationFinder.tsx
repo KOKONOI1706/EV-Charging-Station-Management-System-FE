@@ -37,10 +37,12 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
     const loadStations = async () => {
       try {
         setIsLoading(true);
+        console.log('🔄 Loading stations...');
         const stationData = await MockDatabaseService.getStations();
+        console.log('📊 Stations loaded:', stationData.length, 'stations');
         setStations(stationData);
       } catch (error) {
-        console.error("Failed to load stations:", error);
+        console.error("❌ Failed to load stations:", error);
       } finally {
         setIsLoading(false);
       }
@@ -160,6 +162,17 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
       {/* Station List */}
       <div className="lg:w-2/3">
         <div className="grid gap-6">
+          {(() => {
+            console.log('🎯 Rendering stations:', {
+              totalStations: stations.length,
+              filteredStations: filteredStations.length,
+              isLoading,
+              searchQuery,
+              selectedFilter
+            });
+            return null;
+          })()}
+          
           {filteredStations.map((station) => (
             <Card
               key={station.id}

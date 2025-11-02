@@ -9,7 +9,7 @@ import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
 import { PricingPage } from "./components/PricingPage";
 import { SupportPage } from "./components/SupportPage";
 import { Footer } from "./components/Footer";
-import { RoleSelector } from "./components/RoleSelector";
+// import { RoleSelector } from "./components/RoleSelector";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { DatabaseTest } from "./components/DatabaseTest";
 import { StationStatusDemo } from "./components/StationStatusDemo";
@@ -132,7 +132,7 @@ function AppContent() {
     }
   };
 
-  const handleBookStation = (station: Station) => {
+  const handleBookStation = (station: Station, chargingPointId?: string) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to book a charging station.");
       return;
@@ -141,6 +141,7 @@ function AppContent() {
       toast.error("Only customers can book charging stations.");
       return;
     }
+    console.log('Booking station:', station, 'Point:', chargingPointId);
     setSelectedStation(station);
     setIsBookingModalOpen(true);
   };
@@ -175,7 +176,8 @@ function AppContent() {
 
   // Show role selector if not authenticated and requested
   if (showRoleSelector) {
-    return <RoleSelector onRoleSelect={handleRoleSelect} />;
+    // return <RoleSelector onRoleSelect={handleRoleSelect} />;
+    return <div>Role selector disabled</div>;
   }
 
   const handleCloseBookingModal = () => {

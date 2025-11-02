@@ -77,8 +77,16 @@ export function EnhancedAdminDashboard() {
           email: "alex.johnson@email.com",
           phone: "+1 (555) 123-4567",
           role: "customer",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          memberSince: new Date().toISOString(),
+          totalSessions: 0,
+          totalSpent: 0,
+          favoriteStations: [],
+          vehicleInfo: {
+            make: "Tesla",
+            model: "Model 3",
+            year: 2023,
+            batteryCapacity: 75
+          }
         }
       ]);
     } catch (error) {
@@ -90,11 +98,15 @@ export function EnhancedAdminDashboard() {
   };
 
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev: SystemSettings) => ({ ...prev, [key]: value }));
     toast.success(`${key} ${value ? 'enabled' : 'disabled'}`);
   };
 
-  const totalRevenue = bookings.reduce((sum, booking) => sum + booking.total_cost, 0);
+  const totalRevenue = bookings.reduce((sum: number, booking: Booking) => {
+    // Extract numeric value from price string (e.g., "$15.00" -> 15.00)
+    const numericPrice = parseFloat(booking.price.replace(/[^0-9.]/g, '')) || 0;
+    return sum + numericPrice;
+  }, 0);
   const activeUsers = users.length; // In real app, filter active users
   const totalSessions = bookings.length;
 
@@ -407,7 +419,7 @@ export function EnhancedAdminDashboard() {
                         </div>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(user.memberSince).toLocaleDateString()}</TableCell>
                       <TableCell>-</TableCell>
                       <TableCell>-</TableCell>
                       <TableCell>
@@ -452,7 +464,7 @@ export function EnhancedAdminDashboard() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <span className="text-gray-600">Available:</span>
-                          <span className="font-medium ml-1">{station.available_spots}/{station.total_spots}</span>
+                          <span className="font-medium ml-1">{station.available}/{station.total}</span>
                         </div>
                         <div>
                           <span className="text-gray-600">Power:</span>

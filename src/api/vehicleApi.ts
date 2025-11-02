@@ -157,7 +157,7 @@ class VehicleApiService {
    * Format vehicle display name
    */
   formatVehicleName(vehicle: Vehicle): string {
-    const parts = [];
+    const parts: (string | number)[] = [];
     if (vehicle.year) parts.push(vehicle.year);
     if (vehicle.make) parts.push(vehicle.make);
     if (vehicle.model) parts.push(vehicle.model);

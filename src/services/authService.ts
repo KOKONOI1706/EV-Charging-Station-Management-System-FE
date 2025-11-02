@@ -58,8 +58,16 @@ export class AuthService {
         email: apiUser.email,
         phone: apiUser.phone || '',
         role: apiUser.role as "customer" | "staff" | "admin",
-        created_at: apiUser.createdAt,
-        updated_at: apiUser.updatedAt || apiUser.createdAt
+        memberSince: apiUser.createdAt || new Date().toISOString(),
+        totalSessions: 0,
+        totalSpent: 0,
+        favoriteStations: [],
+        vehicleInfo: {
+          make: "Unknown",
+          model: "Unknown",
+          year: 2023,
+          batteryCapacity: 50
+        }
       };
 
       this.saveUserToStorage(user);
@@ -145,8 +153,16 @@ export class AuthService {
         email: apiUser.email,
         phone: apiUser.phone || '',
         role: apiUser.role as "customer" | "staff" | "admin",
-        created_at: apiUser.createdAt,
-        updated_at: apiUser.updatedAt || apiUser.createdAt
+        memberSince: apiUser.createdAt || new Date().toISOString(),
+        totalSessions: 0,
+        totalSpent: 0,
+        favoriteStations: [],
+        vehicleInfo: data.vehicleInfo || {
+          make: "Unknown",
+          model: "Unknown",
+          year: 2023,
+          batteryCapacity: 50
+        }
       };
 
       // Add to local users array for demo compatibility

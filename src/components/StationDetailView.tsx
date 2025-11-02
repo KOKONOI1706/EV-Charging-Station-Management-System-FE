@@ -87,7 +87,7 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
             <p className="text-sm">Layout information not available</p>
           </div>
           <div className="text-sm text-gray-600">
-            This station has {station.total_spots} charging spots available
+            This station has {station.total} charging spots available
           </div>
         </div>
       );
@@ -357,7 +357,7 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
                 <div className="pt-2 border-t">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Total Points:</span>
-                    <span className="font-bold">{station.total_spots}</span>
+                    <span className="font-bold">{station.total}</span>
                   </div>
                 </div>
               </div>
@@ -381,7 +381,7 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-blue-600" />
-                  <span>{station.operating_hours}</span>
+                  <span>{station.operatingHours}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-purple-600" />

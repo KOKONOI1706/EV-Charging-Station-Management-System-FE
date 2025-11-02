@@ -27,10 +27,10 @@ import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabas
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
+import { LanguageSelector } from "./LanguageSelector";
 import { toast } from "sonner";
-import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
+import { ChargingPointsManagement } from "./ChargingPointsManagement";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -113,9 +113,10 @@ export function EnhancedAdminDashboard() {
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">{t.adminDashboard}</h1>
-          <p className="text-gray-600">Complete system overview and management with advanced analytics</p>
+          <p className="text-gray-600">{t.completeSystemOverview}</p>
         </div>
         <div className="flex items-center gap-2">
+          <LanguageSelector />
           <Button
             variant="outline"
             onClick={async () => {
@@ -172,9 +173,9 @@ export function EnhancedAdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Stations</p>
+                <p className="text-sm text-gray-600">{t.totalStations}</p>
                 <p className="text-2xl font-bold">{stations.length}</p>
-                <p className="text-xs text-green-600">+2 new</p>
+                <p className="text-xs text-green-600">+2 {t.new}</p>
               </div>
               <Zap className="w-8 h-8 text-purple-600" />
             </div>
@@ -187,7 +188,7 @@ export function EnhancedAdminDashboard() {
               <div>
                 <p className="text-sm text-gray-600">{t.activeBookings}</p>
                 <p className="text-2xl font-bold">{totalSessions}</p>
-                <p className="text-xs text-green-600">98% uptime</p>
+                <p className="text-xs text-green-600">98% {t.uptime}</p>
               </div>
               <Calendar className="w-8 h-8 text-orange-600" />
             </div>
@@ -198,9 +199,9 @@ export function EnhancedAdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Current Load</p>
+                <p className="text-sm text-gray-600">{t.currentLoad}</p>
                 <p className="text-2xl font-bold">67.5%</p>
-                <p className="text-xs text-green-600">Normal levels</p>
+                <p className="text-xs text-green-600">{t.normalLevels}</p>
               </div>
               <Activity className="w-8 h-8 text-blue-600" />
             </div>
@@ -211,9 +212,9 @@ export function EnhancedAdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">System Health</p>
+                <p className="text-sm text-gray-600">{t.systemHealth}</p>
                 <p className="text-2xl font-bold">99.5%</p>
-                <p className="text-xs text-green-600">All systems operational</p>
+                <p className="text-xs text-green-600">{t.allSystemsOperational}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
@@ -222,18 +223,24 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
-          <TabsTrigger value="chargingSessions">Charging Sessions</TabsTrigger>
+          <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
           <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="reports">{t.reports}</TabsTrigger>
           <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
         </TabsList>
 
         {/* Charging Sessions Management */}
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement userRole="admin" />
+        </TabsContent>
+
+        {/* Charging Points Management */}
+        <TabsContent value="chargingPoints">
+          <ChargingPointsManagement userRole="admin" />
         </TabsContent>
 
         {/* Overview */}
@@ -243,25 +250,25 @@ export function EnhancedAdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  Revenue Trends
+                  {t.revenueTrends}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span>Today</span>
+                    <span>{t.today}</span>
                     <span className="font-bold">$1,245.50</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>This Week</span>
+                    <span>{t.thisWeek}</span>
                     <span className="font-bold">$8,734.20</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>This Month</span>
+                    <span>{t.thisMonth}</span>
                     <span className="font-bold">$34,567.80</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Year to Date</span>
+                    <span>{t.yearToDate}</span>
                     <span className="font-bold">$412,345.60</span>
                   </div>
                 </div>
@@ -272,7 +279,7 @@ export function EnhancedAdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart className="w-5 h-5" />
-                  Top Performing Stations
+                  {t.topPerformingStations}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -290,7 +297,7 @@ export function EnhancedAdminDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-bold">$2,456</p>
-                        <p className="text-sm text-gray-600">This month</p>
+                        <p className="text-sm text-gray-600">{t.thisMonth}</p>
                       </div>
                     </div>
                   ))}
@@ -302,7 +309,7 @@ export function EnhancedAdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5" />
-                  System Alerts
+                  {t.systemAlerts}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -310,15 +317,15 @@ export function EnhancedAdminDashboard() {
                   <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-yellow-600" />
                     <div>
-                      <p className="font-medium text-yellow-800">Station #2 Maintenance Due</p>
-                      <p className="text-sm text-yellow-600">Scheduled maintenance in 2 days</p>
+                      <p className="font-medium text-yellow-800">{t.station2MaintenanceDue}</p>
+                      <p className="text-sm text-yellow-600">{t.scheduledMaintenance2Days}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <Clock className="w-4 h-4 text-blue-600" />
                     <div>
-                      <p className="font-medium text-blue-800">High Usage Alert</p>
-                      <p className="text-sm text-blue-600">Downtown Hub at 95% capacity</p>
+                      <p className="font-medium text-blue-800">{t.highUsageAlert}</p>
+                      <p className="text-sm text-blue-600">{t.downtownHub95Capacity}</p>
                     </div>
                   </div>
                 </div>
@@ -329,7 +336,7 @@ export function EnhancedAdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UserCheck className="w-5 h-5" />
-                  Recent User Activity
+                  {t.recentUserActivity}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -340,9 +347,9 @@ export function EnhancedAdminDashboard() {
                     </div>
                     <div>
                       <p className="font-medium">Alex Johnson</p>
-                      <p className="text-sm text-gray-600">Completed charging session</p>
+                      <p className="text-sm text-gray-600">{t.completedChargingSession}</p>
                     </div>
-                    <div className="ml-auto text-sm text-gray-500">2m ago</div>
+                    <div className="ml-auto text-sm text-gray-500">2m {t.ago}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -350,9 +357,9 @@ export function EnhancedAdminDashboard() {
                     </div>
                     <div>
                       <p className="font-medium">Maria Silva</p>
-                      <p className="text-sm text-gray-600">New user registration</p>
+                      <p className="text-sm text-gray-600">{t.newUserRegistration}</p>
                     </div>
-                    <div className="ml-auto text-sm text-gray-500">15m ago</div>
+                    <div className="ml-auto text-sm text-gray-500">15m {t.ago}</div>
                   </div>
                 </div>
               </CardContent>
@@ -598,7 +605,7 @@ export function EnhancedAdminDashboard() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="debug">Debug Mode</Label>
                       <p className="text-sm text-gray-600">Enable detailed logging</p>
@@ -608,7 +615,7 @@ export function EnhancedAdminDashboard() {
                       checked={settings.debugMode}
                       onCheckedChange={(checked: boolean) => handleSettingChange('debugMode', checked)}
                     />
-                  </div>
+                    </div>
                 </div>
               </CardContent>
             </Card>

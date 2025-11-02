@@ -32,10 +32,12 @@ import { Station, MockDatabaseService } from '../data/mockDatabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
+import { LanguageSelector } from './LanguageSelector';
 import { toast } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { ChargingSessionsManagement } from './ChargingSessionsManagement';
+import { ChargingPointsManagement } from './ChargingPointsManagement';
+import * as staffStatsApi from '../api/staffStatsApi';
+import * as userStationsApi from '../api/userStationsApi';
 
 interface StationMetrics {
   todaysSessions: number;
@@ -44,86 +46,114 @@ interface StationMetrics {
   averageSessionDuration: number;
   customerSatisfaction: number;
   maintenanceAlerts: number;
+  yesterdaysSessions?: number;
+  yesterdaysRevenue?: number;
 }
 
 interface StaffAnalytics {
   dailyUsage: { date: string; sessions: number; revenue: number }[];
   hourlyPattern: { hour: number; sessions: number; utilization: number }[];
   weeklyTrend: { day: string; sessions: number; revenue: number }[];
-  recentSessions: { id: string; customer: string; duration: string; amount: number; status: string }[];
+  recentSessions: { id: string; customer: string; duration: string; amount: number; status: string; station?: string }[];
 }
 
 export function EnhancedStaffDashboard() {
   const { t } = useLanguage();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
-  const [selectedStation, setSelectedStation] = useState<string>('all');
+  const [selectedStation, setSelectedStation] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('analytics');
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
   const [analytics, setAnalytics] = useState<StaffAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load stations and user's assigned station
   useEffect(() => {
-    loadData();
-  }, [selectedStation]);
+    const initStations = async () => {
+      try {
+        const stationsData = await MockDatabaseService.getStations();
+        setStations(stationsData);
+        
+        // Try to load user's assigned station from database
+        if (user?.id) {
+          try {
+            const userStationData = await userStationsApi.getUserStation(parseInt(user.id));
+            
+            if (userStationData.stationId && stationsData.some(s => s.id === userStationData.stationId)) {
+              // User has an assigned station in database, use it
+              console.log(`[Staff Dashboard] User assigned to station: ${userStationData.station?.name}`);
+              setSelectedStation(userStationData.stationId);
+            } else {
+              // No assigned station, try localStorage as fallback
+              const savedStationId = localStorage.getItem('staff_selected_station');
+              if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+                setSelectedStation(savedStationId);
+              } else if (stationsData.length > 0) {
+                // Default to first station
+                setSelectedStation(stationsData[0].id);
+              }
+            }
+          } catch (error) {
+            console.error('[Staff Dashboard] Failed to load user station from database, using fallback:', error);
+            // Fallback to localStorage
+            const savedStationId = localStorage.getItem('staff_selected_station');
+            if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+              setSelectedStation(savedStationId);
+            } else if (stationsData.length > 0) {
+              setSelectedStation(stationsData[0].id);
+            }
+          }
+        } else {
+          // No user ID, use localStorage fallback
+          const savedStationId = localStorage.getItem('staff_selected_station');
+          if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+            setSelectedStation(savedStationId);
+          } else if (stationsData.length > 0) {
+            setSelectedStation(stationsData[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load stations:', error);
+        toast.error('Không thể tải danh sách trạm');
+      }
+    };
+    initStations();
+  }, [user]);
+
+  // Load data when station changes
+  useEffect(() => {
+    if (selectedStation) {
+      // Save to localStorage as backup
+      localStorage.setItem('staff_selected_station', selectedStation);
+      
+      // Save to database if user is logged in
+      if (user?.id) {
+        userStationsApi.updateUserStation(parseInt(user.id), selectedStation)
+          .then(() => {
+            console.log(`[Staff Dashboard] Saved station ${selectedStation} to database for user ${user.id}`);
+          })
+          .catch(error => {
+            console.error('[Staff Dashboard] Failed to save station to database:', error);
+            // Continue anyway, localStorage is the fallback
+          });
+      }
+      
+      loadData();
+    }
+  }, [selectedStation, user]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const stationsData = await MockDatabaseService.getStations();
-      setStations(stationsData);
       
-      // Mock staff metrics
-      setMetrics({
-        todaysSessions: 23,
-        todaysRevenue: 567.80,
-        currentUtilization: 68.5,
-        averageSessionDuration: 2.3,
-        customerSatisfaction: 4.7,
-        maintenanceAlerts: 2
-      });
+      // Fetch REAL staff metrics from database
+      const metricsData = await staffStatsApi.getStaffMetrics(selectedStation);
+      setMetrics(metricsData);
 
-      // Mock analytics data
-      const dailyUsage = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        return {
-          date: date.toISOString().split('T')[0],
-          sessions: Math.floor(Math.random() * 30) + 15,
-          revenue: Math.floor(Math.random() * 500) + 200
-        };
-      }).reverse();
-
-      const hourlyPattern = Array.from({ length: 24 }, (_, hour) => ({
-        hour,
-        sessions: Math.floor(Math.random() * 8) + 2,
-        utilization: Math.floor(Math.random() * 80) + 20
-      }));
-
-      const weeklyTrend = [
-        { day: 'Mon', sessions: 145, revenue: 3250 },
-        { day: 'Tue', sessions: 132, revenue: 2980 },
-        { day: 'Wed', sessions: 156, revenue: 3420 },
-        { day: 'Thu', sessions: 148, revenue: 3180 },
-        { day: 'Fri', sessions: 167, revenue: 3650 },
-        { day: 'Sat', sessions: 189, revenue: 4120 },
-        { day: 'Sun', sessions: 134, revenue: 2890 }
-      ];
-
-      const recentSessions = [
-        { id: '1', customer: 'John Doe', duration: '2.5h', amount: 45.60, status: 'completed' },
-        { id: '2', customer: 'Jane Smith', duration: '1.8h', amount: 32.40, status: 'completed' },
-        { id: '3', customer: 'Mike Johnson', duration: '3.2h', amount: 58.80, status: 'in-progress' },
-        { id: '4', customer: 'Sarah Wilson', duration: '2.1h', amount: 38.20, status: 'completed' },
-        { id: '5', customer: 'Tom Brown', duration: '1.5h', amount: 27.50, status: 'completed' }
-      ];
-
-      setAnalytics({
-        dailyUsage,
-        hourlyPattern,
-        weeklyTrend,
-        recentSessions
-      });
+      // Fetch REAL analytics data from database
+      const analyticsData = await staffStatsApi.getStaffAnalytics(selectedStation);
+      setAnalytics(analyticsData);
 
     } catch (error) {
       console.error('Failed to load staff data:', error);
@@ -161,15 +191,15 @@ export function EnhancedStaffDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">{t.staffDashboard}</h1>
-          <p className="text-gray-600">Station operations and analytics</p>
+          <p className="text-gray-600">{t.stationOperations}</p>
         </div>
         <div className="flex items-center gap-3">
+          <LanguageSelector />
           <Select value={selectedStation} onValueChange={setSelectedStation}>
             <SelectTrigger className="w-48">
-              <SelectValue />
+              <SelectValue placeholder="Chọn trạm..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Stations</SelectItem>
               {stations.map((station) => (
                 <SelectItem key={station.id} value={station.id}>
                   {station.name}
@@ -201,9 +231,14 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Today's Sessions</p>
+                <p className="text-sm text-gray-600">{t.todaysSessions}</p>
                 <p className="text-2xl font-bold">{metrics.todaysSessions}</p>
-                <p className="text-xs text-green-600">+15% vs yesterday</p>
+                <p className="text-xs text-green-600">
+                  {metrics.yesterdaysSessions !== undefined
+                    ? staffStatsApi.calculatePercentageChange(metrics.todaysSessions, metrics.yesterdaysSessions)
+                    : '+0%'}{' '}
+                  {t.vsYesterday}
+                </p>
               </div>
               <Zap className="w-8 h-8 text-green-600" />
             </div>
@@ -214,9 +249,14 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Today's Revenue</p>
-                <p className="text-2xl font-bold">${metrics.todaysRevenue}</p>
-                <p className="text-xs text-green-600">+8% vs yesterday</p>
+                <p className="text-sm text-gray-600">{t.todaysRevenue}</p>
+                <p className="text-2xl font-bold">${metrics.todaysRevenue.toFixed(2)}</p>
+                <p className="text-xs text-green-600">
+                  {metrics.yesterdaysRevenue !== undefined
+                    ? staffStatsApi.calculatePercentageChange(metrics.todaysRevenue, metrics.yesterdaysRevenue)
+                    : '+0%'}{' '}
+                  {t.vsYesterday}
+                </p>
               </div>
               <DollarSign className="w-8 h-8 text-blue-600" />
             </div>
@@ -227,9 +267,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Utilization</p>
-                <p className="text-2xl font-bold">{metrics.currentUtilization}%</p>
-                <p className="text-xs text-gray-500">current load</p>
+                <p className="text-sm text-gray-600">{t.utilization}</p>
+                <p className="text-2xl font-bold">{metrics.currentUtilization.toFixed(1)}%</p>
+                <p className="text-xs text-gray-500">{t.currentLoad}</p>
               </div>
               <Activity className="w-8 h-8 text-purple-600" />
             </div>
@@ -240,9 +280,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg Duration</p>
-                <p className="text-2xl font-bold">{metrics.averageSessionDuration}h</p>
-                <p className="text-xs text-gray-500">per session</p>
+                <p className="text-sm text-gray-600">{t.avgDuration}</p>
+                <p className="text-2xl font-bold">{metrics.averageSessionDuration.toFixed(1)}h</p>
+                <p className="text-xs text-gray-500">{t.perSession}</p>
               </div>
               <Clock className="w-8 h-8 text-orange-600" />
             </div>
@@ -253,9 +293,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Satisfaction</p>
+                <p className="text-sm text-gray-600">{t.satisfaction}</p>
                 <p className="text-2xl font-bold">{metrics.customerSatisfaction}</p>
-                <p className="text-xs text-green-600">customer rating</p>
+                <p className="text-xs text-green-600">{t.customerRating}</p>
               </div>
               <Users className="w-8 h-8 text-green-600" />
             </div>
@@ -266,9 +306,9 @@ export function EnhancedStaffDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Alerts</p>
+                <p className="text-sm text-gray-600">{t.alerts}</p>
                 <p className="text-2xl font-bold">{metrics.maintenanceAlerts}</p>
-                <p className="text-xs text-yellow-600">maintenance</p>
+                <p className="text-xs text-yellow-600">{t.maintenanceLabel}</p>
               </div>
               <AlertTriangle className="w-8 h-8 text-yellow-600" />
             </div>
@@ -276,21 +316,30 @@ export function EnhancedStaffDashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="chargingSessions">Charging Sessions</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="stations">Stations</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
+          <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
+          <TabsTrigger value="sessions">{t.sessions}</TabsTrigger>
+          <TabsTrigger value="stations">{t.stations}</TabsTrigger>
+          <TabsTrigger value="maintenance">{t.maintenance}</TabsTrigger>
+          <TabsTrigger value="reports">{t.reports}</TabsTrigger>
         </TabsList>
 
         {/* Charging Sessions Management */}
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement 
             userRole="staff" 
-            stationId={selectedStation !== 'all' ? parseInt(selectedStation) : undefined}
+            stationId={selectedStation}
+          />
+        </TabsContent>
+
+        {/* Charging Points Management */}
+        <TabsContent value="chargingPoints">
+          <ChargingPointsManagement
+            userRole="staff"
+            stationId={selectedStation}
           />
         </TabsContent>
 
@@ -301,7 +350,7 @@ export function EnhancedStaffDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="w-5 h-5" />
-                  Daily Usage Trend
+                  {t.dailyUsageTrend}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -319,7 +368,7 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Hourly Usage Pattern</CardTitle>
+                <CardTitle>{t.hourlyUsagePattern}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -336,7 +385,7 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Weekly Performance</CardTitle>
+                <CardTitle>{t.weeklyPerformance}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -353,14 +402,14 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Performance Summary</CardTitle>
+                <CardTitle>{t.performanceSummary}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <TrendingUp className="w-5 h-5 text-green-600" />
-                      <span>Weekly Revenue</span>
+                      <span>{t.weeklyRevenue}</span>
                     </div>
                     <span className="font-bold">
                       ${analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0).toLocaleString()}
@@ -369,7 +418,7 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Zap className="w-5 h-5 text-blue-600" />
-                      <span>Total Sessions</span>
+                      <span>{t.totalSessions}</span>
                     </div>
                     <span className="font-bold">
                       {analytics.weeklyTrend.reduce((sum, day) => sum + day.sessions, 0)}
@@ -378,7 +427,7 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Activity className="w-5 h-5 text-purple-600" />
-                      <span>Peak Hour</span>
+                      <span>{t.peakHour}</span>
                     </div>
                     <span className="font-bold">
                       {analytics.hourlyPattern.reduce((max, curr) => 
@@ -389,7 +438,7 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <DollarSign className="w-5 h-5 text-green-600" />
-                      <span>Avg Revenue/Day</span>
+                      <span>{t.avgRevenuePerDay}</span>
                     </div>
                     <span className="font-bold">
                       ${(analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0) / 7).toFixed(0)}
@@ -407,18 +456,18 @@ export function EnhancedStaffDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Recent Charging Sessions
+                {t.recentChargingSessions}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t.customer}</TableHead>
+                    <TableHead>{t.duration}</TableHead>
+                    <TableHead>{t.amount}</TableHead>
+                    <TableHead>{t.status}</TableHead>
+                    <TableHead>{t.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -435,11 +484,11 @@ export function EnhancedStaffDashboard() {
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm">
-                            View
+                            {t.view}
                           </Button>
                           {session.status === 'in-progress' && (
                             <Button variant="outline" size="sm">
-                              Stop
+                              {t.stop}
                             </Button>
                           )}
                         </div>
@@ -461,36 +510,36 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-semibold">{station.name}</h3>
                     <Badge className="bg-green-100 text-green-800">
-                      Online
+                      {t.online}
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{station.address}</p>
                   <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                     <div>
-                      <span className="text-gray-600">Available:</span>
-                      <span className="font-medium ml-1">{station.available_spots}/{station.total_spots}</span>
+                      <span className="text-gray-600">{t.available}:</span>
+                      <span className="font-medium ml-1">{station.available}/{station.total}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Power:</span>
+                      <span className="text-gray-600">{t.power}:</span>
                       <span className="font-medium ml-1">{station.power}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Utilization:</span>
+                      <span className="text-gray-600">{t.utilization}:</span>
                       <span className="font-medium ml-1">
-                        {Math.floor(((station.total_spots - station.available_spots) / station.total_spots) * 100)}%
+                        {Math.floor(((station.total - station.available) / station.total) * 100)}%
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Rating:</span>
+                      <span className="text-gray-600">{t.rating}:</span>
                       <span className="font-medium ml-1">{station.rating}/5</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1">
-                      Monitor
+                      {t.monitor}
                     </Button>
                     <Button variant="outline" size="sm" className="flex-1">
-                      Control
+                      {t.control}
                     </Button>
                   </div>
                 </CardContent>
@@ -506,7 +555,7 @@ export function EnhancedStaffDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Wrench className="w-5 h-5" />
-                  Maintenance Schedule
+                  {t.maintenanceSchedule}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -514,23 +563,23 @@ export function EnhancedStaffDashboard() {
                   <div className="flex items-center justify-between p-4 border rounded-lg bg-yellow-50">
                     <div>
                       <p className="font-medium">Downtown Hub - Connector 3</p>
-                      <p className="text-sm text-gray-600">Scheduled maintenance due tomorrow</p>
+                      <p className="text-sm text-gray-600">{t.scheduledMaintenanceDueTomorrow}</p>
                     </div>
-                    <Badge variant="secondary">Pending</Badge>
+                    <Badge variant="secondary">{t.pending}</Badge>
                   </div>
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <p className="font-medium">Mall Center - Connector 1</p>
-                      <p className="text-sm text-gray-600">Maintenance completed 2 days ago</p>
+                      <p className="text-sm text-gray-600">{t.maintenanceCompleted2DaysAgo}</p>
                     </div>
-                    <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                    <Badge className="bg-green-100 text-green-800">{t.completed}</Badge>
                   </div>
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <p className="font-medium">Airport Station - All Connectors</p>
-                      <p className="text-sm text-gray-600">Quarterly inspection next week</p>
+                      <p className="text-sm text-gray-600">{t.quarterlyInspectionNextWeek}</p>
                     </div>
-                    <Badge variant="outline">Scheduled</Badge>
+                    <Badge variant="outline">{t.scheduled}</Badge>
                   </div>
                 </div>
               </CardContent>
@@ -538,30 +587,30 @@ export function EnhancedStaffDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Report Incident</CardTitle>
+                <CardTitle>{t.reportIncident}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Button variant="outline" className="h-20 flex-col">
                       <AlertTriangle className="w-6 h-6 mb-2 text-red-600" />
-                      <span>Emergency</span>
+                      <span>{t.emergency}</span>
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <Wrench className="w-6 h-6 mb-2 text-orange-600" />
-                      <span>Maintenance</span>
+                      <span>{t.maintenance}</span>
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <Settings className="w-6 h-6 mb-2 text-blue-600" />
-                      <span>Technical</span>
+                      <span>{t.technical}</span>
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <Users className="w-6 h-6 mb-2 text-green-600" />
-                      <span>Customer</span>
+                      <span>{t.customer}</span>
                     </Button>
                   </div>
                   <Button className="w-full bg-green-600 hover:bg-green-700">
-                    Create Incident Report
+                    {t.createIncidentReport}
                   </Button>
                 </div>
               </CardContent>
@@ -574,44 +623,44 @@ export function EnhancedStaffDashboard() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Station Reports</CardTitle>
+                <CardTitle>{t.stationReports}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Button variant="outline" className="w-full justify-start">
                   <BarChart3 className="w-4 h-4 mr-2" />
-                  Daily Usage Summary
+                  {t.dailyUsageSummary}
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   <DollarSign className="w-4 h-4 mr-2" />
-                  Revenue Report
+                  {t.revenueReport}
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   <Wrench className="w-4 h-4 mr-2" />
-                  Maintenance Log
+                  {t.maintenanceLog}
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="w-4 h-4 mr-2" />
-                  Customer Feedback
+                  {t.customerFeedback}
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>{t.quickActions}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Button className="w-full bg-green-600 hover:bg-green-700">
-                  Start New Session
+                  {t.startNewSession}
                 </Button>
                 <Button variant="outline" className="w-full">
-                  Manual Payment Processing
+                  {t.manualPaymentProcessing}
                 </Button>
                 <Button variant="outline" className="w-full">
-                  Station Emergency Stop
+                  {t.stationEmergencyStop}
                 </Button>
                 <Button variant="outline" className="w-full">
-                  Contact Technical Support
+                  {t.contactTechnicalSupport}
                 </Button>
               </CardContent>
             </Card>

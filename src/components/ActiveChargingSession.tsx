@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -19,6 +18,8 @@ import {
 } from 'lucide-react';
 import { chargingSessionApi, ChargingSession } from '../api/chargingSessionApi';
 import { useAuth } from '../contexts/AuthContext';
+import { PaymentModal } from './PaymentModal';
+import { toast } from 'sonner';
 
 interface ActiveChargingSessionProps {
   onSessionEnd?: () => void;
@@ -26,7 +27,6 @@ interface ActiveChargingSessionProps {
 
 export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [session, setSession] = useState<ChargingSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [stopping, setStopping] = useState(false);
@@ -34,32 +34,63 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
   const [currentMeter, setCurrentMeter] = useState<number>(0);
   const [estimatedCost, setEstimatedCost] = useState<number>(0);
   const [duration, setDuration] = useState<string>('0m');
+  
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    sessionId: number;
+    stationName: string;
+    pointName: string;
+    startTime: string;
+    endTime: string;
+    energyConsumed: number;
+    duration: string;
+    amount: number;
+    pricePerKwh: number;
+  } | null>(null);
 
   // Poll for active session
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const fetchActiveSession = async () => {
       try {
         // Assuming user.id is the numeric user_id
         const userId = parseInt(user.id);
         const activeSession = await chargingSessionApi.getActiveSession(userId);
-        setSession(activeSession);
+        
+        // Only update if session exists
         if (activeSession) {
+          setSession(activeSession);
           setCurrentMeter(activeSession.meter_start);
+          setError(null);
+        } else {
+          // No active session
+          setSession(null);
+          setError(null);
         }
       } catch (err) {
         console.error('Error fetching active session:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load session');
+        // Only set error if it's not a 404 (no active session)
+        if (err instanceof Error && !err.message.includes('404') && !err.message.includes('No active')) {
+          setError(err.message);
+        } else {
+          setSession(null);
+          setError(null);
+        }
       } finally {
         setLoading(false);
       }
     };
 
+    // Fetch immediately
     fetchActiveSession();
 
-    // Poll every 10 seconds
-    const interval = setInterval(fetchActiveSession, 10000);
+    // Poll every 15 seconds (reduced from 10 to improve performance)
+    const interval = setInterval(fetchActiveSession, 15000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -125,22 +156,44 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         idle_minutes: 0, // Could be calculated based on last charge vs current time
       });
 
-      // Session stopped successfully
-      setSession(null);
-      if (onSessionEnd) {
-        onSessionEnd();
-      }
+      // Prepare payment data
+      // Ensure amount is in VND (integer) and meets MoMo minimum of 1000 VND
+      const costInVND = Math.max(1000, Math.round(result.cost || 0));
+      
+      const sessionPaymentData = {
+        sessionId: session.session_id,
+        stationName: session.charging_points?.stations?.name || 'Unknown Station',
+        pointName: session.charging_points?.name || `Point #${session.point_id}`,
+        startTime: session.start_time,
+        endTime: new Date().toISOString(),
+        energyConsumed: result.energy_consumed_kwh || 0,
+        duration: chargingSessionApi.formatDuration(session.start_time),
+        amount: costInVND,
+        pricePerKwh: session.charging_points?.stations?.price_per_kwh || 5000,
+      };
 
-      // Redirect to payment page with session data
-      navigate('/payments', {
-        state: {
-          sessionId: session.session_id,
-          energyConsumed: result.energy_consumed_kwh,
-          totalCost: result.cost,
-          stationName: session.charging_points?.stations?.name,
-          pointName: session.charging_points?.name,
-        },
+      console.log('💳 Opening payment modal:', {
+        amount: sessionPaymentData.amount,
+        energy: sessionPaymentData.energyConsumed,
+        fullData: sessionPaymentData
       });
+
+      // Set payment data and show modal
+      setPaymentData(sessionPaymentData);
+      setShowPaymentModal(true);
+      
+      console.log('✅ Payment modal state set:', {
+        paymentData: sessionPaymentData,
+        showPaymentModal: true
+      });
+      
+      // Show toast notification
+      toast.success('Phiên sạc đã kết thúc! Vui lòng thanh toán.');
+
+      // DON'T call onSessionEnd here - it will refresh the parent and clear our state
+      // We'll call it after payment is complete
+      // Clear session from state but keep payment modal open
+      setSession(null);
     } catch (err) {
       console.error('Error stopping session:', err);
       setError(err instanceof Error ? err.message : 'Failed to stop session');
@@ -160,7 +213,8 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     );
   }
 
-  if (!session) {
+  // If we have payment data, render the payment modal even if session is null
+  if (!session && !paymentData) {
     return (
       <Card className="w-full">
         <CardContent className="py-8">
@@ -174,6 +228,55 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         </CardContent>
       </Card>
     );
+  }
+
+  // If session ended but we have payment data, show payment modal
+  if (!session && paymentData) {
+    return (
+      <div className="space-y-4">
+        <Card className="w-full">
+          <CardContent className="py-8">
+            <div className="text-center">
+              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+              <p className="text-gray-700 font-medium">Phiên sạc đã kết thúc</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Vui lòng hoàn tất thanh toán
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment Modal */}
+        {(() => {
+          console.log('🔍 Render check (no session):', {
+            hasPaymentData: !!paymentData,
+            showPaymentModal,
+            paymentData
+          });
+          return (
+            <PaymentModal
+              open={showPaymentModal}
+              onOpenChange={setShowPaymentModal}
+              sessionId={paymentData.sessionId}
+              sessionData={paymentData}
+              onPaymentSuccess={() => {
+                setShowPaymentModal(false);
+                setPaymentData(null);
+                // Now it's safe to call onSessionEnd after payment is complete
+                if (onSessionEnd) {
+                  onSessionEnd();
+                }
+              }}
+            />
+          );
+        })()}
+      </div>
+    );
+  }
+
+  // At this point, session must exist (because of the checks above)
+  if (!session) {
+    return null; // TypeScript guard, should never reach here
   }
 
   const energyConsumed = currentMeter - session.meter_start;
@@ -355,6 +458,31 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
           </Alert>
         </CardContent>
       </Card>
+
+      {/* Payment Modal */}
+      {(() => {
+        console.log('🔍 Render check:', {
+          hasPaymentData: !!paymentData,
+          showPaymentModal,
+          paymentData
+        });
+        return paymentData && (
+          <PaymentModal
+            open={showPaymentModal}
+            onOpenChange={setShowPaymentModal}
+            sessionId={paymentData.sessionId}
+            sessionData={paymentData}
+            onPaymentSuccess={() => {
+              setShowPaymentModal(false);
+              setPaymentData(null);
+              // Could refresh the dashboard or show success message
+              if (onSessionEnd) {
+                onSessionEnd();
+              }
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

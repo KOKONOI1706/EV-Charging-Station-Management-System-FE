@@ -88,6 +88,9 @@ class ChargingSessionApiService {
    * Start a new charging session
    */
   async startSession(data: StartSessionRequest): Promise<ChargingSession> {
+    console.log('Starting session with data:', data);
+    console.log('POST URL:', this.baseUrl);
+    
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
@@ -96,12 +99,16 @@ class ChargingSessionApiService {
       body: JSON.stringify(data),
     });
 
+    console.log('Response status:', response.status);
+
     if (!response.ok) {
       const error = await response.json();
+      console.error('Start session error:', error);
       throw new Error(error.error || 'Failed to start charging session');
     }
 
     const result = await response.json();
+    console.log('Start session result:', result);
     return result.data;
   }
 

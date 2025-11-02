@@ -7,6 +7,7 @@ import { Separator } from "./ui/separator";
 import { Check, Zap, Calculator, TrendingUp, Users } from "lucide-react";
 import { PRICING_PLANS } from "../data/mockDatabase";
 import { useLanguage } from "../hooks/useLanguage";
+import { LanguageSelector } from "./LanguageSelector";
 
 interface PricingPageProps {
   onGetStarted: (planId: string) => void;
@@ -70,9 +71,17 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      {/* Header */}
-      <div className="text-center mb-16">
+    <div className="min-h-screen">
+      {/* Language Selector - Top Right of Screen */}
+      <div className="w-full px-8 py-6 text-right">
+        <div className="inline-block">
+          <LanguageSelector />
+        </div>
+      </div>
+      
+      <div className="container mx-auto px-4 pb-8">
+        {/* Header */}
+        <div className="text-center mb-16">
         <h1 className="text-4xl font-bold mb-4">
           <span className="text-green-600">{t.choosePlan}</span>
         </h1>
@@ -307,6 +316,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
           </div>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

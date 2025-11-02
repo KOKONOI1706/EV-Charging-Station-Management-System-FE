@@ -55,8 +55,33 @@ export async function fetchStations(): Promise<Station[]> {
       throw new Error('Failed to fetch stations from API');
     }
     
+    // Fetch all charging points for all stations in one call
+    const chargingPointsResponse = await fetch(`${API_URL}/charging-points`);
+    let allChargingPoints: any[] = [];
+    
+    if (chargingPointsResponse.ok) {
+      const cpResult = await chargingPointsResponse.json();
+      if (cpResult.success && cpResult.data) {
+        allChargingPoints = cpResult.data;
+      }
+    }
+    
+    // Group charging points by station_id
+    const chargingPointsByStation: { [key: string]: any[] } = {};
+    allChargingPoints.forEach(cp => {
+      const stationId = cp.station_id?.toString() || '';
+      if (!chargingPointsByStation[stationId]) {
+        chargingPointsByStation[stationId] = [];
+      }
+      chargingPointsByStation[stationId].push(cp);
+    });
+    
     // Transform API data to match frontend Station interface
-    return transformApiStations(result.data);
+    return result.data.map(station => {
+      const stationId = station.id?.toString() || '';
+      const stationChargingPoints = chargingPointsByStation[stationId] || [];
+      return transformApiStation(station, stationChargingPoints);
+    });
   } catch (error) {
     console.error('Error fetching stations from API:', error);
     throw error;
@@ -81,7 +106,18 @@ export async function fetchStationById(id: string): Promise<Station | null> {
       throw new Error('Failed to fetch station from API');
     }
     
-    return transformApiStation(result.data);
+    // Fetch real charging points from database
+    const chargingPointsResponse = await fetch(`${API_URL}/charging-points?station_id=${id}`);
+    let realChargingPoints = [];
+    
+    if (chargingPointsResponse.ok) {
+      const cpResult = await chargingPointsResponse.json();
+      if (cpResult.success && cpResult.data) {
+        realChargingPoints = cpResult.data;
+      }
+    }
+    
+    return transformApiStation(result.data, realChargingPoints);
   } catch (error) {
     console.error(`Error fetching station ${id} from API:`, error);
     throw error;
@@ -109,7 +145,32 @@ export async function searchStations(params: StationSearchParams): Promise<Stati
       throw new Error('Failed to search stations from API');
     }
     
-    return transformApiStations(result.data);
+    // Fetch all charging points
+    const chargingPointsResponse = await fetch(`${API_URL}/charging-points`);
+    let allChargingPoints: any[] = [];
+    
+    if (chargingPointsResponse.ok) {
+      const cpResult = await chargingPointsResponse.json();
+      if (cpResult.success && cpResult.data) {
+        allChargingPoints = cpResult.data;
+      }
+    }
+    
+    // Group charging points by station_id
+    const chargingPointsByStation: { [key: string]: any[] } = {};
+    allChargingPoints.forEach(cp => {
+      const stationId = cp.station_id?.toString() || '';
+      if (!chargingPointsByStation[stationId]) {
+        chargingPointsByStation[stationId] = [];
+      }
+      chargingPointsByStation[stationId].push(cp);
+    });
+    
+    return result.data.map(station => {
+      const stationId = station.id?.toString() || '';
+      const stationChargingPoints = chargingPointsByStation[stationId] || [];
+      return transformApiStation(station, stationChargingPoints);
+    });
   } catch (error) {
     console.error('Error searching stations from API:', error);
     throw error;
@@ -117,14 +178,46 @@ export async function searchStations(params: StationSearchParams): Promise<Stati
 }
 
 // Transform API station data to frontend Station interface
-function transformApiStation(apiStation: any): Station {
-  // Generate charging points if not provided by API
-  const totalSpots = apiStation.total_spots || apiStation.total || 0;
-  const availableSpots = apiStation.available_spots || apiStation.available || 0;
-  const chargingPoints = apiStation.charging_points || generateChargingPoints(totalSpots, availableSpots);
+function transformApiStation(apiStation: any, realChargingPoints?: any[]): Station {
+  let chargingPoints;
+  let availableSpots = 0;
+  let totalSpots = 0;
   
-  // Generate layout if not provided by API
-  const layout = apiStation.layout || generateStationLayout(totalSpots, chargingPoints);
+  // Use real charging points from database if available
+  if (realChargingPoints && realChargingPoints.length > 0) {
+    totalSpots = realChargingPoints.length;
+    availableSpots = realChargingPoints.filter(cp => cp.status === 'Available').length;
+    
+    // Transform real charging points to frontend format
+    chargingPoints = realChargingPoints.map((cp, index) => {
+      // Map database status to frontend status
+      let frontendStatus: 'available' | 'in-use' | 'maintenance' | 'offline' = 'offline';
+      if (cp.status === 'Available') frontendStatus = 'available';
+      else if (cp.status === 'In Use') frontendStatus = 'in-use';
+      else if (cp.status === 'Maintenance') frontendStatus = 'maintenance';
+      else if (cp.status === 'Offline') frontendStatus = 'offline';
+      
+      return {
+        id: cp.point_id?.toString() || `cp-${index + 1}`,
+        stationId: cp.station_id?.toString() || apiStation.id?.toString() || '',
+        number: cp.point_id || (index + 1),
+        status: frontendStatus,
+        connectorType: cp.connector_type || 'CCS',
+        powerKw: cp.power_kw || 150,
+        position: { x: 0, y: 0 }, // Will be positioned by layout
+        currentUser: frontendStatus === 'in-use' ? 'In Use' : undefined,
+        estimatedTimeRemaining: undefined,
+      };
+    });
+  } else {
+    // Fallback to generated charging points if no real data
+    totalSpots = apiStation.total_spots || apiStation.total || 0;
+    availableSpots = apiStation.available_spots || apiStation.available || 0;
+    chargingPoints = generateChargingPoints(totalSpots, availableSpots, apiStation.id?.toString());
+  }
+  
+  // Generate layout based on actual charging points
+  const layout = generateStationLayout(totalSpots, chargingPoints);
   
   return {
     id: apiStation.id?.toString() || '',
@@ -158,7 +251,7 @@ function transformApiStation(apiStation: any): Station {
 }
 
 // Generate charging points based on total and available
-function generateChargingPoints(total: number, available: number) {
+function generateChargingPoints(total: number, available: number, stationId?: string) {
   const points = [];
   const inUse = total - available;
   
@@ -166,6 +259,7 @@ function generateChargingPoints(total: number, available: number) {
     const status = i < available ? 'available' : i < (available + inUse) ? 'in-use' : 'offline';
     points.push({
       id: `cp-${i + 1}`,
+      stationId: stationId || '',
       number: i + 1,
       status: status as any,
       connectorType: 'CCS',
@@ -206,14 +300,14 @@ function generateStationLayout(total: number, chargingPoints: any[]) {
     ],
     facilities: [
       {
-        type: 'restroom',
+        type: 'restroom' as const,
         x: 1,
         y: 1,
         width: 1,
         height: 1,
       },
       {
-        type: 'cafe',
+        type: 'cafe' as const,
         x: width - 2,
         y: 1,
         width: 1,
@@ -221,8 +315,4 @@ function generateStationLayout(total: number, chargingPoints: any[]) {
       },
     ],
   };
-}
-
-function transformApiStations(apiStations: any[]): Station[] {
-  return apiStations.map(transformApiStation);
 }

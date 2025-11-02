@@ -9,11 +9,11 @@ import StaffPage from "./pages/StaffPage";
 import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
-import ProfilePage from "./pages/ProfilePage";
 import UserHistoryPage from "./pages/UserHistoryPage";
 import PersonalReportPage from "./pages/PersonalReportPage";
 import ChargingSessionPage from "./pages/ChargingSessionPage";
 import { ReservationTestPage } from "./pages/ReservationTestPage";
+import PaymentCallback from "./pages/PaymentCallback";
 
 const router = createBrowserRouter([
   {
@@ -55,6 +55,10 @@ const router = createBrowserRouter([
   {
     path: "/charging-session",
     element: <ChargingSessionPage />,
+  },
+  {
+    path: "/payment/callback",
+    element: <PaymentCallback />,
   },
   {
     path: "/reservation-test",

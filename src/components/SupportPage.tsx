@@ -27,6 +27,8 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../hooks/useLanguage";
+import { LanguageSelector } from "./LanguageSelector";
 
 interface FAQItem {
   id: string;
@@ -35,48 +37,10 @@ interface FAQItem {
   category: string;
 }
 
-const FAQ_ITEMS: FAQItem[] = [
-  {
-    id: "1",
-    question: "How do I start a charging session?",
-    answer: "To start a charging session, locate your reserved charging station using the app, plug in your vehicle, and tap 'Start Session' in the app. The session will begin automatically.",
-    category: "charging"
-  },
-  {
-    id: "2",
-    question: "What if a charging station is not working?",
-    answer: "If you encounter a faulty station, please report it immediately through the app or call our 24/7 support line. We'll help you find an alternative station and may provide charging credits for the inconvenience.",
-    category: "technical"
-  },
-  {
-    id: "3",
-    question: "How are charging fees calculated?",
-    answer: "Charging fees are calculated based on the amount of electricity consumed (kWh) and the station's per-kWh rate. Your plan discount is automatically applied. You can view detailed pricing before starting each session.",
-    category: "billing"
-  },
-  {
-    id: "4",
-    question: "Can I cancel or modify my reservation?",
-    answer: "Yes, you can cancel or modify reservations up to 15 minutes before your scheduled time through the app or website. No cancellation fees apply for changes made with sufficient notice.",
-    category: "reservations"
-  },
-  {
-    id: "5",
-    question: "What types of connectors are available?",
-    answer: "Our stations support CCS, CHAdeMO, and Type 2 connectors. The app shows available connector types for each station. Most newer EVs use CCS connectors.",
-    category: "technical"
-  },
-  {
-    id: "6",
-    question: "How do I update my payment method?",
-    answer: "You can update your payment method in the app under Settings > Payment Methods or in your account dashboard. Changes take effect immediately for future sessions.",
-    category: "billing"
-  }
-];
-
 export function SupportPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
@@ -87,12 +51,51 @@ export function SupportPage() {
     message: ""
   });
 
+  const FAQ_ITEMS: FAQItem[] = [
+    {
+      id: "1",
+      question: t.faqQ1,
+      answer: t.faqA1,
+      category: "charging"
+    },
+    {
+      id: "2",
+      question: t.faqQ2,
+      answer: t.faqA2,
+      category: "technical"
+    },
+    {
+      id: "3",
+      question: t.faqQ3,
+      answer: t.faqA3,
+      category: "billing"
+    },
+    {
+      id: "4",
+      question: t.faqQ4,
+      answer: t.faqA4,
+      category: "reservations"
+    },
+    {
+      id: "5",
+      question: t.faqQ5,
+      answer: t.faqA5,
+      category: "technical"
+    },
+    {
+      id: "6",
+      question: t.faqQ6,
+      answer: t.faqA6,
+      category: "billing"
+    }
+  ];
+
   const categories = [
-    { value: "all", label: "All Topics" },
-    { value: "charging", label: "Charging Sessions" },
-    { value: "technical", label: "Technical Issues" },
-    { value: "billing", label: "Billing & Payment" },
-    { value: "reservations", label: "Reservations" }
+    { value: "all", label: t.allTopics },
+    { value: "charging", label: t.chargingSessions },
+    { value: "technical", label: t.technicalIssues },
+    { value: "billing", label: t.billingPayment },
+    { value: "reservations", label: t.reservations }
   ];
 
   const filteredFAQs = FAQ_ITEMS.filter(item => {
@@ -105,12 +108,12 @@ export function SupportPage() {
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactForm.subject || !contactForm.category || !contactForm.message) {
-      toast.error("Please fill in all required fields.");
+      toast.error(t.fillAllFields);
       return;
     }
     
     // Simulate form submission
-    toast.success("Support ticket submitted! We'll get back to you within 24 hours.");
+    toast.success(t.ticketSubmitted);
     setContactForm({
       subject: "",
       category: "",
@@ -120,14 +123,11 @@ export function SupportPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <div></div>
-          <h1 className="text-4xl font-bold flex-1">
-            How can we <span className="text-green-600">help you?</span>
-          </h1>
+    <div className="min-h-screen">
+      {/* Header with buttons - Top Right of Screen */}
+      <div className="w-full px-8 py-6 text-right">
+        <div className="inline-flex items-center gap-3">
+          <LanguageSelector />
           <Button
             variant="outline"
             onClick={async () => {
@@ -141,22 +141,43 @@ export function SupportPage() {
               }
             }}
           >
-            Sign Out
+            {t.signOut}
           </Button>
         </div>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Get quick answers to common questions or reach out to our support team.
-        </p>
       </div>
+      
+      <div className="container mx-auto px-4 pb-8">
+        {/* Title Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">
+            {t.howCanWeHelp.split(" ").map((word, i, arr) => 
+              i === arr.length - 2 ? (
+                <span key={i} className="text-green-600">{word} </span>
+              ) : (
+                <span key={i}>{word} </span>
+              )
+            )}
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            {t.howCanWeHelpDesc}
+          </p>
+        </div>
 
-      {/* Quick Contact Options */}
-      <div className="grid md:grid-cols-3 gap-6 mb-12">
+        {/* Quick Contact Options */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6 text-center">
             <Phone className="w-8 h-8 text-green-600 mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">Call Us</h3>
-            <p className="text-gray-600 mb-4">24/7 Support Available</p>
-            <Button variant="outline" className="w-full">
+            <h3 className="font-semibold mb-2">{t.callUs}</h3>
+            <p className="text-gray-600 mb-4">{t.supportAvailable}</p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                window.location.href = 'tel:1-800-CHARGE-1';
+                toast.success('Đang mở ứng dụng điện thoại...');
+              }}
+            >
               <Phone className="w-4 h-4 mr-2" />
               1-800-CHARGE-1
             </Button>
@@ -166,11 +187,22 @@ export function SupportPage() {
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6 text-center">
             <MessageCircle className="w-8 h-8 text-blue-600 mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">Live Chat</h3>
-            <p className="text-gray-600 mb-4">Average response: 2 minutes</p>
-            <Button variant="outline" className="w-full">
+            <h3 className="font-semibold mb-2">{t.liveChat}</h3>
+            <p className="text-gray-600 mb-4">{t.avgResponse}</p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                // Switch to contact tab
+                const contactTab = document.querySelector('[value="contact"]') as HTMLElement;
+                if (contactTab) {
+                  contactTab.click();
+                  toast.success('Chuyển sang form liên hệ');
+                }
+              }}
+            >
               <MessageCircle className="w-4 h-4 mr-2" />
-              Start Chat
+              {t.startChat}
             </Button>
           </CardContent>
         </Card>
@@ -178,11 +210,18 @@ export function SupportPage() {
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6 text-center">
             <Mail className="w-8 h-8 text-purple-600 mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">Email Support</h3>
-            <p className="text-gray-600 mb-4">Response within 24 hours</p>
-            <Button variant="outline" className="w-full">
+            <h3 className="font-semibold mb-2">{t.emailSupport}</h3>
+            <p className="text-gray-600 mb-4">{t.responseTime}</p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                window.location.href = 'mailto:support@chargetech.com?subject=Support Request';
+                toast.success('Đang mở ứng dụng email...');
+              }}
+            >
               <Mail className="w-4 h-4 mr-2" />
-              Send Email
+              {t.sendEmail}
             </Button>
           </CardContent>
         </Card>
@@ -190,21 +229,21 @@ export function SupportPage() {
 
       <Tabs defaultValue="faq" className="space-y-8">
         <TabsList className="grid w-full grid-cols-3 lg:w-96 mx-auto">
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
-          <TabsTrigger value="contact">Contact Us</TabsTrigger>
-          <TabsTrigger value="status">System Status</TabsTrigger>
+          <TabsTrigger value="faq">{t.faq}</TabsTrigger>
+          <TabsTrigger value="contact">{t.contactUs}</TabsTrigger>
+          <TabsTrigger value="status">{t.systemStatus}</TabsTrigger>
         </TabsList>
 
         {/* FAQ Tab */}
         <TabsContent value="faq">
           <Card>
             <CardHeader>
-              <CardTitle>Frequently Asked Questions</CardTitle>
+              <CardTitle>{t.frequentlyAskedQuestions}</CardTitle>
               <div className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input
-                    placeholder="Search for answers..."
+                    placeholder={t.searchForAnswers}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -212,7 +251,7 @@ export function SupportPage() {
                 </div>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={t.selectCategory} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
@@ -248,7 +287,7 @@ export function SupportPage() {
                 ))}
                 {filteredFAQs.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    No FAQs found matching your search criteria.
+                    {t.noFaqsFound}
                   </div>
                 )}
               </div>
@@ -261,72 +300,72 @@ export function SupportPage() {
           <div className="grid lg:grid-cols-2 gap-8">
             <Card>
               <CardHeader>
-                <CardTitle>Submit a Support Ticket</CardTitle>
+                <CardTitle>{t.submitSupportTicket}</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="subject">Subject *</Label>
+                    <Label htmlFor="subject">{t.subject} *</Label>
                     <Input
                       id="subject"
                       value={contactForm.subject}
                       onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
-                      placeholder="Brief description of your issue"
+                      placeholder={t.subjectPlaceholder}
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="category">Category *</Label>
+                    <Label htmlFor="category">{t.category} *</Label>
                     <Select
                       value={contactForm.category}
-                      onValueChange={(value) => setContactForm(prev => ({ ...prev, category: value }))}
+                      onValueChange={(value: string) => setContactForm(prev => ({ ...prev, category: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select issue category" />
+                        <SelectValue placeholder={t.selectIssueCategory} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="charging">Charging Issues</SelectItem>
-                        <SelectItem value="billing">Billing & Payment</SelectItem>
-                        <SelectItem value="technical">Technical Problems</SelectItem>
-                        <SelectItem value="account">Account Management</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="charging">{t.categoryCharging}</SelectItem>
+                        <SelectItem value="billing">{t.categoryBilling}</SelectItem>
+                        <SelectItem value="technical">{t.categoryTechnical}</SelectItem>
+                        <SelectItem value="account">{t.categoryAccount}</SelectItem>
+                        <SelectItem value="other">{t.categoryOther}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label htmlFor="priority">Priority</Label>
+                    <Label htmlFor="priority">{t.priority}</Label>
                     <Select
                       value={contactForm.priority}
-                      onValueChange={(value) => setContactForm(prev => ({ ...prev, priority: value }))}
+                      onValueChange={(value: string) => setContactForm(prev => ({ ...prev, priority: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="urgent">Urgent</SelectItem>
+                        <SelectItem value="low">{t.priorityLow}</SelectItem>
+                        <SelectItem value="medium">{t.priorityMedium}</SelectItem>
+                        <SelectItem value="high">{t.priorityHigh}</SelectItem>
+                        <SelectItem value="urgent">{t.priorityUrgent}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label htmlFor="message">Message *</Label>
+                    <Label htmlFor="message">{t.message} *</Label>
                     <Textarea
                       id="message"
                       value={contactForm.message}
                       onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
-                      placeholder="Please provide detailed information about your issue..."
+                      placeholder={t.messagePlaceholder}
                       rows={6}
                       required
                     />
                   </div>
 
                   <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-                    Submit Ticket
+                    {t.submitTicket}
                   </Button>
                 </form>
               </CardContent>
@@ -335,34 +374,52 @@ export function SupportPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
+                  <CardTitle>{t.contactInformation}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    onClick={() => {
+                      window.location.href = 'tel:1-800-CHARGE-1';
+                      toast.success('Đang gọi hotline hỗ trợ...');
+                    }}
+                  >
                     <Phone className="w-5 h-5 text-green-600" />
                     <div>
-                      <p className="font-medium">24/7 Support Hotline</p>
+                      <p className="font-medium">{t.supportHotline}</p>
                       <p className="text-gray-600">1-800-CHARGE-1</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    onClick={() => {
+                      window.location.href = 'mailto:support@chargetech.com?subject=Support Request';
+                      toast.success('Đang mở email...');
+                    }}
+                  >
                     <Mail className="w-5 h-5 text-blue-600" />
                     <div>
-                      <p className="font-medium">Email Support</p>
+                      <p className="font-medium">{t.emailSupport}</p>
                       <p className="text-gray-600">support@chargetech.com</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    onClick={() => {
+                      window.open('https://www.google.com/maps/search/123+Electric+Ave,+San+Francisco,+CA+94105', '_blank');
+                      toast.success('Đang mở Google Maps...');
+                    }}
+                  >
                     <MapPin className="w-5 h-5 text-purple-600" />
                     <div>
-                      <p className="font-medium">Headquarters</p>
+                      <p className="font-medium">{t.headquarters}</p>
                       <p className="text-gray-600">123 Electric Ave, San Francisco, CA 94105</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-orange-600" />
                     <div>
-                      <p className="font-medium">Support Hours</p>
+                      <p className="font-medium">{t.supportHours}</p>
                       <p className="text-gray-600">24/7 for emergencies<br />Mon-Fri 8AM-8PM PT for general inquiries</p>
                     </div>
                   </div>
@@ -371,16 +428,16 @@ export function SupportPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Emergency Contacts</CardTitle>
+                  <CardTitle>{t.emergencyContacts}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <AlertCircle className="w-4 h-4 text-red-600" />
-                      <span className="font-medium text-red-800">Station Emergency</span>
+                      <span className="font-medium text-red-800">{t.stationEmergency}</span>
                     </div>
                     <p className="text-sm text-red-700">
-                      If you're stuck at a station or experiencing safety issues, call: 1-800-EMERGENCY
+                      {t.emergencyMessage}
                     </p>
                   </div>
                 </CardContent>
@@ -396,7 +453,7 @@ export function SupportPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  System Status
+                  {t.systemStatus}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -404,75 +461,75 @@ export function SupportPage() {
                   <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="font-medium">All Systems Operational</span>
+                      <span className="font-medium">{t.allSystemsOperational}</span>
                     </div>
                     <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      Operational
+                      {t.operationalStatus}
                     </Badge>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-4">
-                      <h3 className="font-semibold">Core Services</h3>
+                      <h3 className="font-semibold">{t.coreServices}</h3>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Zap className="w-4 h-4 text-green-600" />
-                            <span>Charging Network</span>
+                            <span>{t.chargingNetwork}</span>
                           </div>
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Operational
+                            {t.operationalStatus}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <MessageCircle className="w-4 h-4 text-green-600" />
-                            <span>Mobile App</span>
+                            <span>{t.mobileApp}</span>
                           </div>
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Operational
+                            {t.operationalStatus}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-green-600" />
-                            <span>Payment System</span>
+                            <span>{t.paymentSystem}</span>
                           </div>
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Operational
+                            {t.operationalStatus}
                           </Badge>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-4">
-                      <h3 className="font-semibold">Support Services</h3>
+                      <h3 className="font-semibold">{t.supportServices}</h3>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Phone className="w-4 h-4 text-green-600" />
-                            <span>Customer Support</span>
+                            <span>{t.customerSupport}</span>
                           </div>
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Operational
+                            {t.operationalStatus}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Settings className="w-4 h-4 text-green-600" />
-                            <span>Account Management</span>
+                            <span>{t.accountManagement}</span>
                           </div>
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Operational
+                            {t.operationalStatus}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <ExternalLink className="w-4 h-4 text-green-600" />
-                            <span>Web Portal</span>
+                            <span>{t.webPortal}</span>
                           </div>
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Operational
+                            {t.operationalStatus}
                           </Badge>
                         </div>
                       </div>
@@ -484,16 +541,16 @@ export function SupportPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Recent Updates</CardTitle>
+                <CardTitle>{t.recentUpdates}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex gap-4">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
                     <div>
-                      <p className="font-medium">System Performance Optimization</p>
+                      <p className="font-medium">{t.statusUpdate1Title}</p>
                       <p className="text-sm text-gray-600">
-                        Improved app loading times and charging session reliability.
+                        {t.statusUpdate1Desc}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Dec 20, 2024 - 2:30 PM</p>
                     </div>
@@ -502,9 +559,9 @@ export function SupportPage() {
                   <div className="flex gap-4">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                     <div>
-                      <p className="font-medium">New Station Locations Added</p>
+                      <p className="font-medium">{t.statusUpdate2Title}</p>
                       <p className="text-sm text-gray-600">
-                        15 new charging stations now available across the network.
+                        {t.statusUpdate2Desc}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Dec 18, 2024 - 10:00 AM</p>
                     </div>
@@ -515,6 +572,7 @@ export function SupportPage() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
     </div>
   );
 }

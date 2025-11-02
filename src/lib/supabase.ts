@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Supabase configuration
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+// Supabase configuration - Vite uses import.meta.env
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  throw new Error('Missing Supabase environment variables. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file')
 }
 
 // Create Supabase client
@@ -51,24 +51,14 @@ export type Database = {
           id: string
           name: string
           address: string
-          city: string
-          state: string
-          zipCode: string
-          lat: number
-          lng: number
+          latitude: number
+          longitude: number
           status: 'available' | 'occupied' | 'maintenance'
-          charger_type: string
-          price_per_kwh: number
-          power_kw: number
-          connector: string
+          charger_type: 'fast' | 'ultra_fast' | 'standard'
+          price: number
           amenities: string[]
           total_spots: number
           available_spots: number
-          rating: number
-          network: string
-          operating_hours: string
-          phone: string
-          image_url?: string
           created_at: string
           updated_at: string
         }
@@ -76,24 +66,14 @@ export type Database = {
           id?: string
           name: string
           address: string
-          city: string
-          state: string
-          zipCode: string
-          lat: number
-          lng: number
+          latitude: number
+          longitude: number
           status?: 'available' | 'occupied' | 'maintenance'
-          charger_type: string
-          price_per_kwh: number
-          power_kw: number
-          connector: string
+          charger_type: 'fast' | 'ultra_fast' | 'standard'
+          price: number
           amenities?: string[]
           total_spots: number
           available_spots?: number
-          rating?: number
-          network: string
-          operating_hours: string
-          phone: string
-          image_url?: string
           created_at?: string
           updated_at?: string
         }
@@ -101,40 +81,26 @@ export type Database = {
           id?: string
           name?: string
           address?: string
-          city?: string
-          state?: string
-          zipCode?: string
-          lat?: number
-          lng?: number
+          latitude?: number
+          longitude?: number
           status?: 'available' | 'occupied' | 'maintenance'
-          charger_type?: string
-          price_per_kwh?: number
-          power_kw?: number
-          connector?: string
+          charger_type?: 'fast' | 'ultra_fast' | 'standard'
+          price?: number
           amenities?: string[]
           total_spots?: number
           available_spots?: number
-          rating?: number
-          network?: string
-          operating_hours?: string
-          phone?: string
-          image_url?: string
           updated_at?: string
         }
       }
-      reservations: {
+      bookings: {
         Row: {
           id: string
           user_id: string
           station_id: string
           start_time: string
           end_time: string
-          duration_hours: number
-          status: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
+          status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
           total_cost: number
-          payment_status: 'pending' | 'paid' | 'failed'
-          payment_method?: string
-          payment_id?: string
           created_at: string
           updated_at: string
         }
@@ -144,12 +110,8 @@ export type Database = {
           station_id: string
           start_time: string
           end_time: string
-          duration_hours: number
-          status?: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
+          status?: 'pending' | 'confirmed' | 'completed' | 'cancelled'
           total_cost?: number
-          payment_status?: 'pending' | 'paid' | 'failed'
-          payment_method?: string
-          payment_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -159,12 +121,8 @@ export type Database = {
           station_id?: string
           start_time?: string
           end_time?: string
-          duration_hours?: number
-          status?: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
+          status?: 'pending' | 'confirmed' | 'completed' | 'cancelled'
           total_cost?: number
-          payment_status?: 'pending' | 'paid' | 'failed'
-          payment_method?: string
-          payment_id?: string
           updated_at?: string
         }
       }

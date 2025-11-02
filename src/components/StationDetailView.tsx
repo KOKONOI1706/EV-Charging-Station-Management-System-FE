@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -11,7 +11,6 @@ import {
   MapPin,
   Phone,
   Star,
-  Wifi,
   Car,
   Coffee,
   // Restroom,
@@ -20,7 +19,6 @@ import {
   Navigation
 } from 'lucide-react';
 import { Station, ChargingPoint } from '../data/mockDatabase';
-import { useLanguage } from '../hooks/useLanguage';
 
 interface StationDetailViewProps {
   station: Station;
@@ -29,7 +27,6 @@ interface StationDetailViewProps {
 }
 
 export function StationDetailView({ station, onBack, onBookChargingPoint }: StationDetailViewProps) {
-  const { t } = useLanguage();
   const [selectedChargingPoint, setSelectedChargingPoint] = useState<ChargingPoint | null>(null);
 
   const getStatusColor = (status: ChargingPoint['status']) => {
@@ -254,15 +251,34 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Image */}
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Map
         </Button>
+      </div>
+
+      {/* Station Image Banner */}
+      <div className="w-full h-64 rounded-xl overflow-hidden shadow-lg">
+        <img
+          src={station.image}
+          alt={station.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/1200x400?text=Charging+Station';
+          }}
+        />
+      </div>
+
+      {/* Station Title and Book Button */}
+      <div className="flex items-start justify-between">
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{station.name}</h1>
-          <p className="text-gray-600">{station.address}</p>
+          <p className="text-gray-600 flex items-center gap-2 mt-1">
+            <MapPin className="w-4 h-4" />
+            {station.address}
+          </p>
         </div>
         <Button 
           className="bg-green-600 hover:bg-green-700"

@@ -20,16 +20,22 @@ import {
   MapPin,
   CreditCard,
   Check,
-  Loader2,
 } from "lucide-react";
-import { SupabaseService, Station, Reservation } from "../services/supabaseService";
-import { PaymentService } from "../services/paymentService";
+import { Station, Booking } from "../data/mockDatabase";
 
 interface BookingModalProps {
   station: Station | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirmBooking: (reservation: Partial<Reservation>) => void;
+  onConfirmBooking: (booking: Partial<Booking>) => void;
+  onStartCharging?: (bookingData: {
+    pointId: number;
+    pointName: string;
+    stationName: string;
+    powerKw: number;
+    pricePerKwh: number;
+    bookingId?: number;
+  }) => void;
 }
 
 export function BookingModal({
@@ -37,6 +43,7 @@ export function BookingModal({
   isOpen,
   onClose,
   onConfirmBooking,
+  onStartCharging,
 }: BookingModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date()
@@ -44,13 +51,10 @@ export function BookingModal({
   const [selectedTime, setSelectedTime] = useState("");
   const [duration, setDuration] = useState("2");
   const [step, setStep] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'stripe' | 'payos'>('stripe');
 
   const timeSlots = [
     "08:00",
-    "09:00", 
+    "09:00",
     "10:00",
     "11:00",
     "12:00",
@@ -64,92 +68,34 @@ export function BookingModal({
     "20:00",
   ];
 
-  const handleBooking = async () => {
+  const handleBooking = () => {
     if (!station || !selectedDate || !selectedTime) return;
 
-    setIsProcessing(true);
-    setError(null);
+    const booking = {
+      stationId: station.id,
+      station: station,
+      date: selectedDate,
+      time: selectedTime,
+      duration: duration,
+      status: "confirmed" as const,
+      price: calculatePrice(),
+    };
 
-    try {
-      // Get current user (you would implement proper auth)
-      const userId = "user_001"; // This should come from auth context
-      
-      // Create reservation in Supabase
-      const startDateTime = new Date(selectedDate);
-      const [hours, minutes] = selectedTime.split(':').map(Number);
-      startDateTime.setHours(hours, minutes, 0, 0);
-      
-      const endDateTime = new Date(startDateTime);
-      endDateTime.setHours(startDateTime.getHours() + parseInt(duration));
-
-      const reservation = await SupabaseService.reserveStation(
-        station.id,
-        userId,
-        startDateTime.toISOString(),
-        endDateTime.toISOString(),
-        parseInt(duration)
-      );
-
-      if (!reservation) {
-        throw new Error('Failed to create reservation');
-      }
-
-      // Process payment
-      const paymentResult = await PaymentService.createPaymentSession(
-        reservation.id,
-        reservation.total_cost,
-        selectedPaymentMethod
-      );
-
-      if (paymentResult.success) {
-        // Update reservation with payment info
-        await SupabaseService.processPayment(
-          reservation.id,
-          selectedPaymentMethod,
-          paymentResult.paymentId || ''
-        );
-
-        onConfirmBooking(reservation);
-        setStep(3);
-      } else {
-        throw new Error(paymentResult.error || 'Payment failed');
-      }
-    } catch (err) {
-      console.error('Booking error:', err);
-      setError(err instanceof Error ? err.message : 'Booking failed');
-    } finally {
-      setIsProcessing(false);
-    }
+    onConfirmBooking(booking);
+    setStep(3);
   };
 
-  const calculatePrice = () => {
+  const calculatePrice = (): string => {
     if (!station) return "0.00";
-    const pricePerKwh = station.price_per_kwh;
+    const pricePerKwh = station.pricePerKwh ?? parseFloat(station.price.replace("$", "").replace("/kWh", ""));
     const estimatedKwh = parseInt(duration) * 25; // Assuming 25kWh per hour
-    const subtotal = pricePerKwh * estimatedKwh;
-    const tax = subtotal * 0.0825; // 8.25% tax
-    const total = subtotal + tax;
-    return total.toFixed(2);
-  };
-
-  const calculateSubtotal = () => {
-    if (!station) return "0.00";
-    const pricePerKwh = station.price_per_kwh;
-    const estimatedKwh = parseInt(duration) * 25;
     return (pricePerKwh * estimatedKwh).toFixed(2);
-  };
-
-  const calculateTax = () => {
-    const subtotal = parseFloat(calculateSubtotal());
-    return (subtotal * 0.0825).toFixed(2);
   };
 
   const resetModal = () => {
     setStep(1);
     setSelectedTime("");
     setDuration("2");
-    setError(null);
-    setIsProcessing(false);
     onClose();
   };
 
@@ -175,7 +121,7 @@ export function BookingModal({
               <div className="flex gap-4">
                 <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                   <img
-                    src={station.image_url || 'https://images.unsplash.com/photo-1751355356724-7df0dda28b2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJpYyUyMHZlaGljbGUlMjBjaGFyZ2luZyUyMHN0YXRpb24lMjBtb2Rlcm58ZW58MXx8fHwxNzU4Njc4NDg3fDA&ixlib=rb-4.1.0&q=80&w=1080'}
+                    src={station.image}
                     alt={station.name}
                     className="w-full h-full object-cover"
                   />
@@ -189,9 +135,9 @@ export function BookingModal({
                   <div className="flex items-center gap-4 text-sm mt-2">
                     <span className="flex items-center">
                       <Zap className="w-4 h-4 mr-1 text-green-600" />
-                      {station.power_kw}kW
+                      {station.power}
                     </span>
-                    <span>${station.price_per_kwh}/kWh</span>
+                    <span>{station.price}</span>
                   </div>
                 </div>
               </div>
@@ -209,7 +155,7 @@ export function BookingModal({
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date: Date) => date < new Date()}
+                    disabled={(date) => date < new Date()}
                     className="rounded-md"
                   />
                 </div>
@@ -265,12 +211,6 @@ export function BookingModal({
 
           {step === 2 && (
             <div className="space-y-6">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-
               <div>
                 <h3 className="text-lg font-semibold mb-4">Booking Summary</h3>
                 <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
@@ -290,14 +230,6 @@ export function BookingModal({
                     <span>Estimated Usage:</span>
                     <span>{parseInt(duration) * 25} kWh</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>${calculateSubtotal()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax (8.25%):</span>
-                    <span>${calculateTax()}</span>
-                  </div>
                   <Separator />
                   <div className="flex justify-between font-semibold">
                     <span>Total Cost:</span>
@@ -308,55 +240,17 @@ export function BookingModal({
 
               <div>
                 <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
-                <div className="space-y-3">
-                  {PaymentService.getSupportedMethods().includes('stripe') && (
-                    <Card 
-                      className={`border-2 cursor-pointer transition-colors ${
-                        selectedPaymentMethod === 'stripe' ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                      }`}
-                      onClick={() => setSelectedPaymentMethod('stripe')}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <CreditCard className="w-5 h-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Credit Card (Stripe)</p>
-                            <p className="text-sm text-gray-600">Visa, Mastercard, American Express</p>
-                          </div>
-                          {selectedPaymentMethod === 'stripe' && (
-                            <Check className="w-5 h-5 text-green-600 ml-auto" />
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {PaymentService.getSupportedMethods().includes('payos') && (
-                    <Card 
-                      className={`border-2 cursor-pointer transition-colors ${
-                        selectedPaymentMethod === 'payos' ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                      }`}
-                      onClick={() => setSelectedPaymentMethod('payos')}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <CreditCard className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">PayOS</p>
-                            <p className="text-sm text-gray-600">Vietnamese payment gateway</p>
-                          </div>
-                          {selectedPaymentMethod === 'payos' && (
-                            <Check className="w-5 h-5 text-green-600 ml-auto" />
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
+                <Card className="border-green-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-8 h-8 text-green-600" />
+                      <div>
+                        <p className="font-medium">Credit Card ending in 1234</p>
+                        <p className="text-sm text-gray-600">Expires 12/25</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               <div className="flex gap-3">
@@ -364,23 +258,14 @@ export function BookingModal({
                   variant="outline"
                   onClick={() => setStep(1)}
                   className="flex-1"
-                  disabled={isProcessing}
                 >
                   Back
                 </Button>
                 <Button
                   onClick={handleBooking}
                   className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={isProcessing}
                 >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Confirm & Pay'
-                  )}
+                  Confirm Booking
                 </Button>
               </div>
             </div>
@@ -410,11 +295,41 @@ export function BookingModal({
                   Duration: {duration} hours
                 </p>
               </div>
+              
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                <h4 className="font-semibold text-green-800 mb-2">✨ Ready to Charge?</h4>
+                <p className="text-sm text-green-700 mb-3">
+                  Are you already at the station? Start charging now!
+                </p>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                  onClick={() => {
+                    if (onStartCharging && station) {
+                      // Mock data - in production, get from actual booking
+                      onStartCharging({
+                        pointId: 1, // Should come from booking/station
+                        pointName: "Point #1",
+                        stationName: station.name,
+                        powerKw: station.powerKw || 150,
+                        pricePerKwh: station.pricePerKwh || 5000,
+                        bookingId: Date.now(), // Should be actual booking ID
+                      });
+                      resetModal();
+                    }
+                  }}
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  Yes, Start Charging Now
+                </Button>
+              </div>
+
               <Button
                 onClick={resetModal}
-                className="w-full bg-green-600 hover:bg-green-700"
+                variant="outline"
+                className="w-full"
               >
-                Done
+                No, I'll Start Later
               </Button>
             </div>
           )}

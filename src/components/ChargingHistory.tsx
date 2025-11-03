@@ -12,9 +12,11 @@ import {
   ChevronRight,
   Loader2,
   FileText,
+  BarChart3,
 } from 'lucide-react';
 import { chargingSessionApi, ChargingSession } from '../api/chargingSessionApi';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ChargingHistoryProps {
   limit?: number;
@@ -22,6 +24,7 @@ interface ChargingHistoryProps {
 
 export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<ChargingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -104,11 +107,26 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
             <History className="w-5 h-5" />
             Charging History
           </CardTitle>
-          {total > sessions.length && (
-            <Button variant="link" size="sm">
-              View All ({total})
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/personal-report')}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Personal Report
             </Button>
-          )}
+            {total > sessions.length && (
+              <Button 
+                variant="link" 
+                size="sm"
+                onClick={() => navigate('/user-history')}
+              >
+                View All ({total})
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -269,6 +287,16 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
                 </p>
                 <p className="text-xs text-gray-600">Total Spent</p>
               </div>
+            </div>
+            <div className="mt-4 text-center">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/personal-report')}
+                className="flex items-center gap-2 mx-auto"
+              >
+                <BarChart3 className="w-4 h-4" />
+                View Detailed Report
+              </Button>
             </div>
           </div>
         )}

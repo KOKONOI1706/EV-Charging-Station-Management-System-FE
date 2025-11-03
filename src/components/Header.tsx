@@ -10,9 +10,10 @@ interface HeaderProps {
   userName?: string;
   currentView: string;
   onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void;
+  onOpenProfile?: () => void;
 }
 
-export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate }: HeaderProps) {
+export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate, onOpenProfile }: HeaderProps) {
   const { t } = useLanguage();
   
   return (
@@ -86,8 +87,13 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
           
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
-              <User className="w-5 h-5" />
-              <span className="hidden sm:inline">{t.welcome}, {userName}</span>
+              <button 
+                onClick={onOpenProfile}
+                className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors"
+              >
+                <User className="w-5 h-5" />
+                <span className="hidden sm:inline">{t.welcome}, {userName}</span>
+              </button>
               <Button
                 onClick={async () => {
                   try {

@@ -58,18 +58,16 @@ export interface Station {
 }
 
 export interface User {
-  user_id: string;
+  id: string;
   name: string;
   email: string;
-  phone: string | null;
-  role_id: number;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
-  token?: string;
-  // Frontend-specific fields
-  role?: "customer" | "staff" | "admin";
-  vehicleInfo?: {
+  phone: string;
+  memberSince: string;
+  totalSessions: number;
+  totalSpent: number;
+  favoriteStations: string[];
+  role: "customer" | "staff" | "admin";
+  vehicleInfo: {
     make: string;
     model: string;
     year: number;
@@ -79,7 +77,7 @@ export interface User {
 
 export interface Booking {
   id: string;
-  userId: string; // Changed to number to match User interface
+  userId: string;
   stationId: string;
   station: Station;
   date: Date;
@@ -135,31 +133,31 @@ export let MOCK_STATIONS: Station[] = ENHANCED_MOCK_STATIONS;
 
 export const MOCK_USERS: User[] = [
   {
-    user_id: 1,
+    id: "user_001",
     name: "Alex Johnson",
     email: "alex.johnson@email.com",
     phone: "+1 (555) 123-4567",
-    role_id: 1,
-    created_at: "2023-01-15",
-    updated_at: "2023-01-15",
-    is_active: true,
+    memberSince: "2023-01-15",
+    totalSessions: 45,
+    totalSpent: 1250.75,
+    favoriteStations: ["1", "2", "4"],
     role: "customer",
     vehicleInfo: {
       make: "Tesla",
-      model: "Model 3", 
+      model: "Model 3",
       year: 2022,
       batteryCapacity: 75
     }
   },
   {
-    user_id: 2,
+    id: "staff_001",
     name: "Sarah Martinez",
     email: "sarah.martinez@chargetech.com",
     phone: "+1 (555) 123-4568",
-    role_id: 2,
-    created_at: "2022-06-01",
-    updated_at: "2022-06-01",
-    is_active: true,
+    memberSince: "2022-06-01",
+    totalSessions: 0,
+    totalSpent: 0,
+    favoriteStations: [],
     role: "staff",
     vehicleInfo: {
       make: "Nissan",
@@ -169,14 +167,14 @@ export const MOCK_USERS: User[] = [
     }
   },
   {
-    user_id: 3,
+    id: "admin_001",
     name: "Michael Chen",
     email: "michael.chen@chargetech.com",
     phone: "+1 (555) 123-4569",
-    role_id: 3,
-    created_at: "2022-01-01",
-    updated_at: "2022-01-01",
-    is_active: true,
+    memberSince: "2022-01-01",
+    totalSessions: 0,
+    totalSpent: 0,
+    favoriteStations: [],
     role: "admin",
     vehicleInfo: {
       make: "BMW",
@@ -238,7 +236,7 @@ export const PRICING_PLANS: PricingPlan[] = [
 export const MOCK_BOOKINGS: Booking[] = [
   {
     id: "booking_001",
-    userId: 1,
+    userId: "user_001",
     stationId: "1",
     station: MOCK_STATIONS[0],
     date: new Date(2024, 11, 28, 14, 0), // December 28, 2024 2:00 PM
@@ -249,7 +247,7 @@ export const MOCK_BOOKINGS: Booking[] = [
   },
   {
     id: "booking_002",
-    userId: 1,
+    userId: "user_001",
     stationId: "2",
     station: MOCK_STATIONS[1],
     date: new Date(2024, 11, 20, 10, 0), // December 20, 2024 10:00 AM
@@ -269,7 +267,7 @@ export const MOCK_BOOKINGS: Booking[] = [
   },
   {
     id: "booking_003",
-    userId: 1,
+    userId: "user_001",
     stationId: "4",
     station: MOCK_STATIONS[3],
     date: new Date(2024, 11, 15, 16, 0), // December 15, 2024 4:00 PM
@@ -327,9 +325,9 @@ export class MockDatabaseService {
     return MOCK_STATIONS.find(station => station.id === id) || null;
   }
 
-  static async getUser(id: number): Promise<User | null> {
+  static async getUser(id: string): Promise<User | null> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    return MOCK_USERS.find(u => u.user_id === id) || null;
+    return id === "user_001" ? MOCK_USER : null;
   }
 
   static async getUserBookings(userId: string): Promise<Booking[]> {
@@ -341,7 +339,7 @@ export class MockDatabaseService {
     await new Promise(resolve => setTimeout(resolve, 500));
     const newBooking: Booking = {
       id: `booking_${Date.now()}`,
-      userId: bookingData.userId || 1, // Changed to number
+      userId: bookingData.userId || "user_001",
       stationId: bookingData.stationId || "",
       station: bookingData.station!,
       date: bookingData.date || new Date(),

@@ -35,6 +35,9 @@ import { useLanguage } from '../hooks/useLanguage';
 import { LanguageSelector } from './LanguageSelector';
 import { toast } from 'sonner';
 import { ChargingSessionsManagement } from './ChargingSessionsManagement';
+import { ChargingPointsManagement } from './ChargingPointsManagement';
+import * as staffStatsApi from '../api/staffStatsApi';
+import * as userStationsApi from '../api/userStationsApi';
 
 interface StationMetrics {
   todaysSessions: number;
@@ -43,86 +46,114 @@ interface StationMetrics {
   averageSessionDuration: number;
   customerSatisfaction: number;
   maintenanceAlerts: number;
+  yesterdaysSessions?: number;
+  yesterdaysRevenue?: number;
 }
 
 interface StaffAnalytics {
   dailyUsage: { date: string; sessions: number; revenue: number }[];
   hourlyPattern: { hour: number; sessions: number; utilization: number }[];
   weeklyTrend: { day: string; sessions: number; revenue: number }[];
-  recentSessions: { id: string; customer: string; duration: string; amount: number; status: string }[];
+  recentSessions: { id: string; customer: string; duration: string; amount: number; status: string; station?: string }[];
 }
 
 export function EnhancedStaffDashboard() {
   const { t } = useLanguage();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
-  const [selectedStation, setSelectedStation] = useState<string>('all');
+  const [selectedStation, setSelectedStation] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('analytics');
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
   const [analytics, setAnalytics] = useState<StaffAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load stations and user's assigned station
   useEffect(() => {
-    loadData();
-  }, [selectedStation]);
+    const initStations = async () => {
+      try {
+        const stationsData = await MockDatabaseService.getStations();
+        setStations(stationsData);
+        
+        // Try to load user's assigned station from database
+        if (user?.id) {
+          try {
+            const userStationData = await userStationsApi.getUserStation(parseInt(user.id));
+            
+            if (userStationData.stationId && stationsData.some(s => s.id === userStationData.stationId)) {
+              // User has an assigned station in database, use it
+              console.log(`[Staff Dashboard] User assigned to station: ${userStationData.station?.name}`);
+              setSelectedStation(userStationData.stationId);
+            } else {
+              // No assigned station, try localStorage as fallback
+              const savedStationId = localStorage.getItem('staff_selected_station');
+              if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+                setSelectedStation(savedStationId);
+              } else if (stationsData.length > 0) {
+                // Default to first station
+                setSelectedStation(stationsData[0].id);
+              }
+            }
+          } catch (error) {
+            console.error('[Staff Dashboard] Failed to load user station from database, using fallback:', error);
+            // Fallback to localStorage
+            const savedStationId = localStorage.getItem('staff_selected_station');
+            if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+              setSelectedStation(savedStationId);
+            } else if (stationsData.length > 0) {
+              setSelectedStation(stationsData[0].id);
+            }
+          }
+        } else {
+          // No user ID, use localStorage fallback
+          const savedStationId = localStorage.getItem('staff_selected_station');
+          if (savedStationId && stationsData.some(s => s.id === savedStationId)) {
+            setSelectedStation(savedStationId);
+          } else if (stationsData.length > 0) {
+            setSelectedStation(stationsData[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load stations:', error);
+        toast.error('Không thể tải danh sách trạm');
+      }
+    };
+    initStations();
+  }, [user]);
+
+  // Load data when station changes
+  useEffect(() => {
+    if (selectedStation) {
+      // Save to localStorage as backup
+      localStorage.setItem('staff_selected_station', selectedStation);
+      
+      // Save to database if user is logged in
+      if (user?.id) {
+        userStationsApi.updateUserStation(parseInt(user.id), selectedStation)
+          .then(() => {
+            console.log(`[Staff Dashboard] Saved station ${selectedStation} to database for user ${user.id}`);
+          })
+          .catch(error => {
+            console.error('[Staff Dashboard] Failed to save station to database:', error);
+            // Continue anyway, localStorage is the fallback
+          });
+      }
+      
+      loadData();
+    }
+  }, [selectedStation, user]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const stationsData = await MockDatabaseService.getStations();
-      setStations(stationsData);
       
-      // Mock staff metrics
-      setMetrics({
-        todaysSessions: 23,
-        todaysRevenue: 567.80,
-        currentUtilization: 68.5,
-        averageSessionDuration: 2.3,
-        customerSatisfaction: 4.7,
-        maintenanceAlerts: 2
-      });
+      // Fetch REAL staff metrics from database
+      const metricsData = await staffStatsApi.getStaffMetrics(selectedStation);
+      setMetrics(metricsData);
 
-      // Mock analytics data
-      const dailyUsage = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        return {
-          date: date.toISOString().split('T')[0],
-          sessions: Math.floor(Math.random() * 30) + 15,
-          revenue: Math.floor(Math.random() * 500) + 200
-        };
-      }).reverse();
-
-      const hourlyPattern = Array.from({ length: 24 }, (_, hour) => ({
-        hour,
-        sessions: Math.floor(Math.random() * 8) + 2,
-        utilization: Math.floor(Math.random() * 80) + 20
-      }));
-
-      const weeklyTrend = [
-        { day: 'Mon', sessions: 145, revenue: 3250 },
-        { day: 'Tue', sessions: 132, revenue: 2980 },
-        { day: 'Wed', sessions: 156, revenue: 3420 },
-        { day: 'Thu', sessions: 148, revenue: 3180 },
-        { day: 'Fri', sessions: 167, revenue: 3650 },
-        { day: 'Sat', sessions: 189, revenue: 4120 },
-        { day: 'Sun', sessions: 134, revenue: 2890 }
-      ];
-
-      const recentSessions = [
-        { id: '1', customer: 'John Doe', duration: '2.5h', amount: 45.60, status: 'completed' },
-        { id: '2', customer: 'Jane Smith', duration: '1.8h', amount: 32.40, status: 'completed' },
-        { id: '3', customer: 'Mike Johnson', duration: '3.2h', amount: 58.80, status: 'in-progress' },
-        { id: '4', customer: 'Sarah Wilson', duration: '2.1h', amount: 38.20, status: 'completed' },
-        { id: '5', customer: 'Tom Brown', duration: '1.5h', amount: 27.50, status: 'completed' }
-      ];
-
-      setAnalytics({
-        dailyUsage,
-        hourlyPattern,
-        weeklyTrend,
-        recentSessions
-      });
+      // Fetch REAL analytics data from database
+      const analyticsData = await staffStatsApi.getStaffAnalytics(selectedStation);
+      setAnalytics(analyticsData);
 
     } catch (error) {
       console.error('Failed to load staff data:', error);
@@ -166,10 +197,9 @@ export function EnhancedStaffDashboard() {
           <LanguageSelector />
           <Select value={selectedStation} onValueChange={setSelectedStation}>
             <SelectTrigger className="w-48">
-              <SelectValue />
+              <SelectValue placeholder="Chọn trạm..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t.allStations}</SelectItem>
               {stations.map((station) => (
                 <SelectItem key={station.id} value={station.id}>
                   {station.name}
@@ -203,7 +233,12 @@ export function EnhancedStaffDashboard() {
               <div>
                 <p className="text-sm text-gray-600">{t.todaysSessions}</p>
                 <p className="text-2xl font-bold">{metrics.todaysSessions}</p>
-                <p className="text-xs text-green-600">+15% {t.vsYesterday}</p>
+                <p className="text-xs text-green-600">
+                  {metrics.yesterdaysSessions !== undefined
+                    ? staffStatsApi.calculatePercentageChange(metrics.todaysSessions, metrics.yesterdaysSessions)
+                    : '+0%'}{' '}
+                  {t.vsYesterday}
+                </p>
               </div>
               <Zap className="w-8 h-8 text-green-600" />
             </div>
@@ -215,8 +250,13 @@ export function EnhancedStaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{t.todaysRevenue}</p>
-                <p className="text-2xl font-bold">${metrics.todaysRevenue}</p>
-                <p className="text-xs text-green-600">+8% {t.vsYesterday}</p>
+                <p className="text-2xl font-bold">${metrics.todaysRevenue.toFixed(2)}</p>
+                <p className="text-xs text-green-600">
+                  {metrics.yesterdaysRevenue !== undefined
+                    ? staffStatsApi.calculatePercentageChange(metrics.todaysRevenue, metrics.yesterdaysRevenue)
+                    : '+0%'}{' '}
+                  {t.vsYesterday}
+                </p>
               </div>
               <DollarSign className="w-8 h-8 text-blue-600" />
             </div>
@@ -228,7 +268,7 @@ export function EnhancedStaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{t.utilization}</p>
-                <p className="text-2xl font-bold">{metrics.currentUtilization}%</p>
+                <p className="text-2xl font-bold">{metrics.currentUtilization.toFixed(1)}%</p>
                 <p className="text-xs text-gray-500">{t.currentLoad}</p>
               </div>
               <Activity className="w-8 h-8 text-purple-600" />
@@ -241,7 +281,7 @@ export function EnhancedStaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{t.avgDuration}</p>
-                <p className="text-2xl font-bold">{metrics.averageSessionDuration}h</p>
+                <p className="text-2xl font-bold">{metrics.averageSessionDuration.toFixed(1)}h</p>
                 <p className="text-xs text-gray-500">{t.perSession}</p>
               </div>
               <Clock className="w-8 h-8 text-orange-600" />
@@ -276,10 +316,11 @@ export function EnhancedStaffDashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
           <TabsTrigger value="sessions">{t.sessions}</TabsTrigger>
           <TabsTrigger value="stations">{t.stations}</TabsTrigger>
           <TabsTrigger value="maintenance">{t.maintenance}</TabsTrigger>
@@ -290,7 +331,15 @@ export function EnhancedStaffDashboard() {
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement 
             userRole="staff" 
-            stationId={selectedStation !== 'all' ? parseInt(selectedStation) : undefined}
+            stationId={selectedStation}
+          />
+        </TabsContent>
+
+        {/* Charging Points Management */}
+        <TabsContent value="chargingPoints">
+          <ChargingPointsManagement
+            userRole="staff"
+            stationId={selectedStation}
           />
         </TabsContent>
 

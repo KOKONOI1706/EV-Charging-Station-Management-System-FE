@@ -51,29 +51,46 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
 
   // Poll for active session
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const fetchActiveSession = async () => {
       try {
         // Assuming user.id is the numeric user_id
         const userId = parseInt(user.id);
         const activeSession = await chargingSessionApi.getActiveSession(userId);
-        setSession(activeSession);
+        
+        // Only update if session exists
         if (activeSession) {
+          setSession(activeSession);
           setCurrentMeter(activeSession.meter_start);
+          setError(null);
+        } else {
+          // No active session
+          setSession(null);
+          setError(null);
         }
       } catch (err) {
         console.error('Error fetching active session:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load session');
+        // Only set error if it's not a 404 (no active session)
+        if (err instanceof Error && !err.message.includes('404') && !err.message.includes('No active')) {
+          setError(err.message);
+        } else {
+          setSession(null);
+          setError(null);
+        }
       } finally {
         setLoading(false);
       }
     };
 
+    // Fetch immediately
     fetchActiveSession();
 
-    // Poll every 10 seconds
-    const interval = setInterval(fetchActiveSession, 10000);
+    // Poll every 15 seconds (reduced from 10 to improve performance)
+    const interval = setInterval(fetchActiveSession, 15000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -95,7 +112,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
   useEffect(() => {
     if (!session || !session.charging_points?.stations) return;
 
-    const pricePerKwh = session.charging_points.stations.price_rate;
+    const pricePerKwh = session.charging_points.stations.price_per_kwh;
     const idleFeePerMin = session.charging_points.idle_fee_per_min || 0;
     
     const cost = chargingSessionApi.calculateEstimatedCost(
@@ -152,7 +169,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         energyConsumed: result.energy_consumed_kwh || 0,
         duration: chargingSessionApi.formatDuration(session.start_time),
         amount: costInVND,
-        pricePerKwh: session.charging_points?.stations?.price_rate || 5000,
+        pricePerKwh: session.charging_points?.stations?.price_per_kwh || 5000,
       };
 
       console.log('💳 Opening payment modal:', {
@@ -353,7 +370,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
                 <span className="text-xs font-medium">Rate</span>
               </div>
               <p className="text-lg font-bold text-orange-900">
-                {chargingSessionApi.formatCost(station?.price_rate || 0)}/kWh
+                {chargingSessionApi.formatCost(station?.price_per_kwh || 0)}/kWh
               </p>
             </div>
           </div>

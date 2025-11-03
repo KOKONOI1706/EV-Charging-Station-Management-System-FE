@@ -23,7 +23,18 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
             <div className="w-4 h-4 bg-white rounded-full"></div>
           </div>
           <button 
-            onClick={() => onNavigate("home")}
+            onClick={async () => {
+              // If user is authenticated, logout first before going home
+              if (isAuthenticated) {
+                try {
+                  await AuthService.logout();
+                  console.log('✅ Logged out when clicking logo');
+                } catch (err) {
+                  console.error('❌ Logout failed:', err);
+                }
+              }
+              onNavigate("home");
+            }}
             className="text-xl font-semibold hover:text-green-600 transition-colors"
           >
             ChargeTech

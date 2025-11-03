@@ -14,7 +14,6 @@ import {
   Battery
 } from "lucide-react";
 import { Booking } from "../data/mockDatabase";
-import { MockDatabaseService } from "../data/mockDatabase";
 import { toast } from "sonner";
 import { ActiveChargingSession } from "./ActiveChargingSession";
 import { ChargingHistory } from "./ChargingHistory";
@@ -23,6 +22,9 @@ import { useLanguage } from "../hooks/useLanguage";
 import { ProfileModal } from "./ProfileModal";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { AuthService } from "../services/authService";
+import { VehicleManagement } from "./VehicleManagement";
+import { userStatsApi, UserStats } from "../api/userStatsApi";
+import * as chargingPointsApi from "../api/chargingPointsApi";
 
 interface UserDashboardProps {
   bookings: Booking[];
@@ -46,6 +48,10 @@ export function UserDashboard({
   const { t } = useLanguage();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  
+  console.log('🔄 UserDashboard render:', { loadingStats, hasStats: !!userStats, stats: userStats });
   
   // Get current user info
   const currentUser = AuthService.getCurrentUser();
@@ -68,55 +74,99 @@ export function UserDashboard({
     isOpen: false,
   });
 
+  // Load user statistics from API
+  useEffect(() => {
+    const loadUserStats = async () => {
+      if (!currentUser?.id) {
+        console.log('❌ No current user');
+        setLoadingStats(false);
+        return;
+      }
+      
+      try {
+        console.log('🔄 Loading user stats for user:', currentUser.id);
+        setLoadingStats(true);
+        
+        const stats = await userStatsApi.getUserStats(parseInt(currentUser.id));
+        console.log('✅ Stats fetched:', stats);
+        
+        setUserStats(stats);
+      } catch (error) {
+        console.error('❌ Error loading user stats:', error);
+        // Set default stats on error to avoid showing loading forever
+        setUserStats({
+          totalSessions: 0,
+          sessionsThisMonth: 0,
+          totalSpent: 0,
+          averageRating: 4.8,
+          totalEnergyConsumed: 0,
+          activeSessions: 0
+        });
+        toast.error('Không thể tải thống kê. Hiển thị dữ liệu mặc định.');
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    loadUserStats();
+  }, [currentUser?.id]); // Only depend on user ID, not entire user object
+
   // Auto-open start charging modal if coming from check-in
   useEffect(() => {
     const loadStationDetailsAndOpenModal = async () => {
-      if (autoOpenStartCharging && pendingChargingData) {
-        console.log('🚀 Auto-opening start charging modal from check-in:', pendingChargingData);
+      if (!autoOpenStartCharging || !pendingChargingData) return;
+      
+      console.log('🚀 Auto-opening start charging modal from check-in:', pendingChargingData);
+      
+      try {
+        // Fetch charging points immediately (parallel, don't wait)
+        const chargingPointsPromise = chargingPointsApi.getStationChargingPoints(pendingChargingData.stationId);
         
-        try {
-          // Fetch station details to get charging point info
-          const stations = await MockDatabaseService.getStations();
-          const station = stations.find(s => s.id === pendingChargingData.stationId);
-          
-          if (!station) {
-            console.error('❌ Station not found:', pendingChargingData.stationId);
-            return;
-          }
-          
-          // Find an available charging point
-          let targetPoint = station.chargingPoints?.find(
-            cp => pendingChargingData.chargingPointId !== 'any' 
-              ? cp.id === pendingChargingData.chargingPointId 
-              : cp.status === 'available'
-          );
-          
-          // If no point found or chargingPointId is "any", use first available
-          if (!targetPoint) {
-            targetPoint = station.chargingPoints?.find(cp => cp.status === 'available');
-          }
-          
-          if (!targetPoint) {
-            console.error('❌ No available charging point found');
-            return;
-          }
-          
-          console.log('✅ Found charging point:', targetPoint);
-          
-          // Extract numeric ID from string ID (e.g., 'cp-1' -> 1)
-          const numericPointId = parseInt(targetPoint.id.replace(/\D/g, '')) || targetPoint.number;
-          
-          setStartChargingModal({
-            isOpen: true,
-            stationName: pendingChargingData.stationName,
-            pointName: `Point ${targetPoint.number}`,
-            pointId: numericPointId,
-            powerKw: targetPoint.powerKw,
-            pricePerKwh: station.pricePerKwh, // Use station's price
-          });
-        } catch (error) {
-          console.error('❌ Error loading station details:', error);
+        // Use default price if we have it in pendingChargingData, otherwise fetch
+        const defaultPrice = 0.42; // Default VND per kWh
+        
+        const chargingPoints = await chargingPointsPromise;
+        console.log('✅ Fetched charging points:', chargingPoints.length, 'points');
+        
+        if (!chargingPoints || chargingPoints.length === 0) {
+          console.error('❌ No charging points found');
+          toast.error('Không tìm thấy điểm sạc tại trạm này');
+          return;
         }
+        
+        // Find the specific charging point if provided, otherwise get first available
+        let targetPoint = chargingPoints[0]; // Default to first
+        
+        if (pendingChargingData.chargingPointId && pendingChargingData.chargingPointId !== 'any') {
+          const requestedPointId = parseInt(pendingChargingData.chargingPointId);
+          const foundPoint = chargingPoints.find(cp => cp.point_id === requestedPointId);
+          if (foundPoint) {
+            targetPoint = foundPoint;
+          }
+        } else {
+          // Find first available
+          const availablePoint = chargingPoints.find(cp => cp.status === 'Available');
+          if (availablePoint) {
+            targetPoint = availablePoint;
+          }
+        }
+        
+        console.log('✅ Selected charging point:', targetPoint.point_id, targetPoint.name);
+        
+        // Open modal immediately with available data
+        setStartChargingModal({
+          isOpen: true,
+          stationName: pendingChargingData.stationName,
+          pointName: targetPoint.name,
+          pointId: targetPoint.point_id,
+          powerKw: targetPoint.power_kw,
+          pricePerKwh: defaultPrice, // Use default, can fetch later if needed
+        });
+        
+        console.log('✅ Modal opened successfully');
+      } catch (error) {
+        console.error('❌ Error loading charging point details:', error);
+        toast.error('Không thể tải thông tin điểm sạc');
       }
     };
     
@@ -167,11 +217,16 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.totalSessions}</p>
-                <p className="text-2xl font-bold">{bookings.length}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {userStats ? userStats.totalSessions : (loadingStats ? "..." : "0")}
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  +{userStats ? userStats.sessionsThisMonth : (loadingStats ? "..." : "0")} {t.thisMonth}
+                </p>
               </div>
-              <Zap className="w-8 h-8 text-green-600" />
+              <Zap className="w-8 h-8 text-green-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -179,22 +234,14 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.thisMonth}</p>
-                <p className="text-2xl font-bold">
-                  {
-                    bookings.filter((b) => {
-                      const bookingDate = new Date(b.date);
-                      const now = new Date();
-                      return (
-                        bookingDate.getMonth() === now.getMonth() &&
-                        bookingDate.getFullYear() === now.getFullYear()
-                      );
-                    }).length
-                  }
+                <p className="text-2xl font-bold text-gray-900">
+                  {userStats ? userStats.sessionsThisMonth : (loadingStats ? "..." : "0")}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">Phiên sạc</p>
               </div>
-              <Calendar className="w-8 h-8 text-blue-600" />
+              <Calendar className="w-8 h-8 text-blue-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -202,16 +249,16 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.totalSpent}</p>
-                <p className="text-2xl font-bold">
-                  $
-                  {bookings
-                    .reduce((sum, b) => sum + parseFloat(b.price), 0)
-                    .toFixed(2)}
+                <p className="text-2xl font-bold text-gray-900">
+                  ${userStats ? userStats.totalSpent.toFixed(2) : (loadingStats ? "..." : "0.00")}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {userStats ? userStats.totalEnergyConsumed.toFixed(1) : (loadingStats ? "..." : "0.0")} kWh
                 </p>
               </div>
-              <CreditCard className="w-8 h-8 text-purple-600" />
+              <CreditCard className="w-8 h-8 text-purple-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -219,21 +266,25 @@ export function UserDashboard({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm text-gray-600">{t.avgRating}</p>
-                <p className="text-2xl font-bold">4.8</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {userStats ? userStats.averageRating.toFixed(1) : (loadingStats ? "..." : "4.8")}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Đánh giá TB</p>
               </div>
-              <Star className="w-8 h-8 text-yellow-500" />
+              <Star className="w-8 h-8 text-yellow-500 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="current" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="current">{t.current}</TabsTrigger>
           <TabsTrigger value="upcoming">{t.upcoming}</TabsTrigger>
           <TabsTrigger value="history">{t.history}</TabsTrigger>
+          <TabsTrigger value="vehicles">{t.myVehicles}</TabsTrigger>
           <TabsTrigger value="settings">{t.settings}</TabsTrigger>
         </TabsList>
 
@@ -336,6 +387,10 @@ export function UserDashboard({
 
         <TabsContent value="history">
           <ChargingHistory limit={20} />
+        </TabsContent>
+
+        <TabsContent value="vehicles">
+          <VehicleManagement />
         </TabsContent>
 
         <TabsContent value="settings">

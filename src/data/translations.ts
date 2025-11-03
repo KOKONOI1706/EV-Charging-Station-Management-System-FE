@@ -541,6 +541,25 @@ export interface Translation {
   manageUsers: string;
   viewBookings: string;
   generateReport: string;
+  
+  // Vehicle Management
+  myVehicles: string;
+  addVehicle: string;
+  editVehicle: string;
+  deleteVehicle: string;
+  noVehiclesYet: string;
+  addVehicleToStart: string;
+  added: string;
+  enterVehicleDetails: string;
+  plateNumber: string;
+  make: string;
+  model: string;
+  year: string;
+  color: string;
+  deleteVehicleConfirm: string;
+  vehicleDeleted: string;
+  vehicleAdded: string;
+  vehicleUpdated: string;
 }
 
 export const translations: Record<Language, Translation> = {
@@ -1085,6 +1104,25 @@ export const translations: Record<Language, Translation> = {
     manageUsers: "Manage Users",
     viewBookings: "View Bookings",
     generateReport: "Generate Report",
+    
+    // Vehicle Management
+    myVehicles: "My Vehicles",
+    addVehicle: "Add Vehicle",
+    editVehicle: "Edit Vehicle",
+    deleteVehicle: "Delete Vehicle",
+    noVehiclesYet: "No vehicles added yet",
+    addVehicleToStart: "Add your first vehicle to get started",
+    added: "Added",
+    enterVehicleDetails: "Enter your vehicle details below",
+    plateNumber: "License Plate",
+    make: "Make",
+    model: "Model",
+    year: "Year",
+    color: "Color",
+    deleteVehicleConfirm: "Are you sure you want to delete this vehicle? This action cannot be undone.",
+    vehicleDeleted: "Vehicle deleted successfully",
+    vehicleAdded: "Vehicle added successfully",
+    vehicleUpdated: "Vehicle updated successfully",
   },
   vi: {
     // Header
@@ -1627,6 +1665,25 @@ export const translations: Record<Language, Translation> = {
     manageUsers: "Quản lý người dùng",
     viewBookings: "Xem đặt chỗ",
     generateReport: "Tạo báo cáo",
+    
+    // Vehicle Management
+    myVehicles: "Xe của tôi",
+    addVehicle: "Thêm xe",
+    editVehicle: "Chỉnh sửa xe",
+    deleteVehicle: "Xóa xe",
+    noVehiclesYet: "Chưa thêm xe nào",
+    addVehicleToStart: "Thêm xe đầu tiên của bạn để bắt đầu",
+    added: "Đã thêm",
+    enterVehicleDetails: "Nhập thông tin xe của bạn bên dưới",
+    plateNumber: "Biển số xe",
+    make: "Hãng xe",
+    model: "Mẫu xe",
+    year: "Năm",
+    color: "Màu sắc",
+    deleteVehicleConfirm: "Bạn có chắc chắn muốn xóa xe này không? Hành động này không thể hoàn tác.",
+    vehicleDeleted: "Đã xóa xe thành công",
+    vehicleAdded: "Đã thêm xe thành công",
+    vehicleUpdated: "Đã cập nhật xe thành công",
   }
 };
 

@@ -9,7 +9,7 @@ import { ProfileModal } from "./components/ProfileModal";
 import { UserDashboard } from "./components/UserDashboard";
 import { EnhancedStaffDashboard } from "./components/EnhancedStaffDashboard";
 import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
-import { PricingPage } from "./components/PricingPage";
+import PricingPage from "./pages/PricingPage";
 import { SupportPage } from "./components/SupportPage";
 import { Footer } from "./components/Footer";
 import { LanguageProvider } from "./components/LanguageProvider";
@@ -341,6 +341,20 @@ function AppContent() {
       <ProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
+        userName={user?.name || ''}
+        userEmail={user?.email || ''}
+        userPhone={user?.phone || ''}
+        onUpdate={async (name, email, phone) => {
+          if (user) {
+            // Update user object with new values
+            user.name = name;
+            user.email = email;
+            user.phone = phone;
+            // TODO: Send update to backend
+            toast.success('Profile updated successfully');
+            setIsProfileModalOpen(false);
+          }
+        }}
       />
 
       <BookingModal

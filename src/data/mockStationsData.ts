@@ -3,9 +3,7 @@ import { Station, ChargingPoint } from './mockDatabase';
 
 // Generate charging points for a station
 const generateChargingPoints = (stationId: string, total: number, available: number): ChargingPoint[] => {
-  const points: ChargingPoint[] = [];
-  const statuses: ChargingPoint['status'][] = ['available', 'in-use', 'maintenance'];
-  
+  const points: ChargingPoint[] = [];  
   for (let i = 1; i <= total; i++) {
     let status: ChargingPoint['status'] = 'available';
     

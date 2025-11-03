@@ -231,7 +231,7 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
           <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>

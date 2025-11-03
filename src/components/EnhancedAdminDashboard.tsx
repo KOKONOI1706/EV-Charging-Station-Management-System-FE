@@ -1,6 +1,5 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
 const PackageManagement = React.lazy(() => import("./PackageManagement"));
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -25,11 +24,8 @@ import {
   Activity
 } from "lucide-react";
 import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabase";
-import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
-import { LanguageSelector } from "./LanguageSelector";
-import { toast } from "sonner";
+import { Button } from "./ui/button";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 
 interface SystemSettings {
@@ -42,8 +38,6 @@ interface SystemSettings {
 
 export function EnhancedAdminDashboard() {
   const { t } = useLanguage();
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -91,7 +85,7 @@ export function EnhancedAdminDashboard() {
       ]);
     } catch (error) {
       console.error("Failed to load data:", error);
-      toast.error("Failed to load dashboard data");
+      console.error("Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +93,7 @@ export function EnhancedAdminDashboard() {
 
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    toast.success(`${key} ${value ? 'enabled' : 'disabled'}`);
+    console.log(`${key} ${value ? 'enabled' : 'disabled'}`);
   };
 
   const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
@@ -122,24 +116,6 @@ export function EnhancedAdminDashboard() {
         <div>
           <h1 className="text-3xl font-bold mb-2">{t.adminDashboard}</h1>
           <p className="text-gray-600">{t.completeSystemOverview}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <LanguageSelector />
-          <Button
-            variant="outline"
-            onClick={async () => {
-              try {
-                await logout();
-                toast.success(t.signOut || "Logged out");
-                navigate('/');
-              } catch (err) {
-                console.error('Logout failed:', err);
-                toast.error('Logout failed');
-              }
-            }}
-          >
-            {t.signOut}
-          </Button>
         </div>
       </div>
 

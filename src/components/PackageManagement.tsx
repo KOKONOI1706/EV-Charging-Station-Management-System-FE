@@ -268,12 +268,7 @@ const PackageManagement: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                     <Textarea
-                      placeholder="Nhập quyền lợi (mỗi dòng một quyền lợi)
-Ví dụ:
-Không giới hạn số phiên sạc
-Sạc siêu nhanh
-Giảm 10% phí sạc
-Hỗ trợ kỹ thuật 24/7"
+                      placeholder="Nhập quyền lợi"
                       value={formData.benefits}
                       onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                     />

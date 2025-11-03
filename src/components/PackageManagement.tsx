@@ -23,6 +23,8 @@ const PackageManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<ServicePackage | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   interface FormData {
     name: string;
     description: string;
@@ -80,6 +82,13 @@ const PackageManagement: React.FC = () => {
     discount_rate: number;
     charging_speed: string;
     priority_support: boolean;
+    bonus_minutes: number;
+    after_limit_discount: boolean;
+    reward_points: number;
+    free_start_fee: boolean;
+    booking_priority: boolean;
+    support_24_7: boolean;
+    energy_tracking: boolean;
   }
 
   // Function to parse text input into benefits structure
@@ -91,6 +100,13 @@ const PackageManagement: React.FC = () => {
     let discount_rate = 0;
     let charging_speed = '';
     let priority_support = false;
+    let bonus_minutes = 0;
+    let reward_points = 0;
+    let after_limit_discount = false;
+    let free_start_fee = false;
+    let booking_priority = false;
+    let support_24_7 = false;
+    let energy_tracking = false;
 
     // Parse each line for specific information
     lines.forEach(line => {
@@ -116,8 +132,43 @@ const PackageManagement: React.FC = () => {
       } else if (lowerLine.includes('nhanh')) {
         charging_speed = 'Fast (≤ 60kW)';
       }
-      if (lowerLine.includes('24/7') || lowerLine.includes('ưu tiên')) {
+      
+      // Parse priority support and 24/7
+      if (lowerLine.includes('ưu tiên khách hàng')) {
         priority_support = true;
+      }
+      if (lowerLine.includes('24/7')) {
+        support_24_7 = true;
+      }
+
+      // Parse bonus minutes
+      if (lowerLine.includes('phút sạc miễn phí')) {
+        const match = line.match(/(\d+)/);
+        if (match) {
+          bonus_minutes = parseInt(match[1]);
+        }
+      }
+
+      // Parse reward points
+      if (lowerLine.includes('điểm thưởng')) {
+        const match = line.match(/(\d+)/);
+        if (match) {
+          reward_points = parseInt(match[1]);
+        }
+      }
+
+      // Parse other benefits
+      if (lowerLine.includes('hết lượt vẫn sạc với giá ưu đãi')) {
+        after_limit_discount = true;
+      }
+      if (lowerLine.includes('miễn phí phí khởi động')) {
+        free_start_fee = true;
+      }
+      if (lowerLine.includes('ưu tiên đặt lịch')) {
+        booking_priority = true;
+      }
+      if (lowerLine.includes('theo dõi năng lượng')) {
+        energy_tracking = true;
       }
     });
 
@@ -127,7 +178,14 @@ const PackageManagement: React.FC = () => {
       max_sessions,
       discount_rate,
       charging_speed,
-      priority_support
+      priority_support,
+      bonus_minutes,
+      after_limit_discount,
+      reward_points,
+      free_start_fee,
+      booking_priority,
+      support_24_7,
+      energy_tracking
     };
   };
 
@@ -199,6 +257,15 @@ const PackageManagement: React.FC = () => {
     pkg.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Tính toán số trang
+  const totalPages = Math.ceil(filteredPackages.length / itemsPerPage);
+  
+  // Lấy dữ liệu cho trang hiện tại
+  const currentPackages = filteredPackages.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -213,10 +280,129 @@ const PackageManagement: React.FC = () => {
         </Alert>
       )}
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Danh sách gói dịch vụ</CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle>Danh sách gói dịch vụ</CardTitle>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="icon" className="w-8 h-8 border-2">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1.5 2C1.22386 2 1 2.22386 1 2.5V12.5C1 12.7761 1.22386 13 1.5 13H13.5C13.7761 13 14 12.7761 14 12.5V2.5C14 2.22386 13.7761 2 13.5 2H1.5ZM2 3H13V12H2V3Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd" />
+                    </svg>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Ghi chú cho admin</DialogTitle>
+                  </DialogHeader>
+                  <div className="text-sm font-mono whitespace-pre bg-gray-50 p-4 rounded-md border border-gray-200 max-h-[80vh] overflow-y-auto">
+{`=========================================
+         HƯỚNG DẪN NHẬP QUYỀN LỢI GÓI
+=========================================
+
+Phần này giúp bạn nhập quyền lợi của gói dịch vụ 
+sao cho hệ thống hiểu đúng.
+
+Vui lòng ghi đúng theo mẫu bên dưới, chỉ thay:
+- Số lượng phiên sạc
+- Phần trăm giảm giá
+- Tốc độ sạc (nhanh / siêu nhanh)
+- Hỗ trợ ưu tiên (có / không)
+
+-----------------------------------------
+              CÁCH GHI ĐÚNG MẪU
+-----------------------------------------
+
+1. Số phiên sạc/tháng:
+   - Ghi theo mẫu: X phiên sạc/tháng
+   - Ví dụ: 25 phiên sạc/tháng
+
+2. Giảm phí sạc (%):
+   - Ghi theo mẫu: Giảm X% phí sạc
+   - Ví dụ: Giảm 10% phí sạc
+
+3. Tốc độ sạc:
+   - Cách 1: Tốc độ sạc nhanh
+   - Cách 2: Tốc độ sạc siêu nhanh
+
+4. Hỗ trợ ưu tiên:
+   - Cách 1: Hỗ trợ ưu tiên khách hàng
+   - Cách 2: Không hỗ trợ ưu tiên khách hàng
+
+5. Phút sạc miễn phí:
+   - Ghi theo mẫu: Tặng X phút sạc miễn phí
+   - Ví dụ: Tặng 30 phút sạc miễn phí
+
+6. Điểm thưởng hàng tháng:
+   - Ghi theo mẫu: Tặng X điểm thưởng mỗi tháng
+   - Ví dụ: Tặng 100 điểm thưởng mỗi tháng
+
+7. Các quyền lợi đặc biệt (ghi chính xác):
+   - Hết lượt vẫn sạc với giá ưu đãi
+   - Miễn phí phí khởi động
+   - Ưu tiên đặt lịch sạc
+   - Hỗ trợ 24/7
+   - Theo dõi năng lượng tiêu thụ
+
+
+-----------------------------------------
+             LƯU Ý QUAN TRỌNG
+-----------------------------------------
+
+1. Không đổi thứ tự từ trong câu:
+   ✅ Đúng: Giảm 10% phí sạc
+   ❌ Sai:  Phí sạc giảm 10%
+
+2. Không thêm ký tự hay biểu tượng:
+   ✅ Đúng: Giảm 10% phí sạc
+   ❌ Sai:  Giảm 10% phí sạc!!!
+
+3. Mỗi quyền lợi viết trên 1 dòng riêng
+
+4. Luôn ghi đầy đủ dấu %:
+   ✅ Đúng: Giảm 10% phí sạc
+   ❌ Sai:  Giảm 10 phí sạc
+
+5. Chỉ dùng 2 cụm từ về tốc độ:
+   ✅ Đúng: Tốc độ sạc nhanh
+   ✅ Đúng: Tốc độ sạc siêu nhanh
+   ❌ Sai:  Sạc cực nhanh
+   ❌ Sai:  Nhanh siêu cấp
+
+-----------------------------------------
+              VÍ DỤ ĐẦY ĐỦ
+-----------------------------------------
+
+[Gói Tiêu Chuẩn]
+25 phiên sạc/tháng
+Tốc độ sạc nhanh
+Giảm 5% phí sạc
+Tặng 30 phút sạc miễn phí
+Tặng 50 điểm thưởng mỗi tháng
+Miễn phí phí khởi động
+Hỗ trợ ưu tiên khách hàng
+
+[Gói Cao Cấp]
+50 phiên sạc/tháng
+Tốc độ sạc siêu nhanh
+Giảm 10% phí sạc
+Tặng 60 phút sạc miễn phí
+Tặng 100 điểm thưởng mỗi tháng
+Hết lượt vẫn sạc với giá ưu đãi
+Miễn phí phí khởi động
+Ưu tiên đặt lịch sạc
+Hỗ trợ 24/7
+Theo dõi năng lượng tiêu thụ
+
+=========================================
+    CHỈ CẦN GHI ĐÚNG MẪU - HỆ THỐNG TỰ HIỂU
+=========================================`}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="flex gap-4">
               <Input
                 placeholder=" Tìm kiếm theo tên gói..."
@@ -313,18 +499,19 @@ const PackageManagement: React.FC = () => {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tên gói</TableHead>
-                  <TableHead>Mô tả</TableHead>
-                  <TableHead>Giá</TableHead>
-                  <TableHead>Thời hạn</TableHead>
-                  <TableHead>Quyền lợi</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
+            <div>
+              <Table className="w-full table-fixed">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="w-[15%] font-semibold">Tên gói</TableHead>
+                    <TableHead className="w-[22%] font-semibold">Mô tả</TableHead>
+                    <TableHead className="w-[13%] font-semibold">Giá</TableHead>
+                    <TableHead className="w-[10%] font-semibold">Thời hạn</TableHead>
+                    <TableHead className="w-[20%] font-semibold">Quyền lợi</TableHead>
+                    <TableHead className="w-[10%] font-semibold">Trạng thái</TableHead>
+                    <TableHead className="w-[10%] font-semibold text-center">Thao tác</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {filteredPackages.length === 0 ? (
                   <TableRow>
@@ -333,21 +520,37 @@ const PackageManagement: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredPackages.map((pkg) => (
+                  currentPackages.map((pkg) => (
                     <TableRow key={pkg.package_id}>
-                      <TableCell className="font-medium">{pkg.name}</TableCell>
-                      <TableCell className="truncate max-w-xs">
-                        {pkg.description}
+                      <TableCell className="font-medium w-[15%]">
+                        <div className="truncate">{pkg.name}</div>
                       </TableCell>
-                      <TableCell className="text-green-600 font-semibold">
-                        {pkg.price}đ
+                      <TableCell className="w-[22%]">
+                        <div className="truncate" title={pkg.description}>{pkg.description}</div>
                       </TableCell>
-                      <TableCell>{pkg.duration_days}</TableCell>
-                      <TableCell className="text-sm">
-                        {pkg.benefits?.features?.join(", ") || "-"}
+                      <TableCell className="text-green-600 font-semibold w-[13%]">
+                        <div className="truncate">{pkg.price.toLocaleString()}đ</div>
                       </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded text-sm ${
+                      <TableCell className="w-[10%]">
+                        <div className="truncate">{pkg.duration_days} ngày</div>
+                      </TableCell>
+                      <TableCell className="text-sm relative group w-[20%]">
+                        <div className="max-w-[120px] truncate" title={pkg.benefits?.features?.join(", ")}>
+                          {pkg.benefits?.features?.length ? 
+                            (pkg.benefits.features[0].length > 20 
+                              ? pkg.benefits.features[0].substring(0, 20) + "..."
+                              : pkg.benefits.features[0]) + 
+                            (pkg.benefits.features.length > 1 ? ", ..." : "")
+                            : "-"}
+                        </div>
+                        {pkg.benefits?.features?.length > 1 && (
+                          <div className="invisible group-hover:visible absolute z-50 bg-black text-white text-sm rounded p-2 w-48 left-0 mt-1 shadow-lg">
+                            {pkg.benefits.features.join("\n")}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-[10%]">
+                        <span className={`inline-block px-2 py-1 rounded text-sm ${
                           pkg.status === 'Active'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
@@ -355,27 +558,69 @@ const PackageManagement: React.FC = () => {
                           {pkg.status}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(pkg)}
-                        >
-                          Sửa
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(pkg.package_id)}
-                        >
-                          Xoá
-                        </Button>
+                      <TableCell className="w-[10%] text-center">
+                        <div className="flex items-center gap-2 justify-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(pkg)}
+                            className="px-2 py-1 min-w-[60px]"
+                          >
+                            Sửa
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(pkg.package_id)}
+                            className="px-2 py-1 min-w-[60px]"
+                          >
+                            Xoá
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
-            </Table>
+              </Table>
+              {/* Pagination */}
+              <div className="mt-4 flex items-center justify-between px-2">
+                <div className="text-sm text-gray-600">
+                  Hiển thị {Math.min(currentPage * itemsPerPage, filteredPackages.length)} / {filteredPackages.length} gói
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Trước
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        className={`w-8 h-8 p-0 ${currentPage === page ? 'bg-green-600' : ''}`}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Sau
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

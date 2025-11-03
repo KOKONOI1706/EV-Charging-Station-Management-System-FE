@@ -64,8 +64,14 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
   const handleBookStation = (station: Station, chargingPointId?: string) => {
     console.log('📍 handleBookStation called with chargingPointId:', chargingPointId);
     
-    // Check if already has active reservation
-    if (activeReservation) {
+    // Prevent multiple calls if modal is already open
+    if (showConfirmModal) {
+      console.log('⚠️ Modal already open, ignoring duplicate call');
+      return;
+    }
+    
+    // Check if already has ACTIVE reservation (not cancelled/expired)
+    if (activeReservation && activeReservation.status === 'active') {
       setNotification('⚠️ Bạn đã có một chỗ đang được giữ. Vui lòng hoàn thành hoặc hủy reservation hiện tại.');
       setTimeout(() => setNotification(null), 5000);
       return;
@@ -88,12 +94,16 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
   };
 
   const handleCancelReservation = () => {
+    console.log('🔵 handleCancelReservation called');
     if (activeReservation) {
       const success = reservationService.cancelReservation(activeReservation.id);
+      console.log('📊 Cancel result:', success);
       if (success) {
+        // Clear active reservation immediately
         setActiveReservation(null);
         setNotification('❌ Đã hủy đặt chỗ');
         setTimeout(() => setNotification(null), 5000);
+        console.log('✅ Active reservation cleared');
       }
     }
   };
@@ -182,7 +192,7 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
   return (
     <>
       {/* Floating Reservation Status */}
-      {activeReservation && (
+      {activeReservation && activeReservation.status === 'active' && (
         <div className="fixed bottom-6 right-6 z-50 max-w-sm">
           <ReservationTimer
             reservation={activeReservation}

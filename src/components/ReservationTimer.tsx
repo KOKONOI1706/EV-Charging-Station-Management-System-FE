@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Reservation, reservationService } from '../services/reservationService';
 import { Alert, AlertDescription } from './ui/alert';
+import { toast } from 'sonner';
 
 interface ReservationTimerProps {
   reservation: Reservation;
@@ -32,6 +33,14 @@ export function ReservationTimer({
 
   useEffect(() => {
     console.log('🔵 ReservationTimer mounted for:', reservation.id);
+    
+    // Kiểm tra status ngay khi mount - nếu không phải active thì không render
+    const initialCheck = reservationService.getReservation(reservation.id);
+    if (!initialCheck || initialCheck.status !== 'active') {
+      console.log('⚠️ Reservation not active on mount, skipping timer');
+      return; // Không start timer nếu status không phải active
+    }
+    
     let hasCalledCallback = false; // Prevent double callback
     
     // Cập nhật state mỗi giây
@@ -92,8 +101,17 @@ export function ReservationTimer({
 
   const handleCancel = () => {
     const success = reservationService.cancelReservation(reservation.id);
-    if (success && onCancel) {
-      onCancel();
+    if (success) {
+      toast.success('Đã hủy đặt chỗ thành công!', {
+        duration: 3000
+      });
+      if (onCancel) {
+        onCancel();
+      }
+    } else {
+      toast.error('Không thể hủy đặt chỗ, vui lòng thử lại sau', {
+        duration: 3000
+      });
     }
   };
 
@@ -104,27 +122,37 @@ export function ReservationTimer({
     const current = reservationService.getReservation(reservation.id);
     if (current && current.status !== 'active') {
       console.log(`⚠️ Reservation already processed (status: ${current.status}), not calling onComplete again`);
-      return; // Đừng gọi onComplete nữa vì đã xử lý rồi
+      toast.warning('⚠️ Reservation đã được xử lý', {
+        description: 'Không thể hoàn thành lại reservation này',
+        duration: 3000
+      });
+      return;
     }
     
     const success = reservationService.completeReservation(reservation.id);
     console.log('📊 Service complete result:', success);
     if (success) {
       console.log('✅ Successfully completed, calling onComplete callback once');
+      toast.success('🎉 Đã check-in thành công!\n ', {
+        duration: 4000
+      });
       if (onComplete) {
-        onComplete(); // Chỉ gọi 1 lần khi thành công
+        onComplete();
       }
     } else {
       console.log('⚠️ Complete failed, not calling onComplete');
+      toast.error('❌ Không thể hoàn thành check-in', {
+        description: 'Vui lòng thử lại sau',
+        duration: 3000
+      });
     }
   };
 
   const isNearExpiration = reservationService.isNearExpiration(currentReservation);
   const timeString = reservationService.formatRemainingTime(currentReservation.remainingTime);
 
-  // TEST MODE: Tính phần trăm thời gian còn lại (15 giây thay vì 15 phút)
-  // Đổi lại thành (15 * 60) khi deploy production
-  const percentage = (currentReservation.remainingTime / 15*60) * 100;
+  // Tính phần trăm thời gian còn lại (15 phút = 900 giây)
+  const percentage = Math.max(0, Math.min(100, (currentReservation.remainingTime / (15 * 60)) * 100));
 
   return (
     <Card className="border-2 border-green-500 shadow-lg">
@@ -185,12 +213,14 @@ export function ReservationTimer({
           {/* Progress Bar */}
           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <div
-              className={`h-full transition-all duration-1000 ${
-                isNearExpiration 
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500' 
-                  : 'bg-gradient-to-r from-green-500 to-emerald-500'
-              }`}
-              style={{ width: `${percentage}%` }}
+              className="h-full transition-[width] duration-500 ease-linear"
+              style={{ 
+                width: `${percentage}%`,
+                minWidth: percentage > 0 ? '2%' : '0%',
+                background: isNearExpiration 
+                  ? 'linear-gradient(to right, #ef4444, #f97316)' 
+                  : 'linear-gradient(to right, #22c55e, #10b981)'
+              }}
             />
           </div>
 

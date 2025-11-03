@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     try {
-      const updatedUser = await AuthService.updateProfile(currentUser.id, updates);
+      const updatedUser = await AuthService.updateProfile(currentUser.user_id, updates);
       setUser(updatedUser);
       toast.success("Cập nhật thông tin thành công");
     } catch (error) {

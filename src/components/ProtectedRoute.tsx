@@ -15,7 +15,7 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/auth" replace />;
   }
 
-  if (!allowedRoles.includes(currentUser.role)) {
+  if (!currentUser.role || !allowedRoles.includes(currentUser.role)) {
     // Not authorized, redirect based on role
     if (currentUser.role === "admin") {
       return <Navigate to="/admin" replace />;

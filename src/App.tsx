@@ -6,7 +6,7 @@ import { BookingModal } from "./components/BookingModal";
 import { LoginModal } from "./components/LoginModal";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileModal } from "./components/ProfileModal";
-import { UserDashboard } from "./components/UserDashboard";
+
 import { EnhancedStaffDashboard } from "./components/EnhancedStaffDashboard";
 import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
 import PricingPage from "./pages/PricingPage";
@@ -38,10 +38,10 @@ function AppContent() {
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && user?.role === "customer" && user.id && bookings.length === 0) {
-      loadUserData(user.id);
+    if (isAuthenticated && user?.role === "customer" && user.user_id && bookings.length === 0) {
+      loadUserData(user.user_id);
     }
-  }, [isAuthenticated, user?.id, user?.role, bookings.length]);
+  }, [isAuthenticated, user?.user_id, user?.role, bookings.length]);
 
   const loadUserData = async (userId: string) => {
     try {
@@ -62,7 +62,7 @@ function AppContent() {
     // Navigate to appropriate page based on role
     if (authenticatedUser.role === "customer") {
       setCurrentView("home"); // Customer về trang chủ
-      loadUserData(authenticatedUser.id);
+      loadUserData(authenticatedUser.user_id);
     } else if (authenticatedUser.role === "staff") {
       setCurrentView("staff");
     } else if (authenticatedUser.role === "admin") {
@@ -114,7 +114,7 @@ function AppContent() {
     try {
       const newBooking = await MockDatabaseService.createBooking({
         ...bookingData,
-        userId: user?.id || "user_001"
+        userId: user?.user_id ?? 1 // Default to user ID 1 if not available
       });
       setBookings((prev) => [...prev, newBooking]);
       toast.success("Booking confirmed successfully!");

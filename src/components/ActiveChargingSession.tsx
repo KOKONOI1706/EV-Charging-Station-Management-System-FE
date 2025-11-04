@@ -15,7 +15,6 @@ import {
   CheckCircle,
   Loader2,
   Timer,
-  RefreshCw,
   TrendingUp,
   Bolt,
 } from 'lucide-react';
@@ -71,8 +70,16 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         
         // Only update if session exists
         if (activeSession) {
-          setSession(activeSession);
-          setCurrentMeter(activeSession.meter_start);
+          // Only reset currentMeter if this is a NEW session (different session_id)
+          // This prevents resetting the meter when polling updates the session
+          setSession((prevSession) => {
+            if (!prevSession || prevSession.session_id !== activeSession.session_id) {
+              // New session - reset meter to start
+              setCurrentMeter(activeSession.meter_start);
+            }
+            // Otherwise keep currentMeter value (let auto-increment handle it)
+            return activeSession;
+          });
           setError(null);
         } else {
           // No active session
@@ -115,6 +122,34 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     return () => clearInterval(interval);
   }, [session]);
 
+  // Real-time meter simulation (auto-increment)
+  useEffect(() => {
+    if (!session) return;
+
+    // Simulate real-time charging: add energy every 5 seconds
+    // Typical charging rate: 7-22 kW for Level 2, 50-350 kW for DC Fast Charging
+    const chargingPowerKw = session.charging_points?.power_kw || 7; // Default 7kW
+    const energyPer5Seconds = (chargingPowerKw / 3600) * 5; // kWh added per 5 seconds
+
+    const meterInterval = setInterval(() => {
+      setCurrentMeter((prev) => {
+        // Safety check: stop incrementing if battery is full or max capacity reached
+        const maxCapacity = session.vehicles?.battery_capacity_kwh || 100;
+        const energyConsumed = prev - session.meter_start;
+        
+        // Stop incrementing if we've reached battery capacity or 200 kWh (safety limit)
+        if (energyConsumed >= maxCapacity || energyConsumed >= 200) {
+          return prev; // Don't increment anymore
+        }
+        
+        return prev + energyPer5Seconds;
+      });
+      setLastUpdate(new Date());
+    }, 1000); // Update every 5 seconds
+
+    return () => clearInterval(meterInterval);
+  }, [session]);
+
   // Calculate estimated cost and battery progress
   useEffect(() => {
     if (!session || !session.charging_points?.stations) return;
@@ -148,24 +183,6 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     }
   }, [session, currentMeter]);
 
-  const handleUpdateMeter = async () => {
-    if (!session) return;
-
-    try {
-      // Simulate meter reading update (in real app, this would come from actual meter)
-      const newMeter = currentMeter + Math.random() * 5; // Add random kWh
-      const result = await chargingSessionApi.updateMeter(session.session_id, {
-        current_meter: newMeter,
-      });
-      setCurrentMeter(result.current_meter);
-      setLastUpdate(new Date());
-      toast.success('Đã cập nhật công tơ điện');
-    } catch (err) {
-      console.error('Error updating meter:', err);
-      toast.error('Không thể cập nhật công tơ');
-    }
-  };
-
   const getLastUpdateText = () => {
     const diffMs = new Date().getTime() - lastUpdate.getTime();
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
@@ -177,10 +194,14 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
   };
 
   const formatCurrency = (amount: number) => {
+    // VND should be whole numbers (no decimals)
+    const roundedAmount = Math.round(amount);
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
-    }).format(amount);
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(roundedAmount);
   };
 
   const handleStopSession = async () => {
@@ -361,7 +382,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
       )}
 
       {/* Main Session Card */}
-      <Card className="border-l-4 border-l-green-500">
+      <Card className="border-l-4 border-l-green-500 overflow-visible">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -374,17 +395,12 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Badge className="bg-green-500 hover:bg-green-600">
-                <span className="animate-pulse mr-2">●</span> Live
+              <Badge className="bg-green-500 hover:bg-green-600 animate-pulse">
+                <span className="mr-2">●</span> Real-time
               </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUpdateMeter}
-                disabled={stopping}
-              >
-                <RefreshCw className="w-3 h-3" />
-              </Button>
+              <Badge variant="outline" className="text-xs">
+                Auto-update
+              </Badge>
             </div>
           </div>
         </CardHeader>
@@ -561,37 +577,6 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
             </div>
           </div>
 
-          {/* Action Buttons - Enhanced */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-            <Button
-              onClick={handleUpdateMeter}
-              variant="outline"
-              className="w-full h-12"
-              disabled={stopping}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${stopping ? '' : 'hover:rotate-180 transition-transform duration-500'}`} />
-              Làm mới công tơ
-            </Button>
-            <Button
-              onClick={handleStopSession}
-              variant="destructive"
-              className="w-full h-12 bg-red-600 hover:bg-red-700"
-              disabled={stopping}
-            >
-              {stopping ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Đang dừng...
-                </>
-              ) : (
-                <>
-                  <StopCircle className="w-4 h-4 mr-2" />
-                  Dừng sạc & Thanh toán
-                </>
-              )}
-            </Button>
-          </div>
-
           {/* Info Box */}
           <Alert className="bg-blue-50 border-blue-200">
             <AlertCircle className="h-4 w-4 text-blue-600" />
@@ -600,6 +585,31 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
               Phí chờ có thể được áp dụng nếu bạn để xe kết nối sau khi sạc xong.
             </AlertDescription>
           </Alert>
+
+          {/* Action Buttons - Enhanced */}
+          <div className="pt-4 pb-2">
+            <Button
+              onClick={handleStopSession}
+              style={{ backgroundColor: '#dc2626', color: 'white', borderColor: '#dc2626' }}
+              className="w-full h-14 hover:opacity-90 text-lg font-semibold shadow-lg transition-opacity"
+              disabled={stopping}
+            >
+              {stopping ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                  Đang dừng...
+                </>
+              ) : (
+                <>
+                  <StopCircle className="w-5 h-5 mr-3" />
+                  Dừng sạc & Thanh toán
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Số đo công tơ tự động cập nhật mỗi 5 giây
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -620,7 +630,6 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
               console.log('💰 Payment successful! Now stopping session...');
               
               try {
-                // NOW we can stop the session on backend
                 if (paymentData.meterEnd) {
                   await chargingSessionApi.stopSession(paymentData.sessionId, {
                     meter_end: paymentData.meterEnd,

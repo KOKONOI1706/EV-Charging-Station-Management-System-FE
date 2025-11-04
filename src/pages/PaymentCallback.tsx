@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { chargingSessionApi } from '../api/chargingSessionApi';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -106,35 +105,9 @@ export default function PaymentCallback() {
           setStatus('completed');
           setMessage(`Thanh toán thành công (${amount || ''} VND). Cảm ơn bạn!`);
           
-          // ✅ IMPORTANT: Stop the charging session after payment success
-          const sessionId = data.data?.session_id;
-          if (sessionId) {
-            try {
-              console.log('💰 Payment successful! Now stopping session #', sessionId);
-              
-              // Get session details to get meter_end from extraData or payment record
-              const sessionData = data.data?.charging_sessions;
-              
-              // Try to stop session if it's still Active
-              if (sessionData?.status === 'Active') {
-                // We need meter_end - try to get from payment extraData or calculate
-                // For now, we'll let backend handle it or pass a reasonable value
-                await chargingSessionApi.stopSession(sessionId, {
-                  meter_end: sessionData.meter_start + (sessionData.energy_consumed_kwh || 0),
-                  idle_minutes: 0,
-                });
-                
-                console.log('✅ Session stopped successfully after payment');
-                toast.success('Phiên sạc đã kết thúc thành công!');
-              } else {
-                console.log('ℹ️ Session already stopped:', sessionData?.status);
-              }
-            } catch (err) {
-              console.error('Error stopping session after payment:', err);
-              // Don't fail the whole flow if session stop fails
-              toast.warning('Thanh toán thành công nhưng có lỗi khi kết thúc phiên sạc');
-            }
-          }
+          // ✅ Backend automatically marks session as 'Completed' when payment succeeds
+          // No need to call stopSession() here anymore
+          console.log('✅ Payment completed! Session automatically updated by backend.');
           
           // Show success toast
           toast.success('🎉 Thanh toán thành công!', {

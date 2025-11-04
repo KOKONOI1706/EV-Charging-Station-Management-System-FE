@@ -96,8 +96,8 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     // Fetch immediately
     fetchActiveSession();
 
-    // Poll every 15 seconds (reduced from 10 to improve performance)
-    const interval = setInterval(fetchActiveSession, 15000);
+    // Poll every 5 seconds for faster updates after payment
+    const interval = setInterval(fetchActiveSession, 5000);
     return () => clearInterval(interval);
   }, [user]);
 

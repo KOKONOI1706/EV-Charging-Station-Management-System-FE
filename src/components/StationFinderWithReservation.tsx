@@ -87,8 +87,6 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
       setActiveReservation(result.reservation);
       setShowConfirmModal(false);
       setSelectedStation(null);
-      
-      setNotification(`✅ Đã giữ chỗ thành công tại ${result.reservation.stationName}`);
       setTimeout(() => setNotification(null), 5000);
     }
   };
@@ -129,9 +127,7 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
         };
         localStorage.setItem('pending-charging-session', JSON.stringify(reservationData));
         
-        setActiveReservation(null);
-        setNotification('✅ Check-in thành công! Đang chuyển đến trang bắt đầu sạc...');
-        
+        setActiveReservation(null);        
         // Redirect to dashboard after 1 second
         setTimeout(() => {
           navigate('/dashboard');

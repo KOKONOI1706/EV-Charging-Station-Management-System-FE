@@ -8,9 +8,7 @@ import {
   Zap,
   Clock,
   AlertCircle,
-  CheckCircle,
-  Loader2,
-  ExternalLink
+  Loader2
 } from 'lucide-react';
 import { PaymentMethodSelector, PaymentMethod } from './PaymentMethodSelector';
 import { toast } from 'sonner';
@@ -51,8 +49,6 @@ export function PaymentModal({
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('momo');
   const [loading, setLoading] = useState(false);
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const formatCurrency = (amount: number) => {
@@ -119,24 +115,21 @@ export function PaymentModal({
 
       const data = await response.json();
 
-      if (data.success) {
-        // For MoMo and similar e-wallets
-        if (data.data.payment_url) {
-          setPaymentUrl(data.data.payment_url);
-          setQrCodeUrl(data.data.qrCodeUrl);
-          
-          // Option 1: Redirect to payment page
-          // window.open(data.data.payment_url, '_blank');
-          
-          // Option 2: Show QR code and poll for status
-          if (data.data.qrCodeUrl) {
-            toast.info('Vui lòng quét mã QR để thanh toán');
-            startPaymentPolling(data.data.order_id);
-          } else {
-            // Redirect if no QR code
-            window.location.href = data.data.payment_url;
-          }
-        }
+      if (data.success && data.data.payment_url) {
+        // ✅ REDIRECT directly to MoMo payment page
+        // This will redirect user to MoMo test page
+        // After payment, MoMo will redirect back to our callback URL at /payment/callback
+        toast.success('Đang chuyển đến trang thanh toán MoMo...');
+        
+        setTimeout(() => {
+          window.location.href = data.data.payment_url;
+        }, 1000);
+        
+        // Note: Payment result will be handled by /payment/callback page
+        // The callback page will:
+        // 1. Verify payment with backend
+        // 2. Stop the charging session if payment successful
+        // 3. Redirect to dashboard
       } else {
         throw new Error(data.error || 'Có lỗi xảy ra khi tạo thanh toán');
       }
@@ -148,38 +141,7 @@ export function PaymentModal({
     }
   };
 
-  // Poll payment status every 3 seconds
-  const startPaymentPolling = (orderId: string) => {
-    let attempts = 0;
-    const maxAttempts = 40; // 2 minutes max
-    
-    const pollInterval = setInterval(async () => {
-      attempts++;
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/payments/momo/status/${orderId}`);
-        const data = await response.json();
-        
-        if (data.success && data.data.status === 'Completed') {
-          clearInterval(pollInterval);
-          toast.success('Thanh toán thành công! 🎉');
-          onPaymentSuccess?.();
-          onOpenChange(false);
-        } else if (data.success && data.data.status === 'Failed') {
-          clearInterval(pollInterval);
-          setError('Thanh toán thất bại. Vui lòng thử lại.');
-        } else if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          setError('Hết thời gian chờ thanh toán. Vui lòng kiểm tra lại.');
-        }
-      } catch (err) {
-        console.error('Poll error:', err);
-      }
-    }, 3000);
-
-    // Cleanup on unmount
-    return () => clearInterval(pollInterval);
-  };
+  // Note: Polling removed - we now redirect to MoMo and handle callback
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,48 +229,8 @@ export function PaymentModal({
           <PaymentMethodSelector
             selectedMethod={selectedMethod}
             onMethodChange={setSelectedMethod}
-            disabled={loading || !!paymentUrl}
+            disabled={loading}
           />
-
-          {/* QR Code Display */}
-          {qrCodeUrl && !error && (
-            <div className="bg-white border-2 border-green-500 rounded-lg p-6 text-center space-y-4">
-              <div className="flex items-center justify-center gap-2 text-green-700">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-semibold">Quét mã QR để thanh toán</span>
-              </div>
-              
-              <div className="bg-white p-4 rounded-lg inline-block">
-                <img 
-                  src={qrCodeUrl} 
-                  alt="Payment QR Code"
-                  className="w-64 h-64 mx-auto"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">
-                  Mở ứng dụng {selectedMethod === 'momo' ? 'MoMo' : selectedMethod.toUpperCase()} và quét mã QR
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-green-600" />
-                  <span className="text-xs text-gray-500">Đang chờ xác nhận thanh toán...</span>
-                </div>
-              </div>
-              
-              {paymentUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(paymentUrl, '_blank')}
-                  className="mt-4"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Hoặc thanh toán trên trang web
-                </Button>
-              )}
-            </div>
-          )}
 
           {/* Error Alert */}
           {error && (
@@ -321,35 +243,33 @@ export function PaymentModal({
           )}
 
           {/* Action Buttons */}
-          {!qrCodeUrl && (
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-                className="flex-1"
-              >
-                Hủy
-              </Button>
-              <Button
-                onClick={handlePayment}
-                disabled={loading}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Đang xử lý...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Thanh toán {formatCurrency(sessionData.amount)}
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="flex-1"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handlePayment}
+              disabled={loading}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Thanh toán {formatCurrency(sessionData.amount)}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

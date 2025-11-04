@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
+import { Progress } from './ui/progress';
 import {
   Zap,
   Battery,
-  Clock,
   DollarSign,
   Gauge,
   StopCircle,
@@ -15,6 +15,9 @@ import {
   CheckCircle,
   Loader2,
   Timer,
+  RefreshCw,
+  TrendingUp,
+  Bolt,
 } from 'lucide-react';
 import { chargingSessionApi, ChargingSession } from '../api/chargingSessionApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,6 +37,9 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
   const [currentMeter, setCurrentMeter] = useState<number>(0);
   const [estimatedCost, setEstimatedCost] = useState<number>(0);
   const [duration, setDuration] = useState<string>('0m');
+  const [batteryProgress, setBatteryProgress] = useState<number>(0);
+  const [chargingRate, setChargingRate] = useState<number>(0);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -47,6 +53,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     duration: string;
     amount: number;
     pricePerKwh: number;
+    meterEnd?: number; // Add meter_end to complete session after payment
   } | null>(null);
 
   // Poll for active session
@@ -108,7 +115,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     return () => clearInterval(interval);
   }, [session]);
 
-  // Calculate estimated cost
+  // Calculate estimated cost and battery progress
   useEffect(() => {
     if (!session || !session.charging_points?.stations) return;
 
@@ -124,6 +131,21 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     );
     
     setEstimatedCost(cost);
+
+    // Calculate battery progress
+    if (session.vehicles?.battery_capacity_kwh) {
+      const energyConsumed = currentMeter - session.meter_start;
+      const progress = (energyConsumed / session.vehicles.battery_capacity_kwh) * 100;
+      setBatteryProgress(Math.min(Math.max(progress, 0), 100));
+      
+      // Calculate charging rate (kW)
+      const durationMs = new Date().getTime() - new Date(session.start_time).getTime();
+      const durationHours = durationMs / (1000 * 60 * 60);
+      if (durationHours > 0) {
+        const rate = energyConsumed / durationHours;
+        setChargingRate(rate);
+      }
+    }
   }, [session, currentMeter]);
 
   const handleUpdateMeter = async () => {
@@ -136,9 +158,29 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         current_meter: newMeter,
       });
       setCurrentMeter(result.current_meter);
+      setLastUpdate(new Date());
+      toast.success('Đã cập nhật công tơ điện');
     } catch (err) {
       console.error('Error updating meter:', err);
+      toast.error('Không thể cập nhật công tơ');
     }
+  };
+
+  const getLastUpdateText = () => {
+    const diffMs = new Date().getTime() - lastUpdate.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffSeconds = Math.floor(diffMs / 1000);
+    
+    if (diffSeconds < 60) return `${diffSeconds} giây trước`;
+    if (diffMinutes === 0) return 'Vừa xong';
+    return `${diffMinutes} phút trước`;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount);
   };
 
   const handleStopSession = async () => {
@@ -151,52 +193,47 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
       // Get final meter reading (in real app, this would come from actual meter)
       const finalMeter = currentMeter + Math.random() * 2;
 
-      const result = await chargingSessionApi.stopSession(session.session_id, {
-        meter_end: finalMeter,
-        idle_minutes: 0, // Could be calculated based on last charge vs current time
-      });
+      // ⚠️ IMPORTANT: Don't call stopSession API yet!
+      // We only prepare the payment data and show payment modal
+      // The session will be stopped AFTER successful payment
 
-      // Prepare payment data
+      // Calculate estimated cost
+      const station = session.charging_points?.stations;
+      const pricePerKwh = station?.price_per_kwh || 5000;
+      const energyConsumed = finalMeter - session.meter_start;
+      const estimatedCost = energyConsumed * pricePerKwh;
+      
       // Ensure amount is in VND (integer) and meets MoMo minimum of 1000 VND
-      const costInVND = Math.max(1000, Math.round(result.cost || 0));
+      const costInVND = Math.max(1000, Math.round(estimatedCost));
       
       const sessionPaymentData = {
         sessionId: session.session_id,
-        stationName: session.charging_points?.stations?.name || 'Unknown Station',
+        stationName: station?.name || 'Unknown Station',
         pointName: session.charging_points?.name || `Point #${session.point_id}`,
         startTime: session.start_time,
         endTime: new Date().toISOString(),
-        energyConsumed: result.energy_consumed_kwh || 0,
+        energyConsumed: energyConsumed,
         duration: chargingSessionApi.formatDuration(session.start_time),
         amount: costInVND,
-        pricePerKwh: session.charging_points?.stations?.price_per_kwh || 5000,
+        pricePerKwh: pricePerKwh,
+        meterEnd: finalMeter, // Store meter_end for later
       };
 
-      console.log('💳 Opening payment modal:', {
-        amount: sessionPaymentData.amount,
-        energy: sessionPaymentData.energyConsumed,
-        fullData: sessionPaymentData
-      });
+      
 
       // Set payment data and show modal
       setPaymentData(sessionPaymentData);
       setShowPaymentModal(true);
       
-      console.log('✅ Payment modal state set:', {
-        paymentData: sessionPaymentData,
-        showPaymentModal: true
-      });
-      
       // Show toast notification
-      toast.success('Phiên sạc đã kết thúc! Vui lòng thanh toán.');
+      toast.info('Vui lòng thanh toán để kết thúc phiên sạc');
 
-      // DON'T call onSessionEnd here - it will refresh the parent and clear our state
-      // We'll call it after payment is complete
-      // Clear session from state but keep payment modal open
-      setSession(null);
+      // Keep session visible but with payment modal open
+      // Session will be cleared after successful payment
     } catch (err) {
-      console.error('Error stopping session:', err);
-      setError(err instanceof Error ? err.message : 'Failed to stop session');
+      console.error('Error preparing payment:', err);
+      setError(err instanceof Error ? err.message : 'Không thể chuẩn bị thanh toán');
+      toast.error('Có lỗi xảy ra khi chuẩn bị thanh toán');
     } finally {
       setStopping(false);
     }
@@ -259,10 +296,29 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
               onOpenChange={setShowPaymentModal}
               sessionId={paymentData.sessionId}
               sessionData={paymentData}
-              onPaymentSuccess={() => {
+              onPaymentSuccess={async () => {
+                console.log('💰 Payment successful! Now stopping session...');
+                
+                try {
+                  // NOW we can stop the session on backend
+                  if (paymentData.meterEnd) {
+                    await chargingSessionApi.stopSession(paymentData.sessionId, {
+                      meter_end: paymentData.meterEnd,
+                      idle_minutes: 0,
+                    });
+                    console.log('✅ Session stopped successfully');
+                    toast.success('Thanh toán thành công! Phiên sạc đã kết thúc.');
+                  }
+                } catch (err) {
+                  console.error('Error stopping session after payment:', err);
+                  toast.error('Thanh toán thành công nhưng có lỗi khi kết thúc phiên sạc');
+                }
+                
+                // Close modal and clear state
                 setShowPaymentModal(false);
                 setPaymentData(null);
-                // Now it's safe to call onSessionEnd after payment is complete
+                
+                // Refresh parent to show completed session
                 if (onSessionEnd) {
                   onSessionEnd();
                 }
@@ -283,12 +339,17 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
   const station = session.charging_points?.stations;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Active Session Banner */}
       <Alert className="border-green-500 bg-green-50">
         <CheckCircle className="h-4 w-4 text-green-600" />
-        <AlertDescription className="text-green-800">
-          <strong>Charging in progress</strong> - Your vehicle is currently charging
+        <AlertDescription className="text-green-800 flex justify-between items-center">
+          <span>
+            <strong>Đang sạc điện</strong> - Xe của bạn đang được sạc
+          </span>
+          <span className="text-xs">
+            Cập nhật: {getLastUpdateText()}
+          </span>
         </AlertDescription>
       </Alert>
 
@@ -300,160 +361,243 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
       )}
 
       {/* Main Session Card */}
-      <Card>
+      <Card className="border-l-4 border-l-green-500">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-green-600" />
-              Active Charging Session
-            </CardTitle>
-            <Badge className="bg-green-500 hover:bg-green-600">
-              <span className="animate-pulse mr-2">●</span> Live
-            </Badge>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2 mb-2">
+                <Zap className="w-6 h-6 text-green-600" />
+                Phiên sạc đang hoạt động
+              </CardTitle>
+              <CardDescription>
+                Phiên #{session.session_id} • {station?.name || 'Trạm sạc'}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Badge className="bg-green-500 hover:bg-green-600">
+                <span className="animate-pulse mr-2">●</span> Live
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUpdateMeter}
+                disabled={stopping}
+              >
+                <RefreshCw className="w-3 h-3" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Battery Progress (New Feature) */}
+          {session.vehicles?.battery_capacity_kwh && (
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <Battery className="w-5 h-5 text-green-600" />
+                  <span className="font-semibold text-gray-700">Mức pin</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-bold text-green-600">
+                    {batteryProgress.toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {energyConsumed.toFixed(2)} / {session.vehicles.battery_capacity_kwh} kWh
+                  </p>
+                </div>
+              </div>
+              <Progress 
+                value={batteryProgress} 
+                className="h-3"
+              />
+              <div className="mt-3 flex justify-between text-xs text-gray-600">
+                <span>Xe: {session.vehicles.plate_number}</span>
+                <span className="flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  {chargingRate.toFixed(1)} kW
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Station Info */}
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">{station?.name || 'Unknown Station'}</h3>
-                <div className="flex items-center text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {station?.address || 'N/A'}
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-600">Địa điểm</p>
+                    <p className="font-medium">{station?.address || 'N/A'}</p>
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Gauge className="w-4 h-4 mr-2" />
-                  {session.charging_points?.name || `Point #${session.point_id}`} • {session.charging_points?.power_kw || 0} kW
+                <div className="flex items-center gap-2">
+                  <Bolt className="w-4 h-4 text-yellow-500" />
+                  <div>
+                    <p className="text-sm text-gray-600">Điểm sạc</p>
+                    <p className="font-medium">
+                      {session.charging_points?.name || `Point #${session.point_id}`} • {session.charging_points?.power_kw || 0} kW
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Stats Grid - Improved */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Duration */}
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
               <div className="flex items-center text-blue-600 mb-2">
                 <Timer className="w-4 h-4 mr-2" />
-                <span className="text-xs font-medium">Duration</span>
+                <span className="text-xs font-medium uppercase">Thời gian</span>
               </div>
               <p className="text-2xl font-bold text-blue-900">{duration}</p>
+              <p className="text-xs text-blue-700 mt-1">Đang chạy</p>
             </div>
 
             {/* Energy Consumed */}
-            <div className="bg-green-50 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
               <div className="flex items-center text-green-600 mb-2">
                 <Battery className="w-4 h-4 mr-2" />
-                <span className="text-xs font-medium">Energy</span>
+                <span className="text-xs font-medium uppercase">Điện năng</span>
               </div>
               <p className="text-2xl font-bold text-green-900">
                 {energyConsumed.toFixed(1)} <span className="text-sm">kWh</span>
               </p>
+              <p className="text-xs text-green-700 mt-1">Đã tiêu thụ</p>
             </div>
 
             {/* Current Cost */}
-            <div className="bg-purple-50 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
               <div className="flex items-center text-purple-600 mb-2">
                 <DollarSign className="w-4 h-4 mr-2" />
-                <span className="text-xs font-medium">Est. Cost</span>
+                <span className="text-xs font-medium uppercase">Chi phí</span>
               </div>
               <p className="text-xl font-bold text-purple-900">
-                {chargingSessionApi.formatCost(estimatedCost)}
+                {formatCurrency(estimatedCost)}
               </p>
+              <p className="text-xs text-purple-700 mt-1">Tạm tính</p>
             </div>
 
             {/* Price Rate */}
-            <div className="bg-orange-50 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
               <div className="flex items-center text-orange-600 mb-2">
                 <Gauge className="w-4 h-4 mr-2" />
-                <span className="text-xs font-medium">Rate</span>
+                <span className="text-xs font-medium uppercase">Đơn giá</span>
               </div>
               <p className="text-lg font-bold text-orange-900">
-                {chargingSessionApi.formatCost(station?.price_per_kwh || 0)}/kWh
+                {formatCurrency(station?.price_per_kwh || 0)}
               </p>
+              <p className="text-xs text-orange-700 mt-1">Mỗi kWh</p>
             </div>
           </div>
 
           {/* Meter Readings */}
-          <div className="border rounded-lg p-4 space-y-3">
-            <h4 className="font-semibold text-sm text-gray-700">Meter Readings</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-500">Start</p>
-                <p className="text-lg font-semibold">{session.meter_start.toFixed(2)} kWh</p>
+          <div className="bg-white border-2 border-gray-200 rounded-lg p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                <Gauge className="w-4 h-4" />
+                Số đo công tơ
+              </h4>
+              <Badge variant="outline" className="text-xs">
+                Real-time
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1 uppercase">Bắt đầu</p>
+                <p className="text-2xl font-bold text-gray-900">{session.meter_start.toFixed(2)}</p>
+                <p className="text-xs text-gray-600 mt-1">kWh</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Current</p>
-                <p className="text-lg font-semibold text-green-600">
-                  {currentMeter.toFixed(2)} kWh
+              <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-xs text-green-600 mb-1 uppercase">Hiện tại</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {currentMeter.toFixed(2)}
                 </p>
+                <p className="text-xs text-green-700 mt-1">kWh</p>
               </div>
+            </div>
+            <div className="text-center pt-3 border-t">
+              <p className="text-sm text-gray-600">Chênh lệch</p>
+              <p className="text-3xl font-bold text-blue-600">
+                +{energyConsumed.toFixed(2)} kWh
+              </p>
             </div>
           </div>
 
           {/* Session Details */}
-          <div className="border-t pt-4 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Session ID</span>
-              <span className="font-medium">#{session.session_id}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Started at</span>
-              <span className="font-medium">
-                {new Date(session.start_time).toLocaleTimeString('vi-VN', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  day: '2-digit',
-                  month: '2-digit',
-                })}
-              </span>
-            </div>
-            {session.vehicles && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Vehicle</span>
-                <span className="font-medium">{session.vehicles.plate_number}</span>
+          <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+            <h4 className="font-semibold text-gray-700 mb-3">Chi tiết phiên</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2 bg-white rounded">
+                <span className="text-gray-600">Mã phiên</span>
+                <span className="font-medium">#{session.session_id}</span>
               </div>
-            )}
+              <div className="flex justify-between items-center p-2 bg-white rounded">
+                <span className="text-gray-600">Bắt đầu lúc</span>
+                <span className="font-medium">
+                  {new Date(session.start_time).toLocaleString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              {session.vehicles && (
+                <div className="flex justify-between items-center p-2 bg-white rounded">
+                  <span className="text-gray-600">Biển số xe</span>
+                  <span className="font-medium">{session.vehicles.plate_number}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center p-2 bg-white rounded">
+                <span className="text-gray-600">Tốc độ sạc TB</span>
+                <span className="font-medium text-green-600">
+                  {chargingRate.toFixed(1)} kW
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          {/* Action Buttons - Enhanced */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
             <Button
               onClick={handleUpdateMeter}
               variant="outline"
-              className="flex-1"
+              className="w-full h-12"
               disabled={stopping}
             >
-              <Clock className="w-4 h-4 mr-2" />
-              Refresh Meter
+              <RefreshCw className={`w-4 h-4 mr-2 ${stopping ? '' : 'hover:rotate-180 transition-transform duration-500'}`} />
+              Làm mới công tơ
             </Button>
             <Button
               onClick={handleStopSession}
               variant="destructive"
-              className="flex-1"
+              className="w-full h-12 bg-red-600 hover:bg-red-700"
               disabled={stopping}
             >
               {stopping ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Stopping...
+                  Đang dừng...
                 </>
               ) : (
                 <>
                   <StopCircle className="w-4 h-4 mr-2" />
-                  Stop Charging
+                  Dừng sạc & Thanh toán
                 </>
               )}
             </Button>
           </div>
 
           {/* Info Box */}
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              Your vehicle will continue charging until you press "Stop Charging". 
-              Idle fees may apply if you stay connected after charging completes.
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-xs text-blue-800">
+              <strong>Lưu ý:</strong> Xe của bạn sẽ tiếp tục sạc cho đến khi bạn nhấn "Dừng sạc". 
+              Phí chờ có thể được áp dụng nếu bạn để xe kết nối sau khi sạc xong.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -472,10 +616,30 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
             onOpenChange={setShowPaymentModal}
             sessionId={paymentData.sessionId}
             sessionData={paymentData}
-            onPaymentSuccess={() => {
+            onPaymentSuccess={async () => {
+              console.log('💰 Payment successful! Now stopping session...');
+              
+              try {
+                // NOW we can stop the session on backend
+                if (paymentData.meterEnd) {
+                  await chargingSessionApi.stopSession(paymentData.sessionId, {
+                    meter_end: paymentData.meterEnd,
+                    idle_minutes: 0,
+                  });
+                  console.log('✅ Session stopped successfully');
+                  toast.success('Thanh toán thành công! Phiên sạc đã kết thúc.');
+                }
+              } catch (err) {
+                console.error('Error stopping session after payment:', err);
+                toast.error('Thanh toán thành công nhưng có lỗi khi kết thúc phiên sạc');
+              }
+              
+              // Close modal and clear state
               setShowPaymentModal(false);
               setPaymentData(null);
-              // Could refresh the dashboard or show success message
+              setSession(null);
+              
+              // Refresh parent to show completed session
               if (onSessionEnd) {
                 onSessionEnd();
               }

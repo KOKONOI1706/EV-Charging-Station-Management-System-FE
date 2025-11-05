@@ -68,19 +68,32 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         const userId = parseInt(user.id);
         const activeSession = await chargingSessionApi.getActiveSession(userId);
         
+        console.log('🔄 Active session response:', {
+          hasSession: !!activeSession,
+          sessionId: activeSession?.session_id,
+          current_meter: activeSession?.current_meter,
+          estimated_cost: activeSession?.estimated_cost,
+          battery_progress: activeSession?.battery_progress,
+          charging_rate_kw: activeSession?.charging_rate_kw,
+          price_per_kwh: activeSession?.charging_points?.stations?.price_per_kwh,
+          estimated_minutes_remaining: activeSession?.estimated_minutes_remaining,
+          target_battery_percent: activeSession?.target_battery_percent,
+        });
+        
         // Only update if session exists
         if (activeSession) {
-          // Only reset currentMeter if this is a NEW session (different session_id)
-          // This prevents resetting the meter when polling updates the session
-          setSession((prevSession) => {
-            if (!prevSession || prevSession.session_id !== activeSession.session_id) {
-              // New session - reset meter to start
-              setCurrentMeter(activeSession.meter_start);
-            }
-            // Otherwise keep currentMeter value (let auto-increment handle it)
-            return activeSession;
-          });
+          setSession(activeSession);
           setError(null);
+          
+          // If backend provides current_meter, use it (for new session or sync)
+          if (activeSession.current_meter !== undefined) {
+            console.log('✅ Using backend current_meter:', activeSession.current_meter);
+            setCurrentMeter(activeSession.current_meter);
+          } else if (!activeSession.current_meter) {
+            // Fallback: new session without backend calculation yet
+            console.log('⚠️ No backend current_meter, using meter_start:', activeSession.meter_start);
+            setCurrentMeter(activeSession.meter_start);
+          }
         } else {
           // No active session
           setSession(null);
@@ -122,66 +135,134 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     return () => clearInterval(interval);
   }, [session]);
 
-  // Real-time meter simulation (auto-increment)
+  // ✅ Sync with backend data every 5 seconds
   useEffect(() => {
     if (!session) return;
 
-    // Simulate real-time charging: add energy every 5 seconds
-    // Typical charging rate: 7-22 kW for Level 2, 50-350 kW for DC Fast Charging
-    const chargingPowerKw = session.charging_points?.power_kw || 7; // Default 7kW
-    const energyPer5Seconds = (chargingPowerKw / 3600) * 5; // kWh added per 5 seconds
-
-    const meterInterval = setInterval(() => {
-      setCurrentMeter((prev) => {
-        // Safety check: stop incrementing if battery is full or max capacity reached
-        const maxCapacity = session.vehicles?.battery_capacity_kwh || 100;
-        const energyConsumed = prev - session.meter_start;
-        
-        // Stop incrementing if we've reached battery capacity or 200 kWh (safety limit)
-        if (energyConsumed >= maxCapacity || energyConsumed >= 200) {
-          return prev; // Don't increment anymore
-        }
-        
-        return prev + energyPer5Seconds;
-      });
+    // If backend provides calculated values, use them as authoritative
+    if ('current_meter' in session && typeof session.current_meter === 'number') {
+      setCurrentMeter(session.current_meter);
       setLastUpdate(new Date());
-    }, 1000); // Update every 5 seconds
+    }
 
-    return () => clearInterval(meterInterval);
+    if ('estimated_cost' in session && typeof session.estimated_cost === 'number') {
+      setEstimatedCost(session.estimated_cost);
+    }
+
+    if ('battery_progress' in session && typeof session.battery_progress === 'number') {
+      console.log('🔋 Setting battery progress from backend:', {
+        session_id: session.session_id,
+        battery_progress: session.battery_progress,
+        initial_battery_percent: session.initial_battery_percent,
+        target_battery_percent: session.target_battery_percent,
+        elapsed_hours: session.elapsed_hours
+      });
+      setBatteryProgress(session.battery_progress);
+    }
+
+    if ('charging_rate_kw' in session && typeof session.charging_rate_kw === 'number') {
+      setChargingRate(session.charging_rate_kw);
+    }
   }, [session]);
 
-  // Calculate estimated cost and battery progress
+  // 🔄 Smooth UI interpolation between backend syncs (every 1 second)
+  // This makes UI feel real-time while backend provides accurate values every 5s
   useEffect(() => {
-    if (!session || !session.charging_points?.stations) return;
-
-    const pricePerKwh = session.charging_points.stations.price_per_kwh;
-    const idleFeePerMin = session.charging_points.idle_fee_per_min || 0;
-    
-    const cost = chargingSessionApi.calculateEstimatedCost(
-      session.meter_start,
-      currentMeter,
-      pricePerKwh,
-      0, // No idle time yet
-      idleFeePerMin
-    );
-    
-    setEstimatedCost(cost);
-
-    // Calculate battery progress
-    if (session.vehicles?.battery_capacity_kwh) {
-      const energyConsumed = currentMeter - session.meter_start;
-      const progress = (energyConsumed / session.vehicles.battery_capacity_kwh) * 100;
-      setBatteryProgress(Math.min(Math.max(progress, 0), 100));
-      
-      // Calculate charging rate (kW)
-      const durationMs = new Date().getTime() - new Date(session.start_time).getTime();
-      const durationHours = durationMs / (1000 * 60 * 60);
-      if (durationHours > 0) {
-        const rate = energyConsumed / durationHours;
-        setChargingRate(rate);
-      }
+    if (!session || !session.charging_points?.power_kw) {
+      console.log('⏸️ Interpolation paused - no session or power data');
+      return;
     }
-  }, [session, currentMeter]);
+
+    const chargingPowerKw = session.charging_points.power_kw;
+    const pricePerKwh = session.charging_points?.stations?.price_per_kwh || 5000;
+    const maxCapacity = session.vehicles?.battery_capacity_kwh || 100;
+
+    console.log('▶️ Starting interpolation:', {
+      sessionId: session.session_id,
+      chargingPowerKw,
+      pricePerKwh,
+      maxCapacity,
+      meterStart: session.meter_start,
+    });
+
+    let logCounter = 0; // Throttle logs (only every 5 seconds)
+
+    const interpolateValues = () => {
+      // Calculate time-based increment (energy per second)
+      const energyPerSecond = chargingPowerKw / 3600; // kW to kWh per second
+      
+      setCurrentMeter(prev => {
+        const newMeter = prev + energyPerSecond;
+        const totalEnergy = newMeter - session.meter_start;
+        
+        // Check if already at backend-calculated capacity
+        // If backend sent current_meter that's already capped, respect it
+        if (session.current_meter && prev >= session.current_meter) {
+          if (logCounter % 5 === 0) {
+            console.log('⏸️ At backend capacity limit:', {
+              currentMeter: prev.toFixed(2),
+              backendMeter: session.current_meter.toFixed(2),
+              totalEnergy: totalEnergy.toFixed(2),
+            });
+          }
+          logCounter++;
+          return prev; // Don't increment beyond backend calculation
+        }
+        
+        // Safety cap: Allow 20% over capacity (for charging losses) or max 300 kWh
+        const safetyLimit = Math.max(maxCapacity * 1.2, 300);
+        if (totalEnergy >= safetyLimit) {
+          if (logCounter % 5 === 0) {
+            console.log('🛑 Reached safety limit', {
+              totalEnergy: totalEnergy.toFixed(2),
+              safetyLimit: safetyLimit.toFixed(2),
+            });
+          }
+          logCounter++;
+          return prev;
+        }
+        
+        // Log every 5 seconds
+        if (logCounter % 5 === 0) {
+          console.log('⚡ Meter incrementing:', {
+            prev: prev.toFixed(4),
+            new: newMeter.toFixed(4),
+            totalEnergy: totalEnergy.toFixed(2),
+            energyPerSec: energyPerSecond.toFixed(6),
+          });
+        }
+        logCounter++;
+        
+        return newMeter;
+      });
+
+      // Update cost in sync with meter
+      setEstimatedCost(prev => {
+        const costIncrement = energyPerSecond * pricePerKwh;
+        return prev + costIncrement;
+      });
+
+      // Update battery progress (initial + added energy %)
+      if (session.vehicles?.battery_capacity_kwh) {
+        const batteryCapacity = session.vehicles.battery_capacity_kwh;
+        
+        setBatteryProgress(prev => {
+          const progressIncrement = (energyPerSecond / batteryCapacity) * 100;
+          const newProgress = prev + progressIncrement;
+          
+          // Cap at target if specified, otherwise cap at 100%
+          const targetPercent = session.target_battery_percent || 100;
+          return Math.min(newProgress, targetPercent, 100);
+        });
+      }
+
+      setLastUpdate(new Date());
+    };
+
+    // Update every 1 second for smooth UI
+    const interval = setInterval(interpolateValues, 1000);
+    return () => clearInterval(interval);
+  }, [session]);
 
   const getLastUpdateText = () => {
     const diffMs = new Date().getTime() - lastUpdate.getTime();
@@ -356,17 +437,50 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     return null; // TypeScript guard, should never reach here
   }
 
-  const energyConsumed = currentMeter - session.meter_start;
+  // ✅ Use backend-calculated values or fallback to simple calculation
+  const energyConsumed = session.energy_consumed_kwh || (currentMeter - session.meter_start);
   const station = session.charging_points?.stations;
+
+  // Check for charging warnings
+  // Note: We can't determine actual battery fullness without knowing initial battery level
+  // So instead, we warn based on:
+  // 1. Energy consumed approaching battery capacity (may indicate full charge)
+  // 2. Charging duration is unusually long (potential idle time)
+  const batteryCapacity = session.vehicles?.battery_capacity_kwh || 100;
+  const chargingPowerKw = session.charging_points?.power_kw || 7;
+  
+  // Calculate expected time to full charge (hours)
+  const expectedFullChargeHours = batteryCapacity / chargingPowerKw;
+  const sessionDurationMs = new Date().getTime() - new Date(session.start_time).getTime();
+  const sessionDurationHours = sessionDurationMs / (1000 * 60 * 60);
+  
+  // Show warning if:
+  // - Energy consumed >= 90% of battery capacity (likely near full)
+  // - OR session duration > 1.5x expected full charge time (likely finished + idle)
+  const isLikelyFull = energyConsumed >= batteryCapacity * 0.9;
+  const isTakingTooLong = sessionDurationHours >= expectedFullChargeHours * 1.5;
+  const shouldWarn = isLikelyFull || isTakingTooLong;
 
   return (
     <div className="space-y-6">
+      {/* Charging Warning */}
+      {shouldWarn && (
+        <Alert className="border-yellow-500 bg-yellow-50">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            <strong>⚠️ Lưu ý:</strong> {isLikelyFull 
+              ? 'Đã sạc gần đến dung lượng pin. Vui lòng kiểm tra và dừng sạc nếu đã đầy.' 
+              : 'Phiên sạc đã kéo dài. Vui lòng kiểm tra xe để tránh phí chờ không cần thiết.'}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Active Session Banner */}
-      <Alert className="border-green-500 bg-green-50">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-        <AlertDescription className="text-green-800 flex justify-between items-center">
+      <Alert className={shouldWarn ? "border-yellow-500 bg-yellow-50" : "border-green-500 bg-green-50"}>
+        <CheckCircle className={`h-4 w-4 ${shouldWarn ? 'text-yellow-600' : 'text-green-600'}`} />
+        <AlertDescription className={`flex justify-between items-center ${shouldWarn ? 'text-yellow-800' : 'text-green-800'}`}>
           <span>
-            <strong>Đang sạc điện</strong> - Xe của bạn đang được sạc
+            <strong>{shouldWarn ? '⚠️ Kiểm tra xe' : 'Đang sạc điện'}</strong> - {shouldWarn ? 'Có thể đã sạc xong' : 'Xe của bạn đang được sạc'}
           </span>
           <span className="text-xs">
             Cập nhật: {getLastUpdateText()}
@@ -418,7 +532,11 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
                     {batteryProgress.toFixed(1)}%
                   </p>
                   <p className="text-xs text-gray-500">
-                    {energyConsumed.toFixed(2)} / {session.vehicles.battery_capacity_kwh} kWh
+                    {(session.initial_battery_percent !== undefined && session.initial_battery_percent !== null) && (
+                      <span className="text-blue-600">
+                        {session.initial_battery_percent.toFixed(0)}% → {session.target_battery_percent || 100}%
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -426,12 +544,32 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
                 value={batteryProgress} 
                 className="h-3"
               />
-              <div className="mt-3 flex justify-between text-xs text-gray-600">
-                <span>Xe: {session.vehicles.plate_number}</span>
-                <span className="flex items-center gap-1">
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="text-gray-600">
+                  <span>Xe: {session.vehicles.plate_number}</span>
+                </div>
+                <div className="text-right text-gray-600 flex items-center justify-end gap-1">
                   <TrendingUp className="w-3 h-3" />
                   {chargingRate.toFixed(1)} kW
-                </span>
+                </div>
+                {session.estimated_minutes_remaining !== null && session.estimated_minutes_remaining !== undefined && (
+                  <>
+                    <div className="text-gray-600">
+                      Năng lượng: {energyConsumed.toFixed(1)} / {session.vehicles.battery_capacity_kwh} kWh
+                    </div>
+                    <div className="text-right">
+                      {session.estimated_minutes_remaining > 0 ? (
+                        <span className="text-blue-600 font-medium">
+                          ⏱️ Còn ~{Math.ceil(session.estimated_minutes_remaining)} phút
+                        </span>
+                      ) : (
+                        <span className="text-green-600 font-medium">
+                          ✓ Đã đạt mục tiêu
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -462,14 +600,33 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
 
           {/* Stats Grid - Improved */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Duration */}
+            {/* Duration / Time Remaining */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
               <div className="flex items-center text-blue-600 mb-2">
                 <Timer className="w-4 h-4 mr-2" />
-                <span className="text-xs font-medium uppercase">Thời gian</span>
+                <span className="text-xs font-medium uppercase">
+                  {session.estimated_minutes_remaining !== null && session.estimated_minutes_remaining !== undefined 
+                    ? 'Còn lại' 
+                    : 'Thời gian'}
+                </span>
               </div>
-              <p className="text-2xl font-bold text-blue-900">{duration}</p>
-              <p className="text-xs text-blue-700 mt-1">Đang chạy</p>
+              {session.estimated_minutes_remaining !== null && session.estimated_minutes_remaining !== undefined ? (
+                <>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {session.estimated_minutes_remaining > 0 
+                      ? `${Math.ceil(session.estimated_minutes_remaining)} phút` 
+                      : 'Hoàn tất'}
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    {session.estimated_minutes_remaining > 0 ? 'Ước tính' : '✓ Đã đạt mục tiêu'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-blue-900">{duration}</p>
+                  <p className="text-xs text-blue-700 mt-1">Đang chạy</p>
+                </>
+              )}
             </div>
 
             {/* Energy Consumed */}

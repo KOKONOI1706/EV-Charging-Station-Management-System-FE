@@ -122,8 +122,7 @@ export function ReservationTimer({
     const current = reservationService.getReservation(reservation.id);
     if (current && current.status !== 'active') {
       console.log(`⚠️ Reservation already processed (status: ${current.status}), not calling onComplete again`);
-      toast.warning('⚠️ Reservation đã được xử lý', {
-        description: 'Không thể hoàn thành lại reservation này',
+      toast.warning('Reservation đã được xử lý', {
         duration: 3000
       });
       return;

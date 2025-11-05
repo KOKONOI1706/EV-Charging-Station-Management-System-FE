@@ -146,11 +146,18 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
                   <div className="flex items-center text-sm">
                     <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                     <div>
-                      <p className="text-gray-500 text-xs">Date</p>
+                      <p className="text-gray-500 text-xs">Ngày</p>
                       <p className="font-medium">
                         {new Date(session.start_time).toLocaleDateString('vi-VN', {
                           day: '2-digit',
                           month: '2-digit',
+                          year: '2-digit',
+                        })}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(session.start_time).toLocaleTimeString('vi-VN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })}
                       </p>
                     </div>
@@ -160,19 +167,52 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
                   <div className="flex items-center text-sm">
                     <Clock className="w-4 h-4 mr-2 text-gray-400" />
                     <div>
-                      <p className="text-gray-500 text-xs">Duration</p>
+                      <p className="text-gray-500 text-xs">Thời lượng</p>
                       <p className="font-medium">{duration}</p>
+                      {session.end_time && (
+                        <p className="text-xs text-gray-400">
+                          {new Date(session.end_time).toLocaleTimeString('vi-VN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      )}
                     </div>
                   </div>
+
+                  {/* Battery Progress (NEW) */}
+                  {session.initial_battery_percent !== null && session.initial_battery_percent !== undefined && (
+                    <div className="flex items-center text-sm">
+                      <Battery className="w-4 h-4 mr-2 text-blue-600" />
+                      <div>
+                        <p className="text-gray-500 text-xs">Mức pin</p>
+                        <p className="font-medium">
+                          {session.initial_battery_percent.toFixed(0)}% → {session.target_battery_percent || 100}%
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          +{((session.target_battery_percent || 100) - session.initial_battery_percent).toFixed(0)}%
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Energy */}
                   <div className="flex items-center text-sm">
                     <Battery className="w-4 h-4 mr-2 text-green-600" />
                     <div>
-                      <p className="text-gray-500 text-xs">Energy</p>
+                      <p className="text-gray-500 text-xs">Điện năng</p>
                       <p className="font-medium">
-                        {session.energy_consumed_kwh.toFixed(1)} kWh
+                        {session.energy_consumed_kwh !== null && session.energy_consumed_kwh !== undefined
+                          ? session.energy_consumed_kwh.toFixed(1)
+                          : (session.meter_end && session.meter_start
+                              ? (session.meter_end - session.meter_start).toFixed(1)
+                              : '0.0')} kWh
                       </p>
+                      {session.vehicles?.battery_capacity_kwh && (
+                        <p className="text-xs text-gray-400">
+                          / {session.vehicles.battery_capacity_kwh} kWh
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -180,10 +220,15 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
                   <div className="flex items-center text-sm">
                     <DollarSign className="w-4 h-4 mr-2 text-purple-600" />
                     <div>
-                      <p className="text-gray-500 text-xs">Cost</p>
+                      <p className="text-gray-500 text-xs">Chi phí</p>
                       <p className="font-medium">
                         {chargingSessionApi.formatCost(session.cost)}
                       </p>
+                      {session.charging_points?.stations?.price_per_kwh && (
+                        <p className="text-xs text-gray-400">
+                          {chargingSessionApi.formatCost(session.charging_points.stations.price_per_kwh)}/kWh
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -191,33 +236,63 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
                 {/* Session Details */}
                 <div className="border-t pt-3 space-y-1 text-xs text-gray-600">
                   <div className="flex justify-between">
-                    <span>Charging Point</span>
+                    <span>Điểm sạc</span>
                     <span className="font-medium">
-                      {session.charging_points?.name || `Point #${session.point_id}`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Power</span>
-                    <span className="font-medium">
-                      {session.charging_points?.power_kw || 0} kW
+                      {session.charging_points?.name || `Point #${session.point_id}`} • {session.charging_points?.power_kw || 0} kW
                     </span>
                   </div>
                   {session.vehicles && (
                     <div className="flex justify-between">
-                      <span>Vehicle</span>
+                      <span>Xe</span>
                       <span className="font-medium">
                         {session.vehicles.plate_number}
+                        {session.vehicles.battery_capacity_kwh && (
+                          <span className="text-gray-400 ml-1">
+                            ({session.vehicles.battery_capacity_kwh} kWh)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {/* Meter Readings (NEW) */}
+                  <div className="flex justify-between">
+                    <span>Công tơ</span>
+                    <span className="font-medium">
+                      {session.meter_start.toFixed(2)} kWh → {session.meter_end?.toFixed(2) || 'N/A'} kWh
+                    </span>
+                  </div>
+                  {/* Average Charging Rate (NEW) */}
+                  {session.energy_consumed_kwh > 0 && duration && (
+                    <div className="flex justify-between">
+                      <span>Tốc độ TB</span>
+                      <span className="font-medium text-green-600">
+                        {(() => {
+                          const durationMatch = duration.match(/(\d+)h\s*(\d+)m|(\d+)m/);
+                          if (durationMatch) {
+                            const hours = parseInt(durationMatch[1] || '0');
+                            const minutes = parseInt(durationMatch[2] || durationMatch[3] || '0');
+                            const totalHours = hours + minutes / 60;
+                            const avgRate = totalHours > 0 ? session.energy_consumed_kwh / totalHours : 0;
+                            return `${avgRate.toFixed(1)} kW`;
+                          }
+                          return 'N/A';
+                        })()}
                       </span>
                     </div>
                   )}
                   {session.idle_minutes > 0 && (
                     <div className="flex justify-between text-orange-600">
-                      <span>Idle Time</span>
+                      <span>Thời gian chờ</span>
                       <span className="font-medium">
-                        {session.idle_minutes} min (+{chargingSessionApi.formatCost(session.idle_fee)})
+                        {session.idle_minutes} phút (+{chargingSessionApi.formatCost(session.idle_fee)})
                       </span>
                     </div>
                   )}
+                  {/* Session ID for reference */}
+                  <div className="flex justify-between text-gray-400">
+                    <span>Mã phiên</span>
+                    <span className="font-mono">#{session.session_id}</span>
+                  </div>
                 </div>
 
                 {/* Actions */}
@@ -228,12 +303,13 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
                     className="flex-1"
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    View Receipt
+                    Xem hóa đơn
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="group-hover:bg-gray-100"
+                    title="Xem chi tiết"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>

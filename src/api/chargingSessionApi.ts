@@ -20,6 +20,24 @@ export interface ChargingSession {
   status: 'Active' | 'Completed' | 'Error';
   created_at: string;
   
+  // ✅ Battery tracking fields
+  initial_battery_percent?: number;
+  target_battery_percent?: number;
+  estimated_completion_time?: string;
+  battery_full_time?: string;
+  idle_start_time?: string;
+  auto_stopped?: boolean;
+  
+  // ✅ Real-time calculated fields (from backend)
+  current_duration_minutes?: number;
+  elapsed_hours?: number;
+  current_meter?: number;
+  estimated_cost?: number;
+  battery_progress?: number;
+  charging_rate_kw?: number;
+  estimated_minutes_remaining?: number; // ✅ NEW: Minutes until target battery reached
+  calculation_timestamp?: string;
+  
   // Relations
   charging_points?: {
     point_id: number;
@@ -62,6 +80,8 @@ export interface StartSessionRequest {
   point_id: number;
   booking_id?: number;
   meter_start: number;
+  initial_battery_percent?: number;  // ✅ NEW: Current battery %
+  target_battery_percent?: number;    // ✅ NEW: Target battery % (default 100)
 }
 
 export interface StopSessionRequest {
@@ -238,8 +258,19 @@ class ChargingSessionApiService {
    * Format duration in human-readable format
    */
   formatDuration(startTime: string, endTime?: string): string {
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date();
+    // 🔧 Fix timezone: Add 'Z' if missing to ensure UTC parsing
+    let startStr = startTime;
+    let endStr = endTime;
+    
+    if (typeof startStr === 'string' && !startStr.endsWith('Z') && !startStr.includes('+')) {
+      startStr = startStr + 'Z';
+    }
+    if (endStr && typeof endStr === 'string' && !endStr.endsWith('Z') && !endStr.includes('+')) {
+      endStr = endStr + 'Z';
+    }
+    
+    const start = new Date(startStr);
+    const end = endStr ? new Date(endStr) : new Date();
     const durationMs = end.getTime() - start.getTime();
     
     const hours = Math.floor(durationMs / (1000 * 60 * 60));

@@ -39,7 +39,7 @@ import {
 // Status colors for charging points
 const STATUS_COLORS = {
   Available: { bg: '#10b981', border: '#059669', text: '#ffffff' },
-  'In Use': { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' },
+  InUse: { bg: '#f63b3bff', border: '#ff0000ff', text: '#ffffff' },
   Maintenance: { bg: '#f59e0b', border: '#d97706', text: '#ffffff' },
   Offline: { bg: '#6b7280', border: '#4b5563', text: '#ffffff' },
   Reserved: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' },
@@ -67,17 +67,19 @@ interface ChargingPointNodeData {
   point: ApiChargingPoint;
   onEdit: (point: ApiChargingPoint) => void;
   onDelete: (pointId: number) => void;
+  isReadOnly?: boolean;
 }
 
 interface FacilityNodeData {
   facility: Facility;
   onEdit: (facility: Facility) => void;
   onDelete: (facilityId: string) => void;
+  isReadOnly?: boolean;
 }
 
 // Custom Node Component for Facilities
 function FacilityNode({ data }: NodeProps<FacilityNodeData>) {
-  const { facility, onEdit, onDelete } = data;
+  const { facility, onEdit, onDelete, isReadOnly } = data;
   const colors = FACILITY_COLORS[facility.type];
 
   return (
@@ -91,7 +93,7 @@ function FacilityNode({ data }: NodeProps<FacilityNodeData>) {
         minWidth: '140px',
         minHeight: '100px',
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        cursor: 'grab',
+        cursor: isReadOnly ? 'default' : 'grab',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
@@ -99,6 +101,7 @@ function FacilityNode({ data }: NodeProps<FacilityNodeData>) {
       }}
       onContextMenu={(e) => {
         e.preventDefault();
+        if (isReadOnly) return; // Disable context menu in read-only mode
         if (window.confirm(`Delete facility "${facility.name}"?`)) {
           onDelete(facility.id);
         }
@@ -108,16 +111,18 @@ function FacilityNode({ data }: NodeProps<FacilityNodeData>) {
         <div className="text-2xl mb-2">{colors.label.split(' ')[0]}</div>
         <div className="font-bold text-sm mb-1">{facility.name}</div>
         <div className="text-xs opacity-80">{facility.type}</div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(facility);
-          }}
-          className="mt-2 p-1 hover:bg-white/20 rounded"
-          style={{ color: colors.text }}
-        >
-          <Edit2 className="w-3 h-3" />
-        </button>
+        {!isReadOnly && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(facility);
+            }}
+            className="mt-2 p-1 hover:bg-white/20 rounded"
+            style={{ color: colors.text }}
+          >
+            <Edit2 className="w-3 h-3" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -125,7 +130,7 @@ function FacilityNode({ data }: NodeProps<FacilityNodeData>) {
 
 // Custom Node Component for Charging Points
 function ChargingPointNode({ data }: NodeProps<ChargingPointNodeData>) {
-  const { point, onEdit, onDelete } = data;
+  const { point, onEdit, onDelete, isReadOnly } = data;
   const colors = STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.Offline;
 
   return (
@@ -138,10 +143,11 @@ function ChargingPointNode({ data }: NodeProps<ChargingPointNodeData>) {
         padding: '12px',
         minWidth: '160px',
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        cursor: 'grab',
+        cursor: isReadOnly ? 'default' : 'grab',
       }}
       onContextMenu={(e) => {
         e.preventDefault();
+        if (isReadOnly) return; // Disable context menu in read-only mode
         if (window.confirm(`Delete charging point "${point.name}"?`)) {
           onDelete(point.point_id);
         }
@@ -153,16 +159,18 @@ function ChargingPointNode({ data }: NodeProps<ChargingPointNodeData>) {
             <ZapIcon className="w-5 h-5" />
             <span className="font-bold">{point.name}</span>
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(point);
-            }}
-            className="p-1 hover:bg-white/20 rounded"
-            style={{ color: colors.text }}
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(point);
+              }}
+              className="p-1 hover:bg-white/20 rounded"
+              style={{ color: colors.text }}
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <div className="text-xs opacity-90 space-y-1">
           <div>{point.power_kw} kW</div>
@@ -261,6 +269,7 @@ export function InteractiveStationLayout({
           point,
           onEdit: handleEditPoint,
           onDelete: handleDeletePoint,
+          isReadOnly, // Pass isReadOnly to node
         },
         draggable: !isReadOnly,
       });
@@ -279,6 +288,7 @@ export function InteractiveStationLayout({
           facility,
           onEdit: handleEditFacility,
           onDelete: handleDeleteFacility,
+          isReadOnly, // Pass isReadOnly to node
         },
         draggable: !isReadOnly,
       });

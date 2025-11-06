@@ -150,50 +150,13 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
             </CardHeader>
             <CardContent>
               {/* Use Interactive Station Layout (Read-Only) */}
-              <div style={{ height: '600px' }}>
+              <div style={{ height: '800px' }}>
                 <InteractiveStationLayout
                   stationId={station.id}
                   stationName={station.name}
                   isReadOnly={true}
                   facilities={convertToInteractiveFacilities(station.layout?.facilities || [])}
                 />
-              </div>
-              
-              {/* Legend - Keep this for reference */}
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-3">Chú thích màu sắc</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-green-500"></div>
-                    <span>Sẵn sàng</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-red-500"></div>
-                    <span>Đang sử dụng</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-blue-500"></div>
-                    <span>Đã đặt chỗ</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-yellow-500"></div>
-                    <span>Sắp xong</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-orange-500"></div>
-                    <span>Bảo trì</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-purple-500"></div>
-                    <span>Lỗi</span>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
-                    <span>Tiện ích (WC, Cafe, Shop)</span>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>

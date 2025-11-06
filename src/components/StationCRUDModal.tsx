@@ -54,7 +54,7 @@ export function StationCRUDModal({ isOpen, onClose, station, mode, onSave }: Sta
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Convert between Station layout facilities and InteractiveStationLayout facilities
-  const convertToInteractiveFacilities = (layoutFacilities: typeof formData.layout.facilities) => {
+  const convertToInteractiveFacilities = (layoutFacilities?: NonNullable<Station['layout']>['facilities']) => {
     if (!layoutFacilities) return [];
     return layoutFacilities.map((f, index) => ({
       id: `facility-${f.type}-${f.x}-${f.y}-${index}`,

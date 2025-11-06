@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Station, Booking, MockDatabaseService } from "../data/mockDatabase";
 import { usersApi, type User } from "../api/usersApi";
+import { adminStatsApi, type RevenueStats, type TopStation, type SystemAlert, type RecentActivity } from "../api/adminStatsApi";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
@@ -51,6 +52,12 @@ export function EnhancedAdminDashboard() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Real data states
+  const [revenueStats, setRevenueStats] = useState<RevenueStats>({ today: 0, thisWeek: 0, thisMonth: 0, yearToDate: 0 });
+  const [topStations, setTopStations] = useState<TopStation[]>([]);
+  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
@@ -72,15 +79,22 @@ export function EnhancedAdminDashboard() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [stationsData, bookingsData, usersData] = await Promise.all([
+      const [stationsData, bookingsData, usersData, dashboardStats] = await Promise.all([
         MockDatabaseService.getStations(),
         MockDatabaseService.getUserBookings("user_001"),
-        usersApi.getUsers({ page: currentPage, limit: usersPerPage })
+        usersApi.getUsers({ page: currentPage, limit: usersPerPage }),
+        adminStatsApi.getDashboardStats()
       ]);
       setStations(stationsData);
       setBookings(bookingsData);
       setUsers(usersData.users);
       setTotalUsers(usersData.total);
+      
+      // Set real dashboard stats
+      setRevenueStats(dashboardStats.revenue);
+      setTopStations(dashboardStats.topStations);
+      setSystemAlerts(dashboardStats.systemAlerts);
+      setRecentActivities(dashboardStats.recentActivities);
     } catch (error) {
       console.error("Failed to load data:", error);
       toast.error("Không thể tải dữ liệu");
@@ -297,19 +311,19 @@ export function EnhancedAdminDashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span>{t.today}</span>
-                    <span className="font-bold">1.245.500₫</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.today)}₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.thisWeek}</span>
-                    <span className="font-bold">8.734.200₫</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.thisWeek)}₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.thisMonth}</span>
-                    <span className="font-bold">34.567.800₫</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.thisMonth)}₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.yearToDate}</span>
-                    <span className="font-bold">412.345.600₫</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.yearToDate)}₫</span>
                   </div>
                 </div>
               </CardContent>
@@ -324,7 +338,7 @@ export function EnhancedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {stations.slice(0, 4).map((station, index) => (
+                  {topStations.length > 0 ? topStations.map((station, index) => (
                     <div key={station.id} className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-sm font-bold text-green-700">
@@ -332,15 +346,17 @@ export function EnhancedAdminDashboard() {
                         </div>
                         <div>
                           <p className="font-medium">{station.name}</p>
-                          <p className="text-sm text-gray-600">{station.city}</p>
+                          <p className="text-sm text-gray-600">{station.location}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">2.456.000₫</p>
-                        <p className="text-sm text-gray-600">{t.thisMonth}</p>
+                        <p className="font-bold">{new Intl.NumberFormat('vi-VN').format(station.revenue)}₫</p>
+                        <p className="text-sm text-gray-600">{station.period}</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-gray-500 text-center py-4">Chưa có dữ liệu</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -354,20 +370,31 @@ export function EnhancedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                    <div>
-                      <p className="font-medium text-yellow-800">{t.station2MaintenanceDue}</p>
-                      <p className="text-sm text-yellow-600">{t.scheduledMaintenance2Days}</p>
+                  {systemAlerts.length > 0 ? systemAlerts.map((alert) => (
+                    <div key={alert.id} className={`flex items-center gap-3 p-3 rounded-lg ${
+                      alert.type === 'warning' ? 'bg-yellow-50 border border-yellow-200' :
+                      alert.type === 'error' ? 'bg-red-50 border border-red-200' :
+                      'bg-blue-50 border border-blue-200'
+                    }`}>
+                      {alert.type === 'warning' && <AlertTriangle className="w-4 h-4 text-yellow-600" />}
+                      {alert.type === 'error' && <AlertTriangle className="w-4 h-4 text-red-600" />}
+                      {alert.type === 'info' && <Clock className="w-4 h-4 text-blue-600" />}
+                      <div>
+                        <p className={`font-medium ${
+                          alert.type === 'warning' ? 'text-yellow-800' :
+                          alert.type === 'error' ? 'text-red-800' :
+                          'text-blue-800'
+                        }`}>{alert.title}</p>
+                        <p className={`text-sm ${
+                          alert.type === 'warning' ? 'text-yellow-600' :
+                          alert.type === 'error' ? 'text-red-600' :
+                          'text-blue-600'
+                        }`}>{alert.message}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <p className="font-medium text-blue-800">{t.highUsageAlert}</p>
-                      <p className="text-sm text-blue-600">{t.downtownHub95Capacity}</p>
-                    </div>
-                  </div>
+                  )) : (
+                    <p className="text-gray-500 text-center py-4">Không có cảnh báo</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -381,26 +408,26 @@ export function EnhancedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-green-700">AJ</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">Alex Johnson</p>
-                      <p className="text-sm text-gray-600">{t.completedChargingSession}</p>
-                    </div>
-                    <div className="ml-auto text-sm text-gray-500">2m {t.ago}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-blue-700">MS</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">Maria Silva</p>
-                      <p className="text-sm text-gray-600">{t.newUserRegistration}</p>
-                    </div>
-                    <div className="ml-auto text-sm text-gray-500">15m {t.ago}</div>
-                  </div>
+                  {recentActivities.length > 0 ? recentActivities.slice(0, 5).map((activity) => {
+                    const initials = activity.userName.split(' ').map(n => n[0]).join('').toUpperCase();
+                    const timeDiff = Math.floor((new Date().getTime() - new Date(activity.timestamp).getTime()) / 1000 / 60);
+                    const timeAgo = timeDiff < 60 ? `${timeDiff}m` : timeDiff < 1440 ? `${Math.floor(timeDiff / 60)}h` : `${Math.floor(timeDiff / 1440)}d`;
+                    
+                    return (
+                      <div key={activity.id} className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-green-700">{initials.substring(0, 2)}</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{activity.userName}</p>
+                          <p className="text-sm text-gray-600">{activity.action}</p>
+                        </div>
+                        <div className="text-sm text-gray-500">{timeAgo} {t.ago}</div>
+                      </div>
+                    );
+                  }) : (
+                    <p className="text-gray-500 text-center py-4">Chưa có hoạt động</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -23,7 +23,8 @@ import {
   Shield,
   Activity
 } from "lucide-react";
-import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabase";
+import { Station, Booking, MockDatabaseService } from "../data/mockDatabase";
+import { usersApi, type User } from "../api/usersApi";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
@@ -47,6 +48,7 @@ export function EnhancedAdminDashboard() {
   const [stations, setStations] = useState<Station[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   
   // Pagination states
@@ -70,39 +72,43 @@ export function EnhancedAdminDashboard() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [stationsData, bookingsData] = await Promise.all([
+      const [stationsData, bookingsData, usersData] = await Promise.all([
         MockDatabaseService.getStations(),
-        MockDatabaseService.getUserBookings("user_001") // In real app, get all bookings
+        MockDatabaseService.getUserBookings("user_001"),
+        usersApi.getUsers({ page: currentPage, limit: usersPerPage })
       ]);
       setStations(stationsData);
       setBookings(bookingsData);
-      // Mock users data
-      setUsers([
-        {
-          id: "user_001",
-          name: "Alex Johnson",
-          email: "alex.johnson@email.com",
-          phone: "+1 (555) 123-4567",
-          memberSince: "2023-01-15",
-          totalSessions: 45,
-          totalSpent: 1250.75,
-          favoriteStations: ["1", "2"],
-          role: "customer",
-          vehicleInfo: {
-            make: "Tesla",
-            model: "Model 3",
-            year: 2022,
-            batteryCapacity: 75
-          }
-        }
-      ]);
+      setUsers(usersData.users);
+      setTotalUsers(usersData.total);
     } catch (error) {
       console.error("Failed to load data:", error);
-      toast.error("Failed to load dashboard data");
+      toast.error("Không thể tải dữ liệu");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Load users when pagination changes
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const usersData = await usersApi.getUsers({ 
+          page: currentPage, 
+          limit: usersPerPage 
+        });
+        setUsers(usersData.users);
+        setTotalUsers(usersData.total);
+      } catch (error) {
+        console.error("Failed to load users:", error);
+        toast.error("Không thể tải danh sách người dùng");
+      }
+    };
+
+    if (!isLoading) {
+      loadUsers();
+    }
+  }, [currentPage, usersPerPage, isLoading]);
 
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -114,10 +120,9 @@ export function EnhancedAdminDashboard() {
   const totalSessions = bookings.length;
 
   // Pagination calculations for Users
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
-  const totalUserPages = Math.ceil(users.length / usersPerPage);
+  // Users are already paginated from API, so we don't slice them
+  const currentUsers = users;
+  const totalUserPages = Math.ceil(totalUsers / usersPerPage);
 
   // Pagination calculations for Stations
   const indexOfLastStation = stationCurrentPage * stationsPerPage;
@@ -443,10 +448,10 @@ export function EnhancedAdminDashboard() {
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{new Date(user.memberSince).toLocaleDateString()}</TableCell>
-                      <TableCell>{user.totalSessions}</TableCell>
-                      <TableCell>{new Intl.NumberFormat('vi-VN').format(user.totalSpent)}₫</TableCell>
+                      <TableCell>{user.totalSessions || 0}</TableCell>
+                      <TableCell>{new Intl.NumberFormat('vi-VN').format(user.totalSpent || 0)}₫</TableCell>
                       <TableCell>
-                        <Badge className="bg-green-100 text-green-800">Active</Badge>
+                        <Badge className="bg-green-100 text-green-800">{user.status || 'Active'}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -467,7 +472,7 @@ export function EnhancedAdminDashboard() {
               {totalUserPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-gray-600">
-                    Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, users.length)} of {users.length} users
+                    Showing {(currentPage - 1) * usersPerPage + 1} to {Math.min(currentPage * usersPerPage, totalUsers)} of {totalUsers} users
                   </div>
                   <div className="flex gap-2">
                     <Button

@@ -25,11 +25,13 @@ export interface SystemAlert {
 
 export interface RecentActivity {
   id: string;
-  userId: string;
-  userName: string;
+  user: string; // Changed from userName to match backend
+  userId?: string;
+  userName?: string; // Keep for backward compatibility
   userAvatar?: string;
   action: string;
   timestamp: string;
+  type?: 'success' | 'info' | 'warning';
 }
 
 export interface AdminDashboardStats {

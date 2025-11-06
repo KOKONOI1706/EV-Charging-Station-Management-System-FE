@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect} from "react";
 import { UserDashboard } from "../components/UserDashboard";
 import { useAuth } from "../contexts/AuthContext";
 import { Header } from "../components/Header";
@@ -51,7 +51,6 @@ export default function DashboardPage() {
           else if (view === 'pricing') navigate('/pricing');
           else if (view === 'support') navigate('/support');
         }}
-        onOpenProfile={() => navigate('/profile')}
       />
       
       <main className="py-8">

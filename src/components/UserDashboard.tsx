@@ -74,6 +74,12 @@ export function UserDashboard({
     isOpen: false,
   });
 
+  // State to force refresh ActiveChargingSession
+  const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
+
+  // Flag to prevent opening modal multiple times
+  const [hasOpenedModal, setHasOpenedModal] = useState(false);
+
   // Load user statistics from API
   useEffect(() => {
     const loadUserStats = async () => {
@@ -114,9 +120,13 @@ export function UserDashboard({
   // Auto-open start charging modal if coming from check-in
   useEffect(() => {
     const loadStationDetailsAndOpenModal = async () => {
-      if (!autoOpenStartCharging || !pendingChargingData) return;
+      // Prevent opening modal multiple times
+      if (!autoOpenStartCharging || !pendingChargingData || hasOpenedModal) return;
       
       console.log('🚀 Auto-opening start charging modal from check-in:', pendingChargingData);
+      
+      // Mark as opened immediately to prevent re-opening
+      setHasOpenedModal(true);
       
       try {
         // Fetch charging points immediately (parallel, don't wait)
@@ -152,6 +162,9 @@ export function UserDashboard({
         }
         
         console.log('✅ Selected charging point:', targetPoint.point_id, targetPoint.name);
+        
+        // Clear pending session data BEFORE opening modal to prevent re-opening
+        localStorage.removeItem('pending-charging-session');
         
         // Open modal immediately with available data
         setStartChargingModal({
@@ -290,7 +303,7 @@ export function UserDashboard({
 
         <TabsContent value="current">
           <div className="space-y-6">
-            <ActiveChargingSession />
+            <ActiveChargingSession key={sessionRefreshKey} />
           </div>
         </TabsContent>
 
@@ -460,10 +473,14 @@ export function UserDashboard({
           onSuccess={() => {
             // Clear pending session data
             localStorage.removeItem('pending-charging-session');
-            // Close modal and let the dashboard refresh naturally
+            // Close modal
             setStartChargingModal(prev => ({ ...prev, isOpen: false }));
             // Show success message
-            toast.success('Charging session started successfully! 🔋⚡');
+            toast.success('Đã bắt đầu phiên sạc! 🔋⚡');
+            // Wait a bit for database to commit, then force refresh ActiveChargingSession
+            setTimeout(() => {
+              setSessionRefreshKey(prev => prev + 1);
+            }, 800); // 800ms delay to ensure DB has committed
           }}
         />
       )}

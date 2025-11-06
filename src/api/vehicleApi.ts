@@ -53,15 +53,19 @@ class VehicleApiService {
    * Get all vehicles for a user
    */
   async getUserVehicles(userId: number): Promise<Vehicle[]> {
+    console.log('🚗 Fetching vehicles for user:', userId);
     const response = await fetch(`${this.baseUrl}?user_id=${userId}`);
 
     if (!response.ok) {
+      console.error('❌ Failed to fetch vehicles:', response.status);
       const error = await response.json();
       throw new Error(error.error || 'Failed to fetch vehicles');
     }
 
     const result = await response.json();
-    return result.data;
+    console.log('✅ Vehicles fetched:', result.data?.length || 0, 'vehicles');
+    console.log('📋 Vehicle details:', result.data);
+    return result.data || [];
   }
 
   /**

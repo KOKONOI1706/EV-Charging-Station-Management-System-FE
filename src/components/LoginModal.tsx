@@ -55,16 +55,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     try {
       const user = await AuthService.login(loginForm.email, loginForm.password);
       toast.success(`Chào mừng trở lại, ${user.name}!`);
-      
-      // Navigate based on role
-      const roleMap: Record<string, string> = {
-        "admin": "/admin",     // admin role -> admin page
-        "staff": "/staff",     // staff role -> staff page
-        "customer": "/dashboard" // customer role -> dashboard
-      };
-      
-      // Close modal and trigger success callback with redirect path
-      onSuccess({ ...user, redirectTo: roleMap[user.role] || "/dashboard" });
+      onSuccess(user);
       onClose();
     } catch (err: any) {
       setError(err.message || "Login failed");

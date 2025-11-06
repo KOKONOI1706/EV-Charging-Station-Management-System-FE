@@ -2,12 +2,11 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/sonner";
-import AdminLayout from "./components/AdminLayout";
-import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
-import StaffPage from "./pages/StaffPage";
 import DashboardPage from "./pages/DashboardPage";
+import StaffPage from "./pages/StaffPage";
+import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
 import UserHistoryPage from "./pages/UserHistoryPage";
@@ -35,10 +34,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      { path: "", element: <EnhancedAdminDashboard /> }
-    ]
+    element: <AdminPage />,
   },
   {
     path: "/pricing",

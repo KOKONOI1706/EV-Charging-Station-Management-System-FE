@@ -317,7 +317,7 @@ export function EnhancedStaffDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
           <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
           <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-const PackageManagement = React.lazy(() => import("./PackageManagement"));
+import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
@@ -24,9 +24,13 @@ import {
   Activity
 } from "lucide-react";
 import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabase";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
-import { Button } from "./ui/button";
+import { LanguageSelector } from "./LanguageSelector";
+import { toast } from "sonner";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
+import { ChargingPointsManagement } from "./ChargingPointsManagement";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -38,6 +42,8 @@ interface SystemSettings {
 
 export function EnhancedAdminDashboard() {
   const { t } = useLanguage();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -85,7 +91,7 @@ export function EnhancedAdminDashboard() {
       ]);
     } catch (error) {
       console.error("Failed to load data:", error);
-      console.error("Failed to load dashboard data");
+      toast.error("Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +99,7 @@ export function EnhancedAdminDashboard() {
 
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    console.log(`${key} ${value ? 'enabled' : 'disabled'}`);
+    toast.success(`${key} ${value ? 'enabled' : 'disabled'}`);
   };
 
   const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
@@ -116,6 +122,24 @@ export function EnhancedAdminDashboard() {
         <div>
           <h1 className="text-3xl font-bold mb-2">{t.adminDashboard}</h1>
           <p className="text-gray-600">{t.completeSystemOverview}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <LanguageSelector />
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success(t.signOut || "Logged out");
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            {t.signOut}
+          </Button>
         </div>
       </div>
 
@@ -207,19 +231,24 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="flex w-full justify-between items-center border-b">
-          <TabsTrigger value="overview" className="flex-1 px-4 py-2 text-center">{t.overview}</TabsTrigger>
-          <TabsTrigger value="chargingSessions" className="flex-1 px-4 py-2 text-center">{t.chargingSessions}</TabsTrigger>
-          <TabsTrigger value="users" className="flex-1 px-4 py-2 text-center">{t.userManagement}</TabsTrigger>
-          <TabsTrigger value="packageService" className="flex-1 px-4 py-2 text-center">Package Service Management</TabsTrigger>
-          <TabsTrigger value="stations" className="flex-1 px-4 py-2 text-center">{t.stationManagement}</TabsTrigger>
-          <TabsTrigger value="reports" className="flex-1 px-4 py-2 text-center">{t.reports}</TabsTrigger>
-          <TabsTrigger value="settings" className="flex-1 px-4 py-2 text-center">{t.systemSettings}</TabsTrigger>
+        <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
+          <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+          <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
+          <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
+          <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
+          <TabsTrigger value="reports">{t.reports}</TabsTrigger>
+          <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
         </TabsList>
 
         {/* Charging Sessions Management */}
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement userRole="admin" />
+        </TabsContent>
+
+        {/* Charging Points Management */}
+        <TabsContent value="chargingPoints">
+          <ChargingPointsManagement userRole="admin" />
         </TabsContent>
 
         {/* Overview */}
@@ -408,15 +437,6 @@ export function EnhancedAdminDashboard() {
               </Table>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Package Service Management */}
-        <TabsContent value="packageService">
-          <Suspense fallback={<div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-          </div>}>
-            <PackageManagement />
-          </Suspense>
         </TabsContent>
 
         {/* Station Management */}

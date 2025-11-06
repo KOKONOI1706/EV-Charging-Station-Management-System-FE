@@ -9,8 +9,7 @@ interface HeaderProps {
   isAuthenticated: boolean;
   userName?: string;
   currentView: string;
-  onNavigate: (view: "home" | "dashboard" | "pricing" | "support" | "staff" | "admin") => void;
-  onOpenProfile?: () => void;
+  onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void;
 }
 
 export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate }: HeaderProps) {

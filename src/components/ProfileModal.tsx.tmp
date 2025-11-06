@@ -41,7 +41,7 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: {
-    user_id: number;
+    user_id: string;
     name: string;
     email: string;
     phone: string;
@@ -92,6 +92,16 @@ export function ProfileModal({
     e.preventDefault();
     if (!user || !user.user_id) return;
 
+    if (!profileForm.name.trim()) {
+      toast.error(t.nameRequired || "Name is required");
+      return;
+    }
+
+    if (!profileForm.email.trim()) {
+      toast.error(t.emailRequired || "Email is required");
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Call AuthService directly for profile update
@@ -111,9 +121,9 @@ export function ProfileModal({
       await updateUser(updatedUser);
       
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      toast.success(t.profileUpdated || "Profile updated successfully");
     } catch (error: any) {
-      toast.error(error.message || "Failed to update profile");
+      toast.error(error.message || t.profileUpdateFailed || "Failed to update profile");
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +134,7 @@ export function ProfileModal({
     if (!user) return;
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("New passwords do not match");
+      toast.error(t.passwordsDoNotMatch || "New passwords do not match");
       return;
     }
 
@@ -164,17 +174,13 @@ export function ProfileModal({
   };
 
   const handleClose = () => {
-    if (isEditing) {
-      handleResetForm();
-    }
-    if (showPasswordChange) {
-      setShowPasswordChange(false);
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: ""
-      });
-    }
+    handleResetForm();
+    setShowPasswordChange(false);
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: ""
+    });
     onClose();
   };
 
@@ -203,8 +209,8 @@ export function ProfileModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{t.editProfile}</DialogTitle>
         </DialogHeader>
@@ -262,7 +268,7 @@ export function ProfileModal({
                   <form onSubmit={handleProfileUpdate} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name">{t.fullName}</Label>
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
@@ -271,12 +277,13 @@ export function ProfileModal({
                             onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                             disabled={!isEditing}
                             className="pl-10"
+                            placeholder="Enter your full name"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="phone">{t.phone}</Label>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
@@ -285,13 +292,14 @@ export function ProfileModal({
                             onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                             disabled={!isEditing}
                             className="pl-10"
+                            placeholder="Enter your phone number"
                           />
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="email">{t.email}</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                         <Input
@@ -301,6 +309,7 @@ export function ProfileModal({
                           onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
                           disabled={!isEditing}
                           className="pl-10"
+                          placeholder="Enter your email"
                         />
                       </div>
                     </div>
@@ -312,7 +321,7 @@ export function ProfileModal({
                         disabled={isLoading}
                       >
                         <Save className="w-4 h-4 mr-2" />
-                        {isLoading ? "Saving..." : "Save Changes"}
+                        {isLoading ? t.saving : t.saveChanges}
                       </Button>
                     )}
                   </form>

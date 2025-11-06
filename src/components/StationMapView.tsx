@@ -228,8 +228,8 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
         </Button>
       </div>
 
-      {/* Main Content - List View */}
-      {viewMode === 'list' && renderListView()}
+      {/* Main Content */}
+      {viewMode === 'map' ? renderMapView() : renderListView()}
 
       {/* No Results */}
       {filteredStations.length === 0 && searchQuery && (
@@ -247,9 +247,6 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
           </Button>
         </div>
       )}
-
-      {/* Map View - Always shown at bottom */}
-      {viewMode === 'map' && renderMapView()}
     </div>
   );
 }

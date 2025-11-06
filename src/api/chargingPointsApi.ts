@@ -18,6 +18,8 @@ export interface ChargingPoint {
   };
   status: string;
   station_id: string;
+  pos_x?: number;
+  pos_y?: number;
 }
 
 export interface Station {
@@ -88,6 +90,122 @@ export async function getAvailableChargingPoints(stationId: string): Promise<Cha
     return points.filter(p => p.status === 'Available');
   } catch (error) {
     console.error('[Charging Points API] Error fetching available charging points:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new charging point
+ */
+export async function createChargingPoint(data: {
+  station_id: string;
+  name: string;
+  power_kw: number;
+  connector_type_id: number;
+  status?: string;
+}): Promise<ChargingPoint> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/charging-points`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create charging point: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const point = result.data;
+    
+    return {
+      ...point,
+      connector_type: point.connector_types?.name || point.connector_types?.code || 'Unknown'
+    };
+  } catch (error) {
+    console.error('[Charging Points API] Error creating charging point:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update a charging point
+ */
+export async function updateChargingPoint(pointId: number, data: {
+  name?: string;
+  power_kw?: number;
+  connector_type_id?: number;
+  status?: string;
+  pos_x?: number;
+  pos_y?: number;
+}): Promise<ChargingPoint> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/charging-points/${pointId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update charging point: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const point = result.data;
+    
+    return {
+      ...point,
+      connector_type: point.connector_types?.name || point.connector_types?.code || 'Unknown'
+    };
+  } catch (error) {
+    console.error('[Charging Points API] Error updating charging point:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a charging point
+ */
+export async function deleteChargingPoint(pointId: number): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/charging-points/${pointId}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete charging point: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('[Charging Points API] Error deleting charging point:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all connector types
+ */
+export interface ConnectorType {
+  connector_type_id: number;
+  code: string;
+  name: string;
+}
+
+export async function getConnectorTypes(): Promise<ConnectorType[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/charging-points/connector-types/list`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch connector types: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    console.error('[Charging Points API] Error fetching connector types:', error);
     throw error;
   }
 }

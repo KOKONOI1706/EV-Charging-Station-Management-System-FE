@@ -21,7 +21,9 @@ import {
   TrendingUp,
   UserCheck,
   Shield,
-  Activity
+  Activity,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabase";
 import { useAuth } from "../contexts/AuthContext";
@@ -31,6 +33,8 @@ import { LanguageSelector } from "./LanguageSelector";
 import { toast } from "sonner";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 import { ChargingPointsManagement } from "./ChargingPointsManagement";
+import { StationCRUDModal } from "./StationCRUDModal";
+import { fetchStations, deleteStation } from "../api/stationApi";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -55,6 +59,9 @@ export function EnhancedAdminDashboard() {
     smsNotifications: false,
     debugMode: false
   });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('view');
 
   useEffect(() => {
     loadData();
@@ -62,11 +69,13 @@ export function EnhancedAdminDashboard() {
 
   const loadData = async () => {
     try {
+      console.log('🔄 loadData() called - fetching fresh data from API...');
       setIsLoading(true);
       const [stationsData, bookingsData] = await Promise.all([
-        MockDatabaseService.getStations(),
+        fetchStations(), // Use API instead of mock data
         MockDatabaseService.getUserBookings("user_001") // In real app, get all bookings
       ]);
+      console.log('✅ Fetched stations:', stationsData.length);
       setStations(stationsData);
       setBookings(bookingsData);
       // Mock users data
@@ -95,6 +104,44 @@ export function EnhancedAdminDashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCreateStation = () => {
+    setSelectedStation(null);
+    setModalMode('create');
+    setModalOpen(true);
+  };
+
+  const handleEditStation = (station: Station) => {
+    setSelectedStation(station);
+    setModalMode('edit');
+    setModalOpen(true);
+  };
+
+  const handleViewStation = (station: Station) => {
+    setSelectedStation(station);
+    setModalMode('view');
+    setModalOpen(true);
+  };
+
+  const handleDeleteStation = async (stationId: string) => {
+    if (!confirm('Are you sure you want to delete this station?')) {
+      return;
+    }
+
+    try {
+      await deleteStation(stationId);
+      toast.success('Station deleted successfully');
+      loadData(); // Reload data
+    } catch (error) {
+      console.error('Error deleting station:', error);
+      toast.error('Failed to delete station');
+    }
+  };
+
+  const handleSaveStation = () => {
+    // Reload data to get fresh station list from backend
+    loadData();
   };
 
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
@@ -443,7 +490,16 @@ export function EnhancedAdminDashboard() {
         <TabsContent value="stations">
           <Card>
             <CardHeader>
-              <CardTitle>{t.stationManagement}</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>{t.stationManagement}</CardTitle>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleCreateStation}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Station
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -453,7 +509,7 @@ export function EnhancedAdminDashboard() {
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold">{station.name}</h3>
                         <Badge className="bg-green-100 text-green-800">
-                          {t.operational}
+                          {station.status === 'active' ? t.operational : station.status}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600 mb-3">{station.address}</p>
@@ -476,11 +532,28 @@ export function EnhancedAdminDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleEditStation(station)}
+                        >
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleViewStation(station)}
+                        >
                           View Details
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDeleteStation(station.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </CardContent>
@@ -663,6 +736,15 @@ export function EnhancedAdminDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Station CRUD Modal */}
+      <StationCRUDModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        station={selectedStation}
+        mode={modalMode}
+        onSave={handleSaveStation}
+      />
     </div>
   );
 }

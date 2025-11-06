@@ -6,25 +6,16 @@ import {
   ArrowLeft, 
   Zap, 
   Clock, 
-  User, 
-  Wrench, 
   MapPin,
   Phone,
   Star,
-  Car,
-  Coffee,
-  // Restroom,
-  ShoppingBag,
-  Info,
-  Navigation,
   RefreshCw
 } from 'lucide-react';
-import { Station, ChargingPoint } from '../data/mockDatabase';
+import { Station } from '../data/mockDatabase';
 import { ChargingPoint as ApiChargingPoint, getStationChargingPoints } from '../api/chargingPointsApi';
-import { ChargingPointStatusBadge, getStatusColorClass, isStatusBookable } from './ChargingPointStatusBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { vehicleApi, Vehicle } from '../api/vehicleApi';
-import { BookingValidationService } from '../services/bookingValidationService';
+import { InteractiveStationLayout } from './InteractiveStationLayout';
 
 interface StationDetailViewProps {
   station: Station;
@@ -34,7 +25,6 @@ interface StationDetailViewProps {
 
 export function StationDetailView({ station, onBack, onBookChargingPoint }: StationDetailViewProps) {
   const { user } = useAuth();
-  const [selectedChargingPoint, setSelectedChargingPoint] = useState<ChargingPoint | null>(null);
   const [realChargingPoints, setRealChargingPoints] = useState<ApiChargingPoint[]>([]);
   const [userVehicles, setUserVehicles] = useState<Vehicle[]>([]);
   const [isLoadingPoints, setIsLoadingPoints] = useState(true);
@@ -90,258 +80,16 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
     }
   };
 
-  // Merge real status data with layout data
-  const getMergedChargingPoint = (layoutPoint: ChargingPoint): ChargingPoint & { realStatus?: string; realData?: ApiChargingPoint } => {
-    const realPoint = realChargingPoints.find(
-      rp => rp.point_id.toString() === layoutPoint.id.replace('cp-', '')
-    );
-
-    if (realPoint) {
-      return {
-        ...layoutPoint,
-        status: realPoint.status as any,
-        realStatus: realPoint.status,
-        realData: realPoint
-      };
-    }
-
-    return layoutPoint;
-  };
-
-  const handleBookPoint = (point: ChargingPoint) => {
-    // Find real charging point data
-    const realPoint = realChargingPoints.find(
-      rp => rp.point_id.toString() === point.id.replace('cp-', '')
-    );
-
-    // Validate booking
-    const validation = BookingValidationService.validateBooking(
-      user,
-      realPoint || null,
-      userVehicles
-    );
-
-    if (!validation.isValid) {
-      alert(validation.errors.join('\n'));
-      return;
-    }
-
-    if (validation.warnings.length > 0) {
-      const proceed = confirm(
-        validation.warnings.join('\n') + '\n\nBạn có muốn tiếp tục không?'
-      );
-      if (!proceed) return;
-    }
-
-    // Proceed with booking
-    onBookChargingPoint(station, point.id);
-  };
-
-  const getFacilityIcon = (type: string) => {
-    switch (type) {
-      case 'restroom':
-        return <Info className="w-4 h-4" />;
-      case 'cafe':
-        return <Coffee className="w-4 h-4" />;
-      case 'shop':
-        return <ShoppingBag className="w-4 h-4" />;
-      case 'parking':
-        return <Car className="w-4 h-4" />;
-      default:
-        return <Info className="w-4 h-4" />;
-    }
-  };
-
-  const renderStationLayout = () => {
-    const { layout, chargingPoints } = station;
-    const cellSize = 60; // Size of each grid cell in pixels
-    
-    // Create map of real point IDs to statuses for quick lookup
-    const realPointStatusMap = new Map(
-      realChargingPoints.map(rp => [rp.point_id, rp.status])
-    );
-    
-    console.log('🗺️ Rendering layout with real status map:', {
-      mapSize: realPointStatusMap.size,
-      entries: Array.from(realPointStatusMap.entries()).slice(0, 5),
-      allRealPoints: realChargingPoints.slice(0, 3).map(rp => ({
-        point_id: rp.point_id,
-        name: rp.name,
-        status: rp.status
-      }))
-    });
-    
-    return (
-      <div className="relative bg-gray-50 rounded-lg p-4 overflow-auto">
-        <div 
-          className="relative mx-auto"
-          style={{ 
-            width: layout.width * cellSize, 
-            height: layout.height * cellSize,
-            minWidth: layout.width * cellSize,
-            minHeight: layout.height * cellSize
-          }}
-        >
-          {/* Grid Background */}
-          <div className="absolute inset-0 opacity-20">
-            <svg width="100%" height="100%">
-              <defs>
-                <pattern id="layout-grid" width={cellSize} height={cellSize} patternUnits="userSpaceOnUse">
-                  <path d={`M ${cellSize} 0 L 0 0 0 ${cellSize}`} fill="none" stroke="#gray" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#layout-grid)" />
-            </svg>
-          </div>
-
-          {/* Facilities */}
-          {layout.facilities.map((facility, index) => (
-            <div
-              key={index}
-              className="absolute bg-blue-100 border-2 border-blue-300 rounded-lg flex items-center justify-center"
-              style={{
-                left: facility.x * cellSize,
-                top: facility.y * cellSize,
-                width: facility.width * cellSize,
-                height: facility.height * cellSize
-              }}
-            >
-              <div className="text-center">
-                <div className="text-blue-600 mb-1">
-                  {getFacilityIcon(facility.type)}
-                </div>
-                <span className="text-xs text-blue-700 capitalize">{facility.type}</span>
-              </div>
-            </div>
-          ))}
-
-          {/* Entrances */}
-          {layout.entrances.map((entrance, index) => (
-            <div
-              key={index}
-              className="absolute bg-green-200 border-2 border-green-400 rounded-lg flex items-center justify-center"
-              style={{
-                left: entrance.direction === 'west' ? -20 : entrance.direction === 'east' ? layout.width * cellSize : entrance.x * cellSize,
-                top: entrance.direction === 'north' ? -20 : entrance.direction === 'south' ? layout.height * cellSize : entrance.y * cellSize,
-                width: entrance.direction === 'north' || entrance.direction === 'south' ? 40 : 20,
-                height: entrance.direction === 'east' || entrance.direction === 'west' ? 40 : 20
-              }}
-            >
-              <Navigation className="w-4 h-4 text-green-600" />
-            </div>
-          ))}
-
-          {/* Charging Points */}
-          {chargingPoints.map((point) => {
-            // Get real status from database by matching point number
-            const pointNumber = point.number;
-            const realStatus = realPointStatusMap.get(pointNumber);
-            const statusStr = realStatus || String(point.status);
-            const isBookable = isStatusBookable(statusStr);
-            
-            // Debug log - only for first 3 points to avoid spam
-            if (pointNumber <= 11) {
-              console.log(`📍 Point #${pointNumber}:`, {
-                pointId: point.id,
-                pointNumber,
-                pointNumberType: typeof pointNumber,
-                mockStatus: point.status,
-                realStatus,
-                realStatusType: typeof realStatus,
-                finalStatus: statusStr,
-                colorClass: getStatusColorClass(statusStr),
-                mapHasKey: realPointStatusMap.has(pointNumber),
-                mapKeys: Array.from(realPointStatusMap.keys()).slice(0, 5)
-              });
-            }
-            
-            return (
-            <div
-              key={point.id}
-              className={`absolute rounded-lg border-2 cursor-pointer transition-all duration-200 transform hover:scale-105 ${
-                selectedChargingPoint?.id === point.id 
-                  ? 'border-blue-500 z-20 scale-105' 
-                  : 'border-white z-10'
-              } ${getStatusColorClass(statusStr)} ${
-                isBookable ? 'hover:shadow-lg' : 'cursor-not-allowed opacity-75'
-              }`}
-              style={{
-                left: point.position.x * cellSize + 5,
-                top: point.position.y * cellSize + 5,
-                width: cellSize - 10,
-                height: cellSize - 10
-              }}
-              onClick={() => isBookable && setSelectedChargingPoint(point)}
-            >
-              {/* Charging Point Content */}
-              <div className="w-full h-full flex flex-col items-center justify-center text-white text-xs font-medium">
-                <Zap className="w-4 h-4 mb-1" />
-                <span>#{point.number}</span>
-                <span className="text-xs">{point.powerKw}kW</span>
-              </div>
-
-              {/* Status Indicator */}
-              <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-white border-2 border-current flex items-center justify-center">
-                {(statusStr === 'Available' || statusStr === 'available') && <div className="w-2 h-2 rounded-full bg-green-500" />}
-                {(statusStr === 'Occupied' || statusStr === 'AlmostDone' || statusStr === 'in-use') && <User className="w-2 h-2 text-red-500" />}
-                {(statusStr === 'Maintenance' || statusStr === 'maintenance') && <Wrench className="w-2 h-2 text-yellow-500" />}
-                {(statusStr === 'Faulted' || statusStr === 'offline') && <div className="w-2 h-2 rounded-full bg-purple-500" />}
-                {statusStr === 'Reserved' && <Clock className="w-2 h-2 text-blue-500" />}
-              </div>
-
-              {/* Selected Point Details */}
-              {selectedChargingPoint?.id === point.id && (
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-lg shadow-lg p-3 min-w-48 z-30 border">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-900">Điểm sạc #{point.number}</h4>
-                      <ChargingPointStatusBadge status={statusStr} size="sm" />
-                    </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div className="flex justify-between">
-                        <span>Power:</span>
-                        <span className="font-medium">{point.powerKw} kW</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Connector:</span>
-                        <span className="font-medium">{point.connectorType}</span>
-                      </div>
-                      {point.currentUser && (
-                        <div className="flex justify-between">
-                          <span>Current User:</span>
-                          <span className="font-medium">{point.currentUser}</span>
-                        </div>
-                      )}
-                      {point.estimatedTimeRemaining && (
-                        <div className="flex justify-between">
-                          <span>Est. Time:</span>
-                          <span className="font-medium">{point.estimatedTimeRemaining} min</span>
-                        </div>
-                      )}
-                    </div>
-                    {isBookable && (
-                      <Button 
-                        size="sm" 
-                        className="w-full bg-green-600 hover:bg-green-700 mt-2"
-                        onClick={() => handleBookPoint(point)}
-                      >
-                        Đặt điểm sạc này
-                      </Button>
-                    )}
-                    {!isBookable && (
-                      <p className="text-xs text-gray-500 mt-2 text-center">
-                        Điểm sạc không khả dụng
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-          })}
-        </div>
-      </div>
-    );
+  // Convert layout facilities to InteractiveStationLayout format
+  const convertToInteractiveFacilities = (layoutFacilities: any[]) => {
+    if (!layoutFacilities) return [];
+    return layoutFacilities.map((f: any, index: number) => ({
+      id: `facility-${f.type}-${f.x}-${f.y}-${index}`,
+      type: f.type,
+      name: `${f.type.charAt(0).toUpperCase() + f.type.slice(1)} ${index + 1}`,
+      pos_x: f.x * 60 + 30,
+      pos_y: f.y * 60 + 30,
+    }));
   };
 
   // Calculate status counts from real data
@@ -401,9 +149,17 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {renderStationLayout()}
+              {/* Use Interactive Station Layout (Read-Only) */}
+              <div style={{ height: '600px' }}>
+                <InteractiveStationLayout
+                  stationId={station.id}
+                  stationName={station.name}
+                  isReadOnly={true}
+                  facilities={convertToInteractiveFacilities(station.layout?.facilities || [])}
+                />
+              </div>
               
-              {/* Legend */}
+              {/* Legend - Keep this for reference */}
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-medium mb-3">Chú thích màu sắc</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">

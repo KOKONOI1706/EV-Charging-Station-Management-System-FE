@@ -157,10 +157,21 @@ class ChargingSessionApiService {
    * Get user's active charging session
    */
   async getActiveSession(userId: number): Promise<ChargingSession | null> {
-    const response = await fetch(`${this.baseUrl}/active/user/${userId}`);
+    const url = `${this.baseUrl}/active/user/${userId}`;
+    console.log(`📡 GET ${url}`);
+    
+    const response = await fetch(url, {
+      cache: 'no-cache', // Prevent browser caching
+      headers: {
+        'Cache-Control': 'no-cache',
+      },
+    });
+
+    console.log(`📡 Response status: ${response.status}`);
 
     if (!response.ok) {
       if (response.status === 404) {
+        console.log('📡 404 - No active session');
         return null;
       }
       const error = await response.json();
@@ -168,6 +179,7 @@ class ChargingSessionApiService {
     }
 
     const result = await response.json();
+    console.log(`📡 Response data:`, result);
     return result.data;
   }
 

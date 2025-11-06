@@ -84,6 +84,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
         if (activeSession) {
           setSession(activeSession);
           setError(null);
+          setLoading(false); // Stop loading when session found
           
           // If backend provides current_meter, use it (for new session or sync)
           if (activeSession.current_meter !== undefined) {
@@ -95,9 +96,11 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
             setCurrentMeter(activeSession.meter_start);
           }
         } else {
-          // No active session
+          // No active session - just stop loading, don't retry on polling
+          console.log('ℹ️ No active session found');
           setSession(null);
           setError(null);
+          setLoading(false);
         }
       } catch (err) {
         console.error('Error fetching active session:', err);
@@ -108,7 +111,6 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
           setSession(null);
           setError(null);
         }
-      } finally {
         setLoading(false);
       }
     };
@@ -341,7 +343,53 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
     }
   };
 
+  // Debug render state
+  console.log('🎨 ActiveChargingSession render:', {
+    loading,
+    hasSession: !!session,
+    sessionId: session?.session_id,
+    hasError: !!error,
+    hasPaymentData: !!paymentData,
+    userId: user?.id,
+  });
+
+  // Show loading animation
   if (loading) {
+    console.log('⏳ Rendering loading state...');
+    return (
+      <Card>
+        <CardContent className="p-12">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="relative">
+              {/* Animated charging bolt */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
+              </div>
+              <Zap className="w-12 h-12 text-green-600 animate-pulse" />
+            </div>
+            <div className="text-center space-y-2">
+              <p className="text-lg font-semibold text-gray-700">
+                Đang tải phiên sạc...
+              </p>
+              <p className="text-sm text-gray-500">
+                Vui lòng đợi trong giây lát
+              </p>
+            </div>
+            {/* Animated progress dots */}
+            <div className="flex gap-2">
+              <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    console.log('❌ Rendering error state:', error);
     return (
       <Card className="w-full">
         <CardContent className="flex items-center justify-center py-12">
@@ -354,6 +402,7 @@ export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionPro
 
   // If we have payment data, render the payment modal even if session is null
   if (!session && !paymentData) {
+    console.log('ℹ️ Rendering "No active session" state');
     return (
       <Card className="w-full">
         <CardContent className="py-8">

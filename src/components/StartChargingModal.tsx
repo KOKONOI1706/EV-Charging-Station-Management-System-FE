@@ -147,11 +147,13 @@ export function StartChargingModal({
 
       await chargingSessionApi.startSession(requestData);
 
-      // Success!
+      // Success! Close modal IMMEDIATELY to prevent multiple clicks
+      onClose();
+      
+      // Then trigger callbacks
       if (onSuccess) {
         onSuccess();
       }
-      onClose();
     } catch (err) {
       console.error('Error starting session:', err);
       setError(err instanceof Error ? err.message : 'Không thể bắt đầu phiên sạc');

@@ -4,10 +4,12 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/sonner";
 import AdminLayout from "./components/AdminLayout";
 import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import StaffPage from "./pages/StaffPage";
 import DashboardPage from "./pages/DashboardPage";
+import AdminDashboard from "./pages/AdminDashboard";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
 import UserHistoryPage from "./pages/UserHistoryPage";
@@ -35,9 +37,24 @@ const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <ProtectedRoute requireAdmin={true}>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
-      { path: "", element: <EnhancedAdminDashboard /> }
+      { 
+        path: "", 
+        element: <AdminDashboard />
+      },
+      { 
+        path: "dashboard", 
+        element: <AdminDashboard />
+      },
+      { 
+        path: "enhanced", 
+        element: <EnhancedAdminDashboard />
+      }
     ]
   },
   {

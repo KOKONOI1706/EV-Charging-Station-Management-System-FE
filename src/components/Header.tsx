@@ -15,6 +15,8 @@ interface HeaderProps {
 
 export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate }: HeaderProps) {
   const { t } = useLanguage();
+  const currentUser = AuthService.getCurrentUser();
+  const isAdmin = currentUser?.role === 'admin';
   
   return (
     <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
@@ -62,6 +64,14 @@ export function Header({ onAuthClick, isAuthenticated, userName, currentView, on
               }`}
             >
               Dashboard
+            </button>
+          )}
+          {isAuthenticated && isAdmin && (
+            <button 
+              onClick={() => window.location.href = '/admin'} 
+              className="hover:text-green-600 transition-colors"
+            >
+              Admin
             </button>
           )}
           <button 

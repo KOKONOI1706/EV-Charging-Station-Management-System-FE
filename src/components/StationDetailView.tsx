@@ -29,6 +29,7 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
   const [userVehicles, setUserVehicles] = useState<Vehicle[]>([]);
   const [isLoadingPoints, setIsLoadingPoints] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedPoint, setSelectedPoint] = useState<ApiChargingPoint | null>(null);
 
   // Fetch real charging points from backend
   useEffect(() => {
@@ -92,6 +93,24 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
     }));
   };
 
+  // Handle charging point click
+  const handleChargingPointClick = (point: ApiChargingPoint) => {
+    setSelectedPoint(point);
+    // Auto-scroll to selected point info
+    const element = document.getElementById('selected-point-info');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+
+  // Handle book selected point
+  const handleBookSelectedPoint = () => {
+    if (selectedPoint) {
+      onBookChargingPoint(station, selectedPoint.point_id.toString());
+      setSelectedPoint(null);
+    }
+  };
+
   // Calculate status counts from real data
   const availablePoints = realChargingPoints.filter(p => p.status === 'Available');
   const occupiedPoints = realChargingPoints.filter(p => p.status === 'Occupied' || p.status === 'AlmostDone');
@@ -129,13 +148,32 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
             <MapPin className="w-4 h-4" />
             {station.address}
           </p>
+          {selectedPoint && (
+            <div className="mt-2">
+              <Badge className="bg-green-100 text-green-800 text-sm">
+                ✓ {selectedPoint.name} selected
+              </Badge>
+            </div>
+          )}
         </div>
-        <Button 
-          className="bg-green-600 hover:bg-green-700"
-          onClick={() => onBookChargingPoint(station)}
-        >
-          Book Any Available
-        </Button>
+        <div className="flex gap-2">
+          {selectedPoint && selectedPoint.status === 'Available' && (
+            <Button 
+              className="bg-green-600 hover:bg-green-700"
+              onClick={handleBookSelectedPoint}
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Book {selectedPoint.name}
+            </Button>
+          )}
+          <Button 
+            variant={selectedPoint ? "outline" : "default"}
+            className={!selectedPoint ? "bg-green-600 hover:bg-green-700" : ""}
+            onClick={() => onBookChargingPoint(station)}
+          >
+            Book Any Available
+          </Button>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -147,6 +185,9 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
                 <MapPin className="w-5 h-5" />
                 Station Layout
               </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Click on a charging point to select it for booking
+              </p>
             </CardHeader>
             <CardContent>
               {/* Use Interactive Station Layout (Read-Only) */}
@@ -156,6 +197,7 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
                   stationName={station.name}
                   isReadOnly={true}
                   facilities={convertToInteractiveFacilities(station.layout?.facilities || [])}
+                  onChargingPointClick={handleChargingPointClick}
                 />
               </div>
             </CardContent>
@@ -164,6 +206,70 @@ export function StationDetailView({ station, onBack, onBookChargingPoint }: Stat
 
         {/* Station Info */}
         <div className="space-y-6">
+          {/* Selected Charging Point Info */}
+          {selectedPoint && (
+            <Card id="selected-point-info" className="border-2 border-green-500 shadow-lg">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-green-600" />
+                    Selected Charging Point
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedPoint(null)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Name:</span>
+                    <span className="text-sm font-bold">{selectedPoint.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Power:</span>
+                    <span className="text-sm">{selectedPoint.power_kw} kW</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Connector:</span>
+                    <span className="text-sm">{selectedPoint.connector_type}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Status:</span>
+                    <Badge 
+                      className={
+                        selectedPoint.status === 'Available' 
+                          ? 'bg-green-100 text-green-800'
+                          : selectedPoint.status === 'Reserved'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-red-100 text-red-800'
+                      }
+                    >
+                      {selectedPoint.status}
+                    </Badge>
+                  </div>
+                </div>
+                {selectedPoint.status === 'Available' ? (
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={handleBookSelectedPoint}
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Book This Point
+                  </Button>
+                ) : (
+                  <div className="text-sm text-gray-600 text-center p-3 bg-gray-50 rounded">
+                    This charging point is currently {selectedPoint.status.toLowerCase()}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Status Summary */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

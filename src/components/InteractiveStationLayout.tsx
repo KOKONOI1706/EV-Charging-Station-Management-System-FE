@@ -67,6 +67,7 @@ interface ChargingPointNodeData {
   point: ApiChargingPoint;
   onEdit: (point: ApiChargingPoint) => void;
   onDelete: (pointId: number) => void;
+  onClick?: (point: ApiChargingPoint) => void;
   isReadOnly?: boolean;
 }
 
@@ -130,7 +131,7 @@ function FacilityNode({ data }: NodeProps<FacilityNodeData>) {
 
 // Custom Node Component for Charging Points
 function ChargingPointNode({ data }: NodeProps<ChargingPointNodeData>) {
-  const { point, onEdit, onDelete, isReadOnly } = data;
+  const { point, onEdit, onDelete, onClick, isReadOnly } = data;
   const colors = STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.Offline;
 
   return (
@@ -143,7 +144,26 @@ function ChargingPointNode({ data }: NodeProps<ChargingPointNodeData>) {
         padding: '12px',
         minWidth: '160px',
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        cursor: isReadOnly ? 'default' : 'grab',
+        cursor: isReadOnly ? (onClick ? 'pointer' : 'default') : 'grab',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+      }}
+      onClick={(e) => {
+        if (isReadOnly && onClick) {
+          e.stopPropagation();
+          onClick(point);
+        }
+      }}
+      onMouseEnter={(e) => {
+        if (isReadOnly && onClick) {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.2)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (isReadOnly && onClick) {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        }
       }}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -193,6 +213,7 @@ interface InteractiveStationLayoutProps {
   isReadOnly?: boolean;
   facilities?: Facility[];
   onFacilitiesChange?: (facilities: Facility[]) => void;
+  onChargingPointClick?: (point: ApiChargingPoint) => void;
 }
 
 export function InteractiveStationLayout({
@@ -201,6 +222,7 @@ export function InteractiveStationLayout({
   isReadOnly = false,
   facilities: externalFacilities = [],
   onFacilitiesChange,
+  onChargingPointClick,
 }: InteractiveStationLayoutProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, , onEdgesChange] = useEdgesState([]);
@@ -219,6 +241,8 @@ export function InteractiveStationLayout({
     power_kw: 150,
     connector_type_id: 1,
     status: 'Available',
+    pos_x: 0,
+    pos_y: 0,
   });
 
   // Edit Panel State - Facilities
@@ -234,7 +258,6 @@ export function InteractiveStationLayout({
   const [addMode, setAddMode] = useState<'point' | 'facility'>('point');
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
 
   // Load data on mount
   useEffect(() => {
@@ -269,6 +292,7 @@ export function InteractiveStationLayout({
           point,
           onEdit: handleEditPoint,
           onDelete: handleDeletePoint,
+          onClick: onChargingPointClick,
           isReadOnly, // Pass isReadOnly to node
         },
         draggable: !isReadOnly,
@@ -296,7 +320,24 @@ export function InteractiveStationLayout({
 
     setNodes(newNodes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chargingPoints, facilities, isReadOnly]);
+  }, [chargingPoints, facilities, isReadOnly, onChargingPointClick]);
+
+  // Sync form position changes to canvas
+  useEffect(() => {
+    if (editingPoint && showEditPanel) {
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === `point-${editingPoint.point_id}`) {
+            return {
+              ...node,
+              position: { x: editForm.pos_x, y: editForm.pos_y },
+            };
+          }
+          return node;
+        })
+      );
+    }
+  }, [editForm.pos_x, editForm.pos_y, editingPoint, showEditPanel]);
 
   const loadChargingPoints = async () => {
     try {
@@ -325,10 +366,19 @@ export function InteractiveStationLayout({
 
   // Handle node drag end - mark as unsaved
   const onNodeDragStop = useCallback(
-    () => {
+    (_event: any, node: Node) => {
       setHasUnsavedChanges(true);
+      
+      // If we're editing this node, update the form with new position
+      if (editingPoint && node.id === `point-${editingPoint.point_id}`) {
+        setEditForm(prev => ({
+          ...prev,
+          pos_x: Math.round(node.position.x),
+          pos_y: Math.round(node.position.y),
+        }));
+      }
     },
-    []
+    [editingPoint]
   );
 
   // Handle double-click to add new item
@@ -343,6 +393,8 @@ export function InteractiveStationLayout({
         power_kw: 150,
         connector_type_id: connectorTypes[0]?.connector_type_id || 1,
         status: 'Available',
+        pos_x: 100,
+        pos_y: 100,
       });
       setShowAddForm(true);
       setShowEditPanel(false);
@@ -358,6 +410,8 @@ export function InteractiveStationLayout({
       power_kw: point.power_kw,
       connector_type_id: point.connector_type_id || 1,
       status: point.status,
+      pos_x: point.pos_x ?? 0,
+      pos_y: point.pos_y ?? 0,
     });
     setShowEditPanel(true);
   }, []);
@@ -578,6 +632,8 @@ export function InteractiveStationLayout({
                         power_kw: 150,
                         connector_type_id: connectorTypes[0]?.connector_type_id || 1,
                         status: 'Available',
+                        pos_x: 100,
+                        pos_y: 100,
                       });
                       setShowAddForm(true);
                       setShowEditPanel(false);
@@ -642,7 +698,6 @@ export function InteractiveStationLayout({
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeDragStop={onNodeDragStop}
-                onInit={setReactFlowInstance}
                 nodeTypes={nodeTypes}
                 fitView
                 onPaneClick={() => {
@@ -786,6 +841,31 @@ export function InteractiveStationLayout({
                     <SelectItem value="Offline">Offline</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Position X</Label>
+                  <Input
+                    type="number"
+                    value={editForm.pos_x}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, pos_x: parseInt(e.target.value) || 0 }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Position Y</Label>
+                  <Input
+                    type="number"
+                    value={editForm.pos_y}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, pos_y: parseInt(e.target.value) || 0 }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 px-1">
+                💡 Tip: You can also drag the node on the canvas to change position
               </div>
               <Button onClick={handleSaveEdit} className="w-full bg-blue-600 hover:bg-blue-700">
                 Update Point

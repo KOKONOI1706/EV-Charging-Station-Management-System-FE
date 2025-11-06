@@ -99,8 +99,8 @@ export function ReservationTimer({
     };
   }, [reservation.id, onExpired]);
 
-  const handleCancel = () => {
-    const success = reservationService.cancelReservation(reservation.id);
+  const handleCancel = async () => {
+    const success = await reservationService.cancelReservation(reservation.id);
     if (success) {
       toast.success('Đã hủy đặt chỗ thành công!', {
         duration: 3000

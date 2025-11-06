@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Station } from '../data/mockDatabase';
 import { reservationService, Reservation, ReservationResult } from '../services/reservationService';
 import { StationFinder } from './StationFinder';
@@ -14,6 +15,7 @@ interface StationFinderWithReservationProps {
 
 export function StationFinderWithReservation({ userId }: StationFinderWithReservationProps) {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargingPointId, setSelectedChargingPointId] = useState<string | undefined>(undefined);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -63,6 +65,14 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
 
   const handleBookStation = (station: Station, chargingPointId?: string) => {
     console.log('📍 handleBookStation called with chargingPointId:', chargingPointId);
+    // Only authenticated customers may book
+    if (!isAuthenticated || user?.role !== 'customer') {
+      setNotification('⚠️ Vui lòng đăng nhập bằng tài khoản khách hàng để đặt chỗ');
+      setTimeout(() => setNotification(null), 5000);
+      // redirect to auth page after short delay
+      setTimeout(() => navigate('/auth'), 600);
+      return;
+    }
     
     // Check if already has active reservation
     if (activeReservation) {

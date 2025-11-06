@@ -67,15 +67,27 @@ const router = createBrowserRouter([
   },
   {
     path: "/user-history",
-    element: <UserHistoryPage />,
+    element: (
+      <ProtectedRoute allowedRoles={["customer"]}>
+        <UserHistoryPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/personal-report",
-    element: <PersonalReportPage />,
+    element: (
+      <ProtectedRoute allowedRoles={["customer"]}>
+        <PersonalReportPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/charging-session",
-    element: <ChargingSessionPage />,
+    element: (
+      <ProtectedRoute allowedRoles={["customer"]}>
+        <ChargingSessionPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/payment/callback",
@@ -83,7 +95,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/reservation-test",
-    element: <ReservationTestPage />,
+    element: (
+      <ProtectedRoute allowedRoles={["customer"]}>
+        <ReservationTestPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "*",

@@ -51,6 +51,10 @@ export function UserDashboard({
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   
+  // Pagination states
+  const [bookingsPerPage] = useState(5);
+  const [currentBookingPage, setCurrentBookingPage] = useState(1);
+  
   console.log('🔄 UserDashboard render:', { loadingStats, hasStats: !!userStats, stats: userStats });
   
   // Get current user info
@@ -204,6 +208,16 @@ export function UserDashboard({
     return bookingDate >= new Date() && booking.status === "confirmed";
   });
 
+  // Pagination calculations for bookings
+  const indexOfLastBooking = currentBookingPage * bookingsPerPage;
+  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
+  const currentBookings = upcomingBookings.slice(indexOfFirstBooking, indexOfLastBooking);
+  const totalBookingPages = Math.ceil(upcomingBookings.length / bookingsPerPage);
+
+  const handleBookingPageChange = (pageNumber: number) => {
+    setCurrentBookingPage(pageNumber);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -265,7 +279,7 @@ export function UserDashboard({
               <div className="w-full">
                 <p className="text-sm text-gray-600">{t.totalSpent}</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ${userStats ? userStats.totalSpent.toFixed(2) : (loadingStats ? "..." : "0.00")}
+                  {userStats ? new Intl.NumberFormat('vi-VN').format(userStats.totalSpent) : (loadingStats ? "..." : "0")}₫
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {userStats ? userStats.totalEnergyConsumed.toFixed(1) : (loadingStats ? "..." : "0.0")} kWh
@@ -325,74 +339,114 @@ export function UserDashboard({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {upcomingBookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold">
-                          {booking.station.name}
-                        </h3>
-                        <Badge className={getStatusColor(booking.status)}>
-                          {booking.status}
-                        </Badge>
+                <>
+                  <div className="space-y-4">
+                    {currentBookings.map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-semibold">
+                            {booking.station.name}
+                          </h3>
+                          <Badge className={getStatusColor(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {booking.date.toDateString()}
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="w-4 h-4 mr-2" />
+                            {booking.time}
+                          </div>
+                          <div className="flex items-center">
+                            <Zap className="w-4 h-4 mr-2" />
+                            {booking.duration} hours
+                          </div>
+                          <div className="flex items-center">
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            {new Intl.NumberFormat('vi-VN').format(Number(booking.price))}₫
+                          </div>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600 mt-2">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          {booking.station.address}
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button variant="outline" size="sm">
+                            Modify
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={() => {
+                              // For demo purposes, using mock data
+                              // In real app, get from booking object
+                              setStartChargingModal({
+                                isOpen: true,
+                                pointId: 1, // Mock point ID
+                                pointName: "Point #1",
+                                stationName: booking.station.name,
+                                powerKw: booking.station.powerKw || 150,
+                                pricePerKwh: booking.station.pricePerKwh || 5000,
+                                bookingId: parseInt(booking.id),
+                              });
+                            }}
+                          >
+                            <Battery className="w-4 h-4 mr-2" />
+                            {t.startCharging}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {booking.date.toDateString()}
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-2" />
-                          {booking.time}
-                        </div>
-                        <div className="flex items-center">
-                          <Zap className="w-4 h-4 mr-2" />
-                          {booking.duration} hours
-                        </div>
-                        <div className="flex items-center">
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          ${booking.price}
-                        </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination for Bookings */}
+                  {totalBookingPages > 1 && (
+                    <div className="flex items-center justify-between mt-6">
+                      <div className="text-sm text-gray-600">
+                        Showing {indexOfFirstBooking + 1} to {Math.min(indexOfLastBooking, upcomingBookings.length)} of {upcomingBookings.length} bookings
                       </div>
-                      <div className="flex items-center text-sm text-gray-600 mt-2">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        {booking.station.address}
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm">
-                          Modify
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Cancel
-                        </Button>
+                      <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-green-600 text-green-600 hover:bg-green-50"
-                          onClick={() => {
-                            // For demo purposes, using mock data
-                            // In real app, get from booking object
-                            setStartChargingModal({
-                              isOpen: true,
-                              pointId: 1, // Mock point ID
-                              pointName: "Point #1",
-                              stationName: booking.station.name,
-                              powerKw: booking.station.powerKw || 150,
-                              pricePerKwh: booking.station.pricePerKwh || 5000,
-                              bookingId: parseInt(booking.id),
-                            });
-                          }}
+                          onClick={() => handleBookingPageChange(currentBookingPage - 1)}
+                          disabled={currentBookingPage === 1}
                         >
-                          <Battery className="w-4 h-4 mr-2" />
-                          {t.startCharging}
+                          Previous
+                        </Button>
+                        {Array.from({ length: totalBookingPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentBookingPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleBookingPageChange(page)}
+                            className={currentBookingPage === page ? "bg-green-600 hover:bg-green-700" : ""}
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleBookingPageChange(currentBookingPage + 1)}
+                          disabled={currentBookingPage === totalBookingPages}
+                        >
+                          Next
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

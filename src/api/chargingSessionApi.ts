@@ -2,6 +2,16 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+export interface Invoice {
+  invoice_id: number;
+  user_id: number;
+  session_id: number;
+  payment_id?: number;
+  total_amount: number;
+  issued_at: string;
+  status: 'Issued' | 'Paid' | 'Cancelled';
+}
+
 export interface ChargingSession {
   session_id: number;
   user_id: number;
@@ -72,6 +82,7 @@ export interface ChargingSession {
     amount: number;
     status: string;
   };
+  invoice?: Invoice;
 }
 
 export interface StartSessionRequest {
@@ -302,6 +313,33 @@ class ChargingSessionApiService {
       style: 'currency',
       currency: 'VND',
     }).format(cost);
+  }
+
+  /**
+   * Get or create invoice for a completed session
+   */
+  async getOrCreateInvoice(sessionId: number): Promise<Invoice> {
+    const response = await fetch(`${API_BASE_URL}/charging-sessions/${sessionId}/invoice`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get or create invoice');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  /**
+   * Format invoice number with padding (e.g., INV-000123)
+   */
+  formatInvoiceNumber(invoiceId: number): string {
+    return `INV-${String(invoiceId).padStart(6, '0')}`;
   }
 }
 

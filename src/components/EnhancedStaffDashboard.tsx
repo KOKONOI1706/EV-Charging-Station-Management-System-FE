@@ -68,6 +68,10 @@ export function EnhancedStaffDashboard() {
   const [analytics, setAnalytics] = useState<StaffAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pagination states
+  const [sessionsPerPage] = useState(10);
+  const [currentSessionPage, setCurrentSessionPage] = useState(1);
+
   // Load stations and user's assigned station
   useEffect(() => {
     const initStations = async () => {
@@ -186,6 +190,16 @@ export function EnhancedStaffDashboard() {
     );
   }
 
+  // Pagination calculations for recent sessions
+  const indexOfLastSession = currentSessionPage * sessionsPerPage;
+  const indexOfFirstSession = indexOfLastSession - sessionsPerPage;
+  const currentSessions = analytics.recentSessions.slice(indexOfFirstSession, indexOfLastSession);
+  const totalSessionPages = Math.ceil(analytics.recentSessions.length / sessionsPerPage);
+
+  const handleSessionPageChange = (pageNumber: number) => {
+    setCurrentSessionPage(pageNumber);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -250,7 +264,7 @@ export function EnhancedStaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{t.todaysRevenue}</p>
-                <p className="text-2xl font-bold">${metrics.todaysRevenue.toFixed(2)}</p>
+                <p className="text-2xl font-bold">{new Intl.NumberFormat('vi-VN').format(metrics.todaysRevenue)}₫</p>
                 <p className="text-xs text-green-600">
                   {metrics.yesterdaysRevenue !== undefined
                     ? staffStatsApi.calculatePercentageChange(metrics.todaysRevenue, metrics.yesterdaysRevenue)
@@ -320,7 +334,7 @@ export function EnhancedStaffDashboard() {
         <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
           <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
-          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
+          <TabsTrigger value="chargingPoints">{t.chargingPointsTab}</TabsTrigger>
           <TabsTrigger value="sessions">{t.sessions}</TabsTrigger>
           <TabsTrigger value="stations">{t.stations}</TabsTrigger>
           <TabsTrigger value="maintenance">{t.maintenance}</TabsTrigger>
@@ -412,7 +426,7 @@ export function EnhancedStaffDashboard() {
                       <span>{t.weeklyRevenue}</span>
                     </div>
                     <span className="font-bold">
-                      ${analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0).toLocaleString()}
+                      {new Intl.NumberFormat('vi-VN').format(analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0))}₫
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -441,7 +455,7 @@ export function EnhancedStaffDashboard() {
                       <span>{t.avgRevenuePerDay}</span>
                     </div>
                     <span className="font-bold">
-                      ${(analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0) / 7).toFixed(0)}
+                      {new Intl.NumberFormat('vi-VN').format(Math.round(analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0) / 7))}₫
                     </span>
                   </div>
                 </div>
@@ -471,11 +485,11 @@ export function EnhancedStaffDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {analytics.recentSessions.map((session) => (
+                  {currentSessions.map((session) => (
                     <TableRow key={session.id}>
                       <TableCell className="font-medium">{session.customer}</TableCell>
                       <TableCell>{session.duration}</TableCell>
-                      <TableCell>${session.amount.toFixed(2)}</TableCell>
+                      <TableCell>{new Intl.NumberFormat('vi-VN').format(session.amount)}₫</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(session.status)}>
                           {session.status}
@@ -497,6 +511,44 @@ export function EnhancedStaffDashboard() {
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Pagination for Recent Sessions */}
+              {totalSessionPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-gray-600">
+                    Showing {indexOfFirstSession + 1} to {Math.min(indexOfLastSession, analytics.recentSessions.length)} of {analytics.recentSessions.length} sessions
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSessionPageChange(currentSessionPage - 1)}
+                      disabled={currentSessionPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    {Array.from({ length: totalSessionPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentSessionPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleSessionPageChange(page)}
+                        className={currentSessionPage === page ? "bg-green-600 hover:bg-green-700" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSessionPageChange(currentSessionPage + 1)}
+                      disabled={currentSessionPage === totalSessionPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

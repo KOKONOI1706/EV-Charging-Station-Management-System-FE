@@ -48,6 +48,13 @@ export function EnhancedAdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10);
+  const [stationsPerPage] = useState(6);
+  const [stationCurrentPage, setStationCurrentPage] = useState(1);
+  
   const [settings, setSettings] = useState<SystemSettings>({
     maintenanceMode: false,
     autoBackup: true,
@@ -105,6 +112,26 @@ export function EnhancedAdminDashboard() {
   const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
   const activeUsers = users.length; // In real app, filter active users
   const totalSessions = bookings.length;
+
+  // Pagination calculations for Users
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+  const totalUserPages = Math.ceil(users.length / usersPerPage);
+
+  // Pagination calculations for Stations
+  const indexOfLastStation = stationCurrentPage * stationsPerPage;
+  const indexOfFirstStation = indexOfLastStation - stationsPerPage;
+  const currentStations = stations.slice(indexOfFirstStation, indexOfLastStation);
+  const totalStationPages = Math.ceil(stations.length / stationsPerPage);
+
+  const handleUserPageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleStationPageChange = (pageNumber: number) => {
+    setStationCurrentPage(pageNumber);
+  };
 
   if (isLoading) {
     return (
@@ -166,7 +193,7 @@ export function EnhancedAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{t.revenue}</p>
-                <p className="text-2xl font-bold">${totalRevenue.toFixed(2)}</p>
+                <p className="text-2xl font-bold">{new Intl.NumberFormat('vi-VN').format(totalRevenue)}₫</p>
                 <p className="text-xs text-green-600 flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" />
                   +8% this month
@@ -234,7 +261,7 @@ export function EnhancedAdminDashboard() {
         <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
-          <TabsTrigger value="chargingPoints">Charging Points</TabsTrigger>
+          <TabsTrigger value="chargingPoints">{t.chargingPointsTab}</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
           <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
           <TabsTrigger value="reports">{t.reports}</TabsTrigger>
@@ -265,19 +292,19 @@ export function EnhancedAdminDashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span>{t.today}</span>
-                    <span className="font-bold">$1,245.50</span>
+                    <span className="font-bold">1.245.500₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.thisWeek}</span>
-                    <span className="font-bold">$8,734.20</span>
+                    <span className="font-bold">8.734.200₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.thisMonth}</span>
-                    <span className="font-bold">$34,567.80</span>
+                    <span className="font-bold">34.567.800₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.yearToDate}</span>
-                    <span className="font-bold">$412,345.60</span>
+                    <span className="font-bold">412.345.600₫</span>
                   </div>
                 </div>
               </CardContent>
@@ -304,7 +331,7 @@ export function EnhancedAdminDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">$2,456</p>
+                        <p className="font-bold">2.456.000₫</p>
                         <p className="text-sm text-gray-600">{t.thisMonth}</p>
                       </div>
                     </div>
@@ -406,7 +433,7 @@ export function EnhancedAdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {currentUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div>
@@ -417,7 +444,7 @@ export function EnhancedAdminDashboard() {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{new Date(user.memberSince).toLocaleDateString()}</TableCell>
                       <TableCell>{user.totalSessions}</TableCell>
-                      <TableCell>${user.totalSpent.toFixed(2)}</TableCell>
+                      <TableCell>{new Intl.NumberFormat('vi-VN').format(user.totalSpent)}₫</TableCell>
                       <TableCell>
                         <Badge className="bg-green-100 text-green-800">Active</Badge>
                       </TableCell>
@@ -435,6 +462,44 @@ export function EnhancedAdminDashboard() {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Pagination for Users */}
+              {totalUserPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-gray-600">
+                    Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, users.length)} of {users.length} users
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUserPageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    {Array.from({ length: totalUserPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleUserPageChange(page)}
+                        className={currentPage === page ? "bg-green-600 hover:bg-green-700" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUserPageChange(currentPage + 1)}
+                      disabled={currentPage === totalUserPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -447,7 +512,7 @@ export function EnhancedAdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stations.map((station) => (
+                {currentStations.map((station) => (
                   <Card key={station.id} className="border">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -487,6 +552,44 @@ export function EnhancedAdminDashboard() {
                   </Card>
                 ))}
               </div>
+              
+              {/* Pagination for Stations */}
+              {totalStationPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <div className="text-sm text-gray-600">
+                    Showing {indexOfFirstStation + 1} to {Math.min(indexOfLastStation, stations.length)} of {stations.length} stations
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStationPageChange(stationCurrentPage - 1)}
+                      disabled={stationCurrentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    {Array.from({ length: totalStationPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={stationCurrentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleStationPageChange(page)}
+                        className={stationCurrentPage === page ? "bg-green-600 hover:bg-green-700" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStationPageChange(stationCurrentPage + 1)}
+                      disabled={stationCurrentPage === totalStationPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

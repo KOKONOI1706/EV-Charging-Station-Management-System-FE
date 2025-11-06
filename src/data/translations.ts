@@ -59,6 +59,7 @@ export interface Translation {
   stationLayout: string;
   chargingPoints: string;
   chargingPoint: string;
+  chargingPointsTab: string;
   ports: string;
   
   // Map Legend
@@ -622,6 +623,7 @@ export const translations: Record<Language, Translation> = {
     stationLayout: "Station Layout",
     chargingPoints: "Charging Points",
     chargingPoint: "Charging Point",
+    chargingPointsTab: "Charging Points",
     ports: "ports",
     
     // Map Legend
@@ -1183,6 +1185,7 @@ export const translations: Record<Language, Translation> = {
     stationLayout: "Bố cục trạm sạc",
     chargingPoints: "Điểm sạc",
     chargingPoint: "Điểm sạc",
+    chargingPointsTab: "Điểm sạc",
     ports: "cổng",
     
     // Map Legend

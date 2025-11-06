@@ -12,9 +12,18 @@ import {
   ChevronRight,
   Loader2,
   FileText,
+  Download,
+  Printer,
+  Zap,
 } from 'lucide-react';
 import { chargingSessionApi, ChargingSession } from '../api/chargingSessionApi';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 interface ChargingHistoryProps {
   limit?: number;
@@ -25,6 +34,8 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
   const [sessions, setSessions] = useState<ChargingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [selectedSession, setSelectedSession] = useState<ChargingSession | null>(null);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -61,6 +72,33 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleViewInvoice = async (session: ChargingSession) => {
+    setSelectedSession(session);
+    setIsInvoiceOpen(true);
+    
+    // Try to get or create invoice from backend
+    try {
+      const invoice = await chargingSessionApi.getOrCreateInvoice(session.session_id);
+      // Update session with invoice data
+      setSelectedSession({
+        ...session,
+        invoice: invoice,
+      });
+    } catch (error) {
+      console.error('Failed to get invoice:', error);
+      // Still show the modal with session data, but without real invoice_id
+    }
+  };
+
+  const handlePrintInvoice = () => {
+    window.print();
+  };
+
+  const handleDownloadInvoice = () => {
+    // In production, this would generate a PDF
+    alert('Tính năng tải về hóa đơn sẽ sớm được triển khai');
   };
 
   if (loading) {
@@ -301,6 +339,7 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
                     variant="outline"
                     size="sm"
                     className="flex-1"
+                    onClick={() => handleViewInvoice(session)}
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     Xem hóa đơn
@@ -349,6 +388,256 @@ export function ChargingHistory({ limit = 10 }: ChargingHistoryProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Invoice Dialog */}
+      <Dialog open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Hóa Đơn Sạc Xe Điện
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedSession && (
+            <div className="space-y-6">
+              {/* Invoice Header */}
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border border-green-200">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">ChargeTech</h2>
+                    <p className="text-sm text-gray-600">Hệ thống sạc xe điện thông minh</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 mb-1">Mã hóa đơn</p>
+                    <p className="text-lg font-mono font-bold">
+                      {selectedSession.invoice 
+                        ? chargingSessionApi.formatInvoiceNumber(selectedSession.invoice.invoice_id)
+                        : `INV-${String(selectedSession.session_id).padStart(6, '0')}`
+                      }
+                    </p>
+                    <Badge className={getStatusColor(selectedSession.status)}>
+                      {selectedSession.status}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600 mb-1">Khách hàng</p>
+                    <p className="font-semibold">{user?.name || 'N/A'}</p>
+                    <p className="text-gray-600">{user?.email || 'N/A'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-600 mb-1">Ngày phát hành</p>
+                    <p className="font-semibold">
+                      {new Date(selectedSession.invoice?.issued_at || selectedSession.start_time).toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })}
+                    </p>
+                    <p className="text-gray-600">
+                      {new Date(selectedSession.invoice?.issued_at || selectedSession.start_time).toLocaleTimeString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Station Information */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Thông tin trạm sạc
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tên trạm:</span>
+                    <span className="font-medium">{selectedSession.charging_points?.stations?.name || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Địa chỉ:</span>
+                    <span className="font-medium text-right max-w-xs">{selectedSession.charging_points?.stations?.address || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Điểm sạc:</span>
+                    <span className="font-medium">{selectedSession.charging_points?.name || `Point #${selectedSession.point_id}`}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Công suất:</span>
+                    <span className="font-medium text-green-600">{selectedSession.charging_points?.power_kw || 0} kW</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vehicle Information */}
+              {selectedSession.vehicles && (
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Thông tin xe
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Biển số:</span>
+                      <span className="font-medium">{selectedSession.vehicles.plate_number}</span>
+                    </div>
+                    {selectedSession.vehicles.battery_capacity_kwh && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Dung lượng pin:</span>
+                        <span className="font-medium">{selectedSession.vehicles.battery_capacity_kwh} kWh</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Charging Details */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <Battery className="w-4 h-4" />
+                  Chi tiết phiên sạc
+                </h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 text-xs">Bắt đầu</p>
+                        <p className="font-medium">
+                          {new Date(selectedSession.start_time).toLocaleString('vi-VN')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 text-xs">Kết thúc</p>
+                        <p className="font-medium">
+                          {selectedSession.end_time 
+                            ? new Date(selectedSession.end_time).toLocaleString('vi-VN')
+                            : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 text-xs">Thời lượng</p>
+                        <p className="font-medium">
+                          {chargingSessionApi.formatDuration(
+                            selectedSession.start_time,
+                            selectedSession.end_time
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    {selectedSession.initial_battery_percent !== null && selectedSession.initial_battery_percent !== undefined && (
+                      <div className="flex items-center gap-2">
+                        <Battery className="w-4 h-4 text-blue-600" />
+                        <div>
+                          <p className="text-gray-600 text-xs">Mức pin</p>
+                          <p className="font-medium">
+                            {selectedSession.initial_battery_percent.toFixed(0)}% → {selectedSession.target_battery_percent || 100}%
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t pt-3 mt-3">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Công tơ bắt đầu:</span>
+                      <span className="font-medium">{selectedSession.meter_start.toFixed(2)} kWh</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Công tơ kết thúc:</span>
+                      <span className="font-medium">{selectedSession.meter_end?.toFixed(2) || 'N/A'} kWh</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-semibold text-green-700">
+                      <span>Điện năng tiêu thụ:</span>
+                      <span>{selectedSession.energy_consumed_kwh.toFixed(2)} kWh</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cost Breakdown */}
+              <div className="border rounded-lg p-4 bg-gradient-to-br from-purple-50 to-pink-50">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Chi phí chi tiết
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Điện năng tiêu thụ:</span>
+                    <span>{selectedSession.energy_consumed_kwh.toFixed(2)} kWh</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Đơn giá:</span>
+                    <span>{chargingSessionApi.formatCost(selectedSession.charging_points?.stations?.price_per_kwh || 0)}/kWh</span>
+                  </div>
+                  <div className="flex justify-between pb-2 border-b">
+                    <span className="text-gray-600">Phí sạc:</span>
+                    <span className="font-medium">
+                      {chargingSessionApi.formatCost(
+                        selectedSession.energy_consumed_kwh * (selectedSession.charging_points?.stations?.price_per_kwh || 0)
+                      )}
+                    </span>
+                  </div>
+                  
+                  {selectedSession.idle_fee > 0 && (
+                    <>
+                      <div className="flex justify-between text-orange-600">
+                        <span>Phí chờ ({selectedSession.idle_minutes} phút):</span>
+                        <span>+{chargingSessionApi.formatCost(selectedSession.idle_fee)}</span>
+                      </div>
+                      <div className="border-b pb-2"></div>
+                    </>
+                  )}
+                  
+                  <div className="flex justify-between text-lg font-bold text-purple-700 pt-2">
+                    <span>Tổng cộng:</span>
+                    <span>{chargingSessionApi.formatCost(selectedSession.cost)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handlePrintInvoice}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  In hóa đơn
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleDownloadInvoice}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Tải xuống PDF
+                </Button>
+              </div>
+
+              {/* Footer */}
+              <div className="text-center text-xs text-gray-500 pt-4 border-t">
+                <p>Cảm ơn bạn đã sử dụng dịch vụ ChargeTech!</p>
+                <p className="mt-1">Mọi thắc mắc vui lòng liên hệ: support@chargetech.com | 1-800-CHARGE</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

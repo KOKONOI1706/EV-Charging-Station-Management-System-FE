@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
 import { 
   BarChart3, 
   Download, 
@@ -14,7 +15,8 @@ import {
   MapPin,
   Leaf,
   Clock,
-  Battery
+  Battery,
+  ArrowLeft
 } from 'lucide-react';
 
 interface PersonalReport {
@@ -126,6 +128,7 @@ const getStatusBadge = (status: string) => {
 };
 
 const PersonalReportPage: React.FC = () => {
+  const navigate = useNavigate();
   const [reports, setReports] = useState<PersonalReport[]>([]);
   const [stats, setStats] = useState<ChargingStats | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
@@ -202,8 +205,26 @@ const PersonalReportPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {/* Header with Back Button */}
       <div className="mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Button>
+          <div className="h-6 w-px bg-gray-300" />
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2"
+          >
+            Dashboard
+          </Button>
+        </div>
         <h1 className="text-3xl font-bold mb-2">Báo Cáo Cá Nhân</h1>
         <p className="text-gray-600">Theo dõi thống kê và báo cáo sử dụng của bạn</p>
       </div>

@@ -1,5 +1,6 @@
 // Reservation Service - Quản lý đặt chỗ và giữ chỗ
 import { Station } from '../data/mockDatabase';
+import * as reservationApi from '../api/reservationApi';
 
 export interface Reservation {
   id: string;
@@ -12,6 +13,7 @@ export interface Reservation {
   expiresAt: Date;
   remainingTime: number; // in seconds
   notificationSent?: boolean; // Đã gửi thông báo 5 phút không
+  backendReservationId?: number; // Backend reservation ID for API calls
 }
 
 export interface ReservationResult {
@@ -147,11 +149,11 @@ class ReservationService {
   /**
    * Tạo reservation mới
    */
-  createReservation(
+  async createReservation(
     userId: string,
     station: Station,
     chargingPointId?: string
-  ): ReservationResult {
+  ): Promise<ReservationResult> {
     console.log('🎯 createReservation called for user:', userId, 'station:', station.name, 'chargingPointId:', chargingPointId);
     
     // Kiểm tra xem user đã có reservation active chưa
@@ -164,81 +166,108 @@ class ReservationService {
       };
     }
 
-    // Nếu đặt charging point cụ thể, kiểm tra xem point đó đã được đặt chưa
-    if (chargingPointId) {
-      const pointKey = `${station.id}_${chargingPointId}`;
-      const reservedBy = this.reservedChargingPoints.get(pointKey);
-      
-      if (reservedBy) {
-        console.log(`🔒 Charging point ${chargingPointId} already reserved by user ${reservedBy}`);
-        return {
-          success: false,
-          error: `Điểm sạc #${chargingPointId} đã được đặt bởi người khác. Vui lòng chọn điểm khác.`
-        };
-      }
-    }
-
-    // Tính số chỗ thực sự còn available (trừ đi số đã reserved)
-    const reservedSlots = this.stationReservedSlots.get(station.id) || 0;
-    const actualAvailable = station.available - reservedSlots;
-    
-    console.log(`📊 Station ${station.name}:`);
-    console.log(`   - Total: ${station.total}`);
-    console.log(`   - Available (from DB): ${station.available}`);
-    console.log(`   - Reserved slots: ${reservedSlots}`);
-    console.log(`   - Actual available: ${actualAvailable}`);
-    console.log(`   - Charging point: ${chargingPointId || 'any'}`);
-    console.log(`   - Reserved points:`, Array.from(this.reservedChargingPoints.entries()));
-
-    // Kiểm tra station còn chỗ không (sau khi trừ reserved)
-    if (actualAvailable <= 0) {
-      console.log('❌ No slots available!');
+    // Nếu không có chargingPointId, không thể tạo reservation (backend yêu cầu pointId)
+    if (!chargingPointId) {
+      console.log('❌ No charging point ID provided');
       return {
         success: false,
-        error: 'Trạm sạc này hiện đã hết chỗ hoặc tất cả đã được đặt trước.'
+        error: 'Vui lòng chọn điểm sạc cụ thể để đặt chỗ.'
       };
     }
 
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + this.RESERVATION_DURATION * 1000);
+    // Call backend API to create reservation
+    try {
+      const apiResult = await reservationApi.createReservation({
+        userId: parseInt(userId),
+        pointId: parseInt(chargingPointId),
+        durationMinutes: 15 // 15 minutes
+      });
 
-    const reservation: Reservation = {
-      id: this.generateReservationId(),
-      userId,
-      stationId: station.id,
-      stationName: station.name,
-      chargingPointId,
-      status: 'active',
-      createdAt: now,
-      expiresAt,
-      remainingTime: this.RESERVATION_DURATION,
-      notificationSent: false
-    };
+      if (!apiResult.success || !apiResult.data) {
+        console.log('❌ Backend API failed:', apiResult.error);
+        return {
+          success: false,
+          error: apiResult.error || 'Không thể tạo đặt chỗ. Vui lòng thử lại.'
+        };
+      }
 
-    this.reservations.set(reservation.id, reservation);
-    
-    // Tăng số chỗ đã reserved cho station này
-    this.stationReservedSlots.set(station.id, reservedSlots + 1);
-    console.log(`🔒 Reserved slot for station ${station.id}: ${reservedSlots + 1} slots now reserved`);
-    
-    // Nếu đặt charging point cụ thể, mark nó là reserved
-    if (chargingPointId) {
+      // Create local reservation object from backend response
+      const backendRes = apiResult.data;
+      const now = new Date();
+      
+      // Fix: Ensure timezone is preserved
+      // Backend returns '2025-11-06T22:16:25.832' (no Z)
+      // JavaScript interprets this as local time, causing timezone shift
+      // Solution: If no 'Z' at end, add it to parse as UTC
+      let expireTimeStr = backendRes.expire_time;
+      if (!expireTimeStr.endsWith('Z') && !expireTimeStr.includes('+') && !expireTimeStr.includes('-', 10)) {
+        expireTimeStr += 'Z'; // Force UTC parsing
+      }
+      
+      const expiresAt = new Date(expireTimeStr);
+      const remainingSeconds = Math.floor((expiresAt.getTime() - now.getTime()) / 1000);
+
+      console.log('🕐 Time calculation:', {
+        now: now.toISOString(),
+        expire_time_from_backend: backendRes.expire_time,
+        expire_time_fixed: expireTimeStr,
+        expiresAt: expiresAt.toISOString(),
+        remainingSeconds,
+        remainingMinutes: Math.floor(remainingSeconds / 60)
+      });
+
+      const reservation: Reservation = {
+        id: this.generateReservationId(),
+        userId,
+        stationId: station.id,
+        stationName: station.name,
+        chargingPointId,
+        status: 'active',
+        createdAt: new Date(backendRes.start_time),
+        expiresAt,
+        remainingTime: remainingSeconds,
+        notificationSent: false,
+        backendReservationId: backendRes.booking_id
+      };
+
+      console.log('📊 Created reservation object:', {
+        id: reservation.id,
+        backendReservationId: reservation.backendReservationId,
+        expiresAt: reservation.expiresAt.toISOString(),
+        remainingTime: reservation.remainingTime
+      });
+
+      this.reservations.set(reservation.id, reservation);
+      
+      // Tăng số chỗ đã reserved cho station này
+      const reservedSlots = this.stationReservedSlots.get(station.id) || 0;
+      this.stationReservedSlots.set(station.id, reservedSlots + 1);
+      console.log(`🔒 Reserved slot for station ${station.id}: ${reservedSlots + 1} slots now reserved`);
+      
+      // Mark charging point as reserved
       const pointKey = `${station.id}_${chargingPointId}`;
       this.reservedChargingPoints.set(pointKey, userId);
       console.log(`🔒 Reserved charging point ${chargingPointId} for user ${userId}`);
-    }
-    
-    // Save to storage
-    this.saveToStorage();
-    
-    this.startTimer(reservation);
+      
+      // Save to storage
+      this.saveToStorage();
+      
+      this.startTimer(reservation);
 
-    console.log(`✅ Reservation created: ${reservation.id} for station ${station.name}`);
-    
-    return {
-      success: true,
-      reservation
-    };
+      console.log(`✅ Reservation created: ${reservation.id} for station ${station.name}`);
+      console.log(`📡 Backend reservation ID: ${backendRes.booking_id}`);
+      
+      return {
+        success: true,
+        reservation
+      };
+    } catch (error) {
+      console.error('❌ Error creating reservation:', error);
+      return {
+        success: false,
+        error: 'Lỗi kết nối. Vui lòng thử lại.'
+      };
+    }
   }
 
   /**
@@ -246,6 +275,12 @@ class ReservationService {
    */
   private startTimer(reservation: Reservation) {
     console.log(`🚀 Starting timer for reservation ${reservation.id}`);
+    console.log(`⏰ Initial timer setup:`, {
+      id: reservation.id,
+      expiresAt: reservation.expiresAt.toISOString(),
+      expiresAtLocal: reservation.expiresAt.toString(),
+      remainingTime: reservation.remainingTime
+    });
     
     // Timer cập nhật mỗi giây
     const updateTimer = setInterval(() => {
@@ -260,7 +295,11 @@ class ReservationService {
       const remaining = Math.max(0, Math.floor((res.expiresAt.getTime() - now.getTime()) / 1000));
       res.remainingTime = remaining;
       
-      console.log(`⏰ Timer update: ${reservation.id} - ${remaining}s remaining`);
+      console.log(`⏰ Timer update: ${reservation.id} - ${remaining}s remaining`, {
+        nowMs: now.getTime(),
+        expiresAtMs: res.expiresAt.getTime(),
+        diff: res.expiresAt.getTime() - now.getTime()
+      });
 
       // Thông báo khi còn 5 phút
       if (remaining <= 5 * 60 && !res.notificationSent) {
@@ -345,10 +384,30 @@ class ReservationService {
   /**
    * Hủy reservation
    */
-  cancelReservation(reservationId: string): boolean {
+  async cancelReservation(reservationId: string): Promise<boolean> {
     const reservation = this.reservations.get(reservationId);
     if (!reservation || reservation.status !== 'active') {
       return false;
+    }
+
+    // Call backend API to cancel reservation
+    if (reservation.backendReservationId) {
+      try {
+        const userId = parseInt(reservation.userId);
+        const apiResult = await reservationApi.cancelReservation(
+          reservation.backendReservationId,
+          userId
+        );
+
+        if (!apiResult.success) {
+          console.error('❌ Failed to cancel reservation via API:', apiResult.error);
+          // Still cancel locally even if API fails
+        } else {
+          console.log('✅ Reservation cancelled via backend API');
+        }
+      } catch (error) {
+        console.error('❌ Error calling cancel API:', error);
+      }
     }
 
     reservation.status = 'cancelled';

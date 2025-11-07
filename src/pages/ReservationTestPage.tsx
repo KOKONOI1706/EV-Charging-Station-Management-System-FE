@@ -6,9 +6,16 @@ import { ReservationConfirmModal } from '../components/ReservationConfirmModal';
 import { StationMapView } from '../components/StationMapView';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Bell, MapPin } from 'lucide-react';
+import { Bell, MapPin, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * ⚠️ DEVELOPMENT ONLY - Reservation Testing Page
+ * This page is for testing reservation flow in development.
+ * Not intended for production use.
+ */
 export function ReservationTestPage() {
+  const { user } = useAuth(); // Use real user instead of hardcoded
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -16,8 +23,28 @@ export function ReservationTestPage() {
   const [showExpired, setShowExpired] = useState(false);
   const [expiredStationName, setExpiredStationName] = useState('');
 
-  // Mock user ID
-  const userId = 'user-123';
+  // Get userId from auth context
+  const userId = user?.id?.toString() || 'guest';
+
+  // Show warning if not in development
+  if (import.meta.env.PROD) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">Development Page Only</h2>
+            <p className="text-gray-600 mb-4">
+              This page is only available in development mode.
+            </p>
+            <Button onClick={() => window.location.href = '/'}>
+              Go to Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   useEffect(() => {
     // Check if user already has active reservation
@@ -79,9 +106,9 @@ export function ReservationTestPage() {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (activeReservation) {
-      const success = reservationService.cancelReservation(activeReservation.id);
+      const success = await reservationService.cancelReservation(activeReservation.id);
       if (success) {
         setActiveReservation(null);
         setNotifications(prev => [`❌ Đã hủy đặt chỗ`, ...prev]);
@@ -106,13 +133,29 @@ export function ReservationTestPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Dev Warning Banner */}
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded">
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 text-yellow-700 mr-3" />
+            <div>
+              <p className="text-sm font-semibold text-yellow-700">Development Test Page</p>
+              <p className="text-xs text-yellow-600">
+                This page is for testing reservation features. Use StationFinder for production.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="text-center py-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            🔋 Hệ thống Đặt chỗ & Giữ chỗ
+            🔋 Hệ thống Đặt chỗ & Giữ chỗ (Test)
           </h1>
           <p className="text-gray-600">
             Giữ chỗ trong 15 phút - Thông báo sau 10 phút
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Current User: {user ? `${user.name} (ID: ${userId})` : 'Not logged in'}
           </p>
         </div>
 

@@ -10,6 +10,12 @@ export interface ChargingPoint {
   name: string;
   power_kw: number;
   connector_type: string;
+  connector_type_id?: number;
+  connector_types?: {
+    connector_type_id: number;
+    code: string;
+    name: string;
+  };
   status: string;
   station_id: string;
 }
@@ -33,7 +39,13 @@ export async function getStationChargingPoints(stationId: string): Promise<Charg
     }
 
     const result = await response.json();
-    return result.data || [];
+    const points = result.data || [];
+    
+    // Transform data: extract connector_type from nested connector_types object
+    return points.map((point: any) => ({
+      ...point,
+      connector_type: point.connector_types?.name || point.connector_types?.code || 'Unknown'
+    }));
   } catch (error) {
     console.error('[Charging Points API] Error fetching station charging points:', error);
     throw error;
@@ -52,7 +64,15 @@ export async function getChargingPoint(pointId: number): Promise<ChargingPoint |
     }
 
     const result = await response.json();
-    return result.data || null;
+    const point = result.data;
+    
+    if (!point) return null;
+    
+    // Transform data: extract connector_type from nested connector_types object
+    return {
+      ...point,
+      connector_type: point.connector_types?.name || point.connector_types?.code || 'Unknown'
+    };
   } catch (error) {
     console.error('[Charging Points API] Error fetching charging point:', error);
     throw error;

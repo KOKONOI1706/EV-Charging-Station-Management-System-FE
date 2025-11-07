@@ -1,6 +1,6 @@
-import React, { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-const PackageManagement = React.lazy(() => import("./PackageManagement"));
+import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
@@ -23,10 +23,16 @@ import {
   Shield,
   Activity
 } from "lucide-react";
-import { Station, Booking, User, MockDatabaseService } from "../data/mockDatabase";
+import { Station, Booking, MockDatabaseService } from "../data/mockDatabase";
+import { usersApi, type User } from "../api/usersApi";
+import { adminStatsApi, type RevenueStats, type TopStation, type SystemAlert, type RecentActivity } from "../api/adminStatsApi";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
-import { Button } from "./ui/button";
+import { LanguageSelector } from "./LanguageSelector";
+import { toast } from "sonner";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
+import { ChargingPointsManagement } from "./ChargingPointsManagement";
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -38,10 +44,26 @@ interface SystemSettings {
 
 export function EnhancedAdminDashboard() {
   const { t } = useLanguage();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Real data states
+  const [revenueStats, setRevenueStats] = useState<RevenueStats>({ today: 0, thisWeek: 0, thisMonth: 0, yearToDate: 0 });
+  const [topStations, setTopStations] = useState<TopStation[]>([]);
+  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10);
+  const [stationsPerPage] = useState(6);
+  const [stationCurrentPage, setStationCurrentPage] = useState(1);
+  
   const [settings, setSettings] = useState<SystemSettings>({
     maintenanceMode: false,
     autoBackup: true,
@@ -57,48 +79,80 @@ export function EnhancedAdminDashboard() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [stationsData, bookingsData] = await Promise.all([
+      const [stationsData, bookingsData, usersData, dashboardStats] = await Promise.all([
         MockDatabaseService.getStations(),
-        MockDatabaseService.getUserBookings("user_001") // In real app, get all bookings
+        MockDatabaseService.getUserBookings("user_001"),
+        usersApi.getUsers({ page: currentPage, limit: usersPerPage }),
+        adminStatsApi.getDashboardStats()
       ]);
       setStations(stationsData);
       setBookings(bookingsData);
-      // Mock users data
-      setUsers([
-        {
-          id: "user_001",
-          name: "Alex Johnson",
-          email: "alex.johnson@email.com",
-          phone: "+1 (555) 123-4567",
-          memberSince: "2023-01-15",
-          totalSessions: 45,
-          totalSpent: 1250.75,
-          favoriteStations: ["1", "2"],
-          role: "customer",
-          vehicleInfo: {
-            make: "Tesla",
-            model: "Model 3",
-            year: 2022,
-            batteryCapacity: 75
-          }
-        }
-      ]);
+      setUsers(usersData.users);
+      setTotalUsers(usersData.total);
+      
+      // Set real dashboard stats
+      console.log('📊 Dashboard Stats:', dashboardStats);
+      console.log('🏢 Top Stations:', dashboardStats.topStations);
+      setRevenueStats(dashboardStats.revenue);
+      setTopStations(dashboardStats.topStations);
+      setSystemAlerts(dashboardStats.systemAlerts);
+      setRecentActivities(dashboardStats.recentActivities);
     } catch (error) {
       console.error("Failed to load data:", error);
-      console.error("Failed to load dashboard data");
+      toast.error("Không thể tải dữ liệu");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Load users when pagination changes
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const usersData = await usersApi.getUsers({ 
+          page: currentPage, 
+          limit: usersPerPage 
+        });
+        setUsers(usersData.users);
+        setTotalUsers(usersData.total);
+      } catch (error) {
+        console.error("Failed to load users:", error);
+        toast.error("Không thể tải danh sách người dùng");
+      }
+    };
+
+    if (!isLoading) {
+      loadUsers();
+    }
+  }, [currentPage, usersPerPage, isLoading]);
+
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    console.log(`${key} ${value ? 'enabled' : 'disabled'}`);
+    toast.success(`${key} ${value ? 'enabled' : 'disabled'}`);
   };
 
   const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
   const activeUsers = users.length; // In real app, filter active users
   const totalSessions = bookings.length;
+
+  // Pagination calculations for Users
+  // Users are already paginated from API, so we don't slice them
+  const currentUsers = users;
+  const totalUserPages = Math.ceil(totalUsers / usersPerPage);
+
+  // Pagination calculations for Stations
+  const indexOfLastStation = stationCurrentPage * stationsPerPage;
+  const indexOfFirstStation = indexOfLastStation - stationsPerPage;
+  const currentStations = stations.slice(indexOfFirstStation, indexOfLastStation);
+  const totalStationPages = Math.ceil(stations.length / stationsPerPage);
+
+  const handleUserPageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleStationPageChange = (pageNumber: number) => {
+    setStationCurrentPage(pageNumber);
+  };
 
   if (isLoading) {
     return (
@@ -116,6 +170,24 @@ export function EnhancedAdminDashboard() {
         <div>
           <h1 className="text-3xl font-bold mb-2">{t.adminDashboard}</h1>
           <p className="text-gray-600">{t.completeSystemOverview}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <LanguageSelector />
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success(t.signOut || "Logged out");
+                navigate('/');
+              } catch (err) {
+                console.error('Logout failed:', err);
+                toast.error('Logout failed');
+              }
+            }}
+          >
+            {t.signOut}
+          </Button>
         </div>
       </div>
 
@@ -142,7 +214,7 @@ export function EnhancedAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{t.revenue}</p>
-                <p className="text-2xl font-bold">${totalRevenue.toFixed(2)}</p>
+                <p className="text-2xl font-bold">{new Intl.NumberFormat('vi-VN').format(totalRevenue)}₫</p>
                 <p className="text-xs text-green-600 flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" />
                   +8% this month
@@ -207,19 +279,24 @@ export function EnhancedAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="flex w-full justify-between items-center border-b">
-          <TabsTrigger value="overview" className="flex-1 px-4 py-2 text-center">{t.overview}</TabsTrigger>
-          <TabsTrigger value="chargingSessions" className="flex-1 px-4 py-2 text-center">{t.chargingSessions}</TabsTrigger>
-          <TabsTrigger value="users" className="flex-1 px-4 py-2 text-center">{t.userManagement}</TabsTrigger>
-          <TabsTrigger value="packageService" className="flex-1 px-4 py-2 text-center">Package Service Management</TabsTrigger>
-          <TabsTrigger value="stations" className="flex-1 px-4 py-2 text-center">{t.stationManagement}</TabsTrigger>
-          <TabsTrigger value="reports" className="flex-1 px-4 py-2 text-center">{t.reports}</TabsTrigger>
-          <TabsTrigger value="settings" className="flex-1 px-4 py-2 text-center">{t.systemSettings}</TabsTrigger>
+        <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
+          <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+          <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
+          <TabsTrigger value="chargingPoints">{t.chargingPointsTab}</TabsTrigger>
+          <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
+          <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
+          <TabsTrigger value="reports">{t.reports}</TabsTrigger>
+          <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
         </TabsList>
 
         {/* Charging Sessions Management */}
         <TabsContent value="chargingSessions">
           <ChargingSessionsManagement userRole="admin" />
+        </TabsContent>
+
+        {/* Charging Points Management */}
+        <TabsContent value="chargingPoints">
+          <ChargingPointsManagement userRole="admin" />
         </TabsContent>
 
         {/* Overview */}
@@ -236,19 +313,19 @@ export function EnhancedAdminDashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span>{t.today}</span>
-                    <span className="font-bold">$1,245.50</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.today)}₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.thisWeek}</span>
-                    <span className="font-bold">$8,734.20</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.thisWeek)}₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.thisMonth}</span>
-                    <span className="font-bold">$34,567.80</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.thisMonth)}₫</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>{t.yearToDate}</span>
-                    <span className="font-bold">$412,345.60</span>
+                    <span className="font-bold">{new Intl.NumberFormat('vi-VN').format(revenueStats.yearToDate)}₫</span>
                   </div>
                 </div>
               </CardContent>
@@ -263,7 +340,13 @@ export function EnhancedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {stations.slice(0, 4).map((station, index) => (
+                  {(topStations.length > 0 ? topStations : stations.slice(0, 4).map((s) => ({
+                    id: s.id,
+                    name: s.name,
+                    location: s.city,
+                    revenue: 1189271 / 2, // Mock revenue based on actual total
+                    period: '30 ngày qua'
+                  }))).map((station, index) => (
                     <div key={station.id} className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-sm font-bold text-green-700">
@@ -271,12 +354,12 @@ export function EnhancedAdminDashboard() {
                         </div>
                         <div>
                           <p className="font-medium">{station.name}</p>
-                          <p className="text-sm text-gray-600">{station.city}</p>
+                          <p className="text-sm text-gray-600">{station.location}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">$2,456</p>
-                        <p className="text-sm text-gray-600">{t.thisMonth}</p>
+                        <p className="font-bold">{new Intl.NumberFormat('vi-VN').format(station.revenue)}₫</p>
+                        <p className="text-sm text-gray-600">{station.period}</p>
                       </div>
                     </div>
                   ))}
@@ -293,20 +376,31 @@ export function EnhancedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                    <div>
-                      <p className="font-medium text-yellow-800">{t.station2MaintenanceDue}</p>
-                      <p className="text-sm text-yellow-600">{t.scheduledMaintenance2Days}</p>
+                  {systemAlerts.length > 0 ? systemAlerts.map((alert) => (
+                    <div key={alert.id} className={`flex items-center gap-3 p-3 rounded-lg ${
+                      alert.type === 'warning' ? 'bg-yellow-50 border border-yellow-200' :
+                      alert.type === 'error' ? 'bg-red-50 border border-red-200' :
+                      'bg-blue-50 border border-blue-200'
+                    }`}>
+                      {alert.type === 'warning' && <AlertTriangle className="w-4 h-4 text-yellow-600" />}
+                      {alert.type === 'error' && <AlertTriangle className="w-4 h-4 text-red-600" />}
+                      {alert.type === 'info' && <Clock className="w-4 h-4 text-blue-600" />}
+                      <div>
+                        <p className={`font-medium ${
+                          alert.type === 'warning' ? 'text-yellow-800' :
+                          alert.type === 'error' ? 'text-red-800' :
+                          'text-blue-800'
+                        }`}>{alert.title}</p>
+                        <p className={`text-sm ${
+                          alert.type === 'warning' ? 'text-yellow-600' :
+                          alert.type === 'error' ? 'text-red-600' :
+                          'text-blue-600'
+                        }`}>{alert.message}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <p className="font-medium text-blue-800">{t.highUsageAlert}</p>
-                      <p className="text-sm text-blue-600">{t.downtownHub95Capacity}</p>
-                    </div>
-                  </div>
+                  )) : (
+                    <p className="text-gray-500 text-center py-4">Không có cảnh báo</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -320,26 +414,27 @@ export function EnhancedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-green-700">AJ</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">Alex Johnson</p>
-                      <p className="text-sm text-gray-600">{t.completedChargingSession}</p>
-                    </div>
-                    <div className="ml-auto text-sm text-gray-500">2m {t.ago}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-blue-700">MS</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">Maria Silva</p>
-                      <p className="text-sm text-gray-600">{t.newUserRegistration}</p>
-                    </div>
-                    <div className="ml-auto text-sm text-gray-500">15m {t.ago}</div>
-                  </div>
+                  {recentActivities.length > 0 ? recentActivities.slice(0, 5).map((activity) => {
+                    const userName = activity.user || activity.userName || 'Unknown';
+                    const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
+                    const timeDiff = Math.floor((new Date().getTime() - new Date(activity.timestamp).getTime()) / 1000 / 60);
+                    const timeAgo = timeDiff < 60 ? `${timeDiff}m` : timeDiff < 1440 ? `${Math.floor(timeDiff / 60)}h` : `${Math.floor(timeDiff / 1440)}d`;
+                    
+                    return (
+                      <div key={activity.id} className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-green-700">{initials.substring(0, 2)}</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{activity.userName}</p>
+                          <p className="text-sm text-gray-600">{activity.action}</p>
+                        </div>
+                        <div className="text-sm text-gray-500">{timeAgo} {t.ago}</div>
+                      </div>
+                    );
+                  }) : (
+                    <p className="text-gray-500 text-center py-4">Chưa có hoạt động</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -377,7 +472,7 @@ export function EnhancedAdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {currentUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div>
@@ -387,10 +482,10 @@ export function EnhancedAdminDashboard() {
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{new Date(user.memberSince).toLocaleDateString()}</TableCell>
-                      <TableCell>{user.totalSessions}</TableCell>
-                      <TableCell>${user.totalSpent.toFixed(2)}</TableCell>
+                      <TableCell>{user.totalSessions || 0}</TableCell>
+                      <TableCell>{new Intl.NumberFormat('vi-VN').format(user.totalSpent || 0)}₫</TableCell>
                       <TableCell>
-                        <Badge className="bg-green-100 text-green-800">Active</Badge>
+                        <Badge className="bg-green-100 text-green-800">{user.status || 'Active'}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -406,17 +501,46 @@ export function EnhancedAdminDashboard() {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Pagination for Users */}
+              {totalUserPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-gray-600">
+                    Showing {(currentPage - 1) * usersPerPage + 1} to {Math.min(currentPage * usersPerPage, totalUsers)} of {totalUsers} users
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUserPageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    {Array.from({ length: totalUserPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleUserPageChange(page)}
+                        className={currentPage === page ? "bg-green-600 hover:bg-green-700" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUserPageChange(currentPage + 1)}
+                      disabled={currentPage === totalUserPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Package Service Management */}
-        <TabsContent value="packageService">
-          <Suspense fallback={<div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-          </div>}>
-            <PackageManagement />
-          </Suspense>
         </TabsContent>
 
         {/* Station Management */}
@@ -427,7 +551,7 @@ export function EnhancedAdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stations.map((station) => (
+                {currentStations.map((station) => (
                   <Card key={station.id} className="border">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -467,6 +591,44 @@ export function EnhancedAdminDashboard() {
                   </Card>
                 ))}
               </div>
+              
+              {/* Pagination for Stations */}
+              {totalStationPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <div className="text-sm text-gray-600">
+                    Showing {indexOfFirstStation + 1} to {Math.min(indexOfLastStation, stations.length)} of {stations.length} stations
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStationPageChange(stationCurrentPage - 1)}
+                      disabled={stationCurrentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    {Array.from({ length: totalStationPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={stationCurrentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleStationPageChange(page)}
+                        className={stationCurrentPage === page ? "bg-green-600 hover:bg-green-700" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStationPageChange(stationCurrentPage + 1)}
+                      disabled={stationCurrentPage === totalStationPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

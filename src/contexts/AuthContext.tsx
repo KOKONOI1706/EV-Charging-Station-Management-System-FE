@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../data/mockDatabase';
 import { AuthService } from '../services/authService';
-import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -14,15 +13,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function useAuth(): AuthContextType {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-export { useAuth };
+};
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -52,20 +49,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const updateUser = async (updates: Partial<User>) => {
-    const currentUser = AuthService.getCurrentUser();
-    if (!currentUser) {
-      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-      await logout();
-      return;
-    }
+    if (!user) throw new Error('No user logged in');
     
     try {
-      const updatedUser = await AuthService.updateProfile(currentUser.user_id, updates);
+      const updatedUser = await AuthService.updateProfile(user.id, updates);
       setUser(updatedUser);
-      toast.success("Cập nhật thông tin thành công");
     } catch (error) {
       console.error('Failed to update user:', error);
-      toast.error("Cập nhật thất bại: " + (error instanceof Error ? error.message : "Lỗi không xác định"));
       throw error;
     }
   };

@@ -2,7 +2,6 @@ import { User, MOCK_USERS } from "../data/mockDatabase";
 
 // Get API URL from environment or default
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
-console.log('API_BASE_URL:', API_BASE_URL);
 
 export interface LoginCredentials {
   email: string;
@@ -53,24 +52,16 @@ export class AuthService {
 
       // Transform API response to match frontend User interface
       const apiUser = result.data.user;
-      // Map role_id to role string
-      const roleMap: { [key: number]: "customer" | "staff" | "admin" } = {
-        1: "customer",
-        2: "staff",
-        3: "admin"
-      };
-      
       const user: User = {
-        user_id: Number(apiUser.user_id),
+        id: apiUser.id,
         name: apiUser.name,
         email: apiUser.email,
-        phone: apiUser.phone || null,
-        role_id: apiUser.role_id,
-        created_at: apiUser.created_at,
-        updated_at: apiUser.updated_at,
-        is_active: true,
-        role: roleMap[apiUser.role_id] || "customer",
-        token: result.data.token, // Save the token from login response
+        phone: apiUser.phone || '',
+        memberSince: new Date(apiUser.createdAt).toISOString().split('T')[0],
+        totalSessions: 0,
+        totalSpent: 0,
+        favoriteStations: [],
+        role: apiUser.role as "customer" | "staff" | "admin",
         vehicleInfo: {
           make: "N/A",
           model: "N/A",
@@ -157,15 +148,15 @@ export class AuthService {
       // Transform API response to match frontend User interface
       const apiUser = result.data.user;
       const newUser: User = {
-        user_id: Number(apiUser.user_id), // Ensure ID is a number
+        id: apiUser.id,
         name: apiUser.name,
         email: apiUser.email,
         phone: apiUser.phone || '',
-        created_at: apiUser.created_at,
-        role_id: apiUser.role_id,
-        updated_at: apiUser.updated_at,
-        is_active: true,
-        role: this.mapRoleIdToRole(apiUser.role_id),
+        memberSince: new Date(apiUser.createdAt).toISOString().split('T')[0],
+        totalSessions: 0,
+        totalSpent: 0,
+        favoriteStations: [],
+        role: apiUser.role as "customer" | "staff" | "admin",
         vehicleInfo: data.vehicleInfo
       };
 
@@ -256,135 +247,62 @@ export class AuthService {
   }
 
   // Update user profile
-  static async updateProfile(user_id: number, updates: Partial<User>): Promise<User> {
+  static async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
     try {
-      // Log the update request
-      console.log('[AuthService] Starting profile update:', {
-        user_id,
-        updates,
-        apiUrl: API_BASE_URL
-      });
-
-      // Get current user token
-      const currentUser = this.getCurrentUser();
-      if (!currentUser) {
-        throw new Error('No user found in storage');
-      }
-
-      console.log('[AuthService] Current user:', currentUser);
-      
-      // Call backend API
-      const response = await fetch(`${API_BASE_URL}/users/${user_id}`, {
+      // Call real API
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`,
         },
         body: JSON.stringify({
           name: updates.name,
           email: updates.email,
           phone: updates.phone,
-          is_active: updates.is_active,
-          updated_at: new Date().toISOString()
+          vehicleInfo: updates.vehicleInfo
         }),
       });
 
-      // Log complete response details for debugging
-      console.log('[AuthService] Update profile response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      // Get response text first for debugging
-      const responseText = await response.text();
-      console.log('[AuthService] Response text:', responseText);
-
-      // Parse response text as JSON
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (e) {
-        console.error('[AuthService] Failed to parse response JSON:', e);
-        throw new Error('Invalid JSON response from server');
-      }
+      const result = await response.json();
 
       if (!response.ok) {
-        console.error('[AuthService] Update failed:', responseData);
-        throw new Error(responseData.error || responseData.message || `Update failed: ${response.status} ${response.statusText}`);
+        throw new Error(result.error || result.message || 'Update failed');
       }
 
-      if (!responseData.success || !responseData.data?.user) {
-        throw new Error('Invalid response format from server');
+      if (!result.success || !result.data?.user) {
+        throw new Error('Invalid response from server');
       }
 
-      console.log('[AuthService] Update success:', responseData);
-
-        // Transform API response to frontend User interface format
-      const apiUser = responseData.data.user;
-      const updatedUser: User = {
-        ...currentUser,
-        user_id: Number(apiUser.user_id),
-        name: apiUser.name,
-        email: apiUser.email,
-        phone: apiUser.phone || null,
-        role_id: apiUser.role_id,
-        created_at: apiUser.created_at,
-        updated_at: apiUser.updated_at,
-        is_active: apiUser.is_active,
-        token: currentUser.token, // Preserve token
-        role: this.mapRoleIdToRole(apiUser.role_id)
-      };      // Update local storage
+      const updatedUser = result.data.user;
+      
+      // Update storage
       this.saveUserToStorage(updatedUser);
       
-      // Update users array if in demo mode
-      const userIndex = this.users.findIndex(u => u.user_id === user_id);
-      if (userIndex !== -1) {
-        this.users[userIndex] = updatedUser;
-      }
-
       return updatedUser;
     } catch (error) {
-      console.error('[AuthService] Update profile failed:', error);
+      console.error('API update profile failed:', error);
       
-      // Check if we should fall back to demo mode
-      if (error instanceof Error && error.message.includes('fetch')) {
-        console.warn('[AuthService] Network error, falling back to demo mode');
-        
-        // Fallback to demo mode
-        const userIndex = this.users.findIndex(u => u.user_id === user_id);
-        if (userIndex === -1) {
-          throw new Error("User not found");
-        }
-
-        // Update user data in demo mode
-        const updatedDemoUser: User = {
-          ...this.users[userIndex],
-          name: updates.name || this.users[userIndex].name,
-          email: updates.email || this.users[userIndex].email,
-          phone: updates.phone || this.users[userIndex].phone,
-          is_active: updates.is_active ?? this.users[userIndex].is_active,
-          updated_at: new Date().toISOString(),
-          user_id: user_id
-        };
-        this.users[userIndex] = updatedDemoUser;
-        
-        // Update storage if this is the current user
-        const currentUser = this.getCurrentUser();
-        if (currentUser && currentUser.user_id === user_id) {
-          this.saveUserToStorage(updatedDemoUser);
-        }
-
-        return updatedDemoUser;
+      // Fallback to demo mode
+      const userIndex = this.users.findIndex(u => u.id === userId);
+      if (userIndex === -1) {
+        throw new Error("User not found");
       }
+
+      // Update user data
+      this.users[userIndex] = { ...this.users[userIndex], ...updates };
       
-      // Re-throw the error if it's not a network error
-      throw error;
+      // Update storage if this is the current user
+      const currentUser = this.getCurrentUser();
+      if (currentUser && currentUser.id === userId) {
+        this.saveUserToStorage(this.users[userIndex]);
+      }
+
+      return this.users[userIndex];
     }
   }
 
   // Change password
-  static async changePassword(userId: number, currentPassword: string, newPassword: string): Promise<void> {
+  static async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     try {
       // Call real API
       const response = await fetch(`${API_BASE_URL}/users/${userId}/change-password`, {
@@ -413,7 +331,7 @@ export class AuthService {
       console.error('API change password failed:', error);
       
       // Fallback to demo mode validation
-      const user = this.users.find(u => u.user_id === userId);
+      const user = this.users.find(u => u.id === userId);
       if (!user) {
         throw new Error("User not found");
       }
@@ -458,19 +376,6 @@ export class AuthService {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
   }
 
-  private static mapRoleIdToRole(roleId: number): "customer" | "staff" | "admin" {
-    switch (roleId) {
-      case 1:
-        return "customer";
-      case 2:
-        return "staff";
-      case 3:
-        return "admin";
-      default:
-        return "customer";
-    }
-  }
-
   // Get all users (admin only)
   static async getAllUsers(): Promise<User[]> {
     // Simulate API delay
@@ -479,11 +384,11 @@ export class AuthService {
   }
 
   // Delete user account
-  static async deleteAccount(user_id: number): Promise<void> {
+  static async deleteAccount(userId: string): Promise<void> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const userIndex = this.users.findIndex(u => u.user_id === user_id);
+    const userIndex = this.users.findIndex(u => u.id === userId);
     if (userIndex === -1) {
       throw new Error("User not found");
     }
@@ -493,7 +398,7 @@ export class AuthService {
 
     // Clear storage if this is the current user
     const currentUser = this.getCurrentUser();
-    if (currentUser && currentUser.user_id === user_id) {
+    if (currentUser && currentUser.id === userId) {
       localStorage.removeItem(this.STORAGE_KEY);
     }
   }

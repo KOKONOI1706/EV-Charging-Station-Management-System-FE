@@ -2,14 +2,11 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/sonner";
-import AdminLayout from "./components/AdminLayout";
-import { EnhancedAdminDashboard } from "./components/EnhancedAdminDashboard";
-import { ProtectedRoute } from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
-import StaffPage from "./pages/StaffPage";
 import DashboardPage from "./pages/DashboardPage";
-import AdminDashboard from "./pages/AdminDashboard";
+import StaffPage from "./pages/StaffPage";
+import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 import SupportPage from "./pages/SupportPage";
 import UserHistoryPage from "./pages/UserHistoryPage";
@@ -37,25 +34,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: (
-      <ProtectedRoute requireAdmin={true}>
-        <AdminLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      { 
-        path: "", 
-        element: <AdminDashboard />
-      },
-      { 
-        path: "dashboard", 
-        element: <AdminDashboard />
-      },
-      { 
-        path: "enhanced", 
-        element: <EnhancedAdminDashboard />
-      }
-    ]
+    element: <AdminPage />,
   },
   {
     path: "/pricing",
@@ -67,27 +46,15 @@ const router = createBrowserRouter([
   },
   {
     path: "/user-history",
-    element: (
-      <ProtectedRoute allowedRoles={["customer"]}>
-        <UserHistoryPage />
-      </ProtectedRoute>
-    ),
+    element: <UserHistoryPage />,
   },
   {
     path: "/personal-report",
-    element: (
-      <ProtectedRoute allowedRoles={["customer"]}>
-        <PersonalReportPage />
-      </ProtectedRoute>
-    ),
+    element: <PersonalReportPage />,
   },
   {
     path: "/charging-session",
-    element: (
-      <ProtectedRoute allowedRoles={["customer"]}>
-        <ChargingSessionPage />
-      </ProtectedRoute>
-    ),
+    element: <ChargingSessionPage />,
   },
   {
     path: "/payment/callback",
@@ -95,11 +62,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/reservation-test",
-    element: (
-      <ProtectedRoute allowedRoles={["customer"]}>
-        <ReservationTestPage />
-      </ProtectedRoute>
-    ),
+    element: <ReservationTestPage />,
   },
   {
     path: "*",

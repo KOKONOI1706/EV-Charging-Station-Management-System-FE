@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Station } from '../data/mockDatabase';
 import { reservationService, ReservationResult } from '../services/reservationService';
 import { Button } from './ui/button';
@@ -13,6 +13,10 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
+import { useAuth } from '../contexts/AuthContext';
+import { vehicleApi, Vehicle } from '../api/vehicleApi';
+import { getStationChargingPoints, ChargingPoint } from '../api/chargingPointsApi';
+import { BookingValidationService } from '../services/bookingValidationService';
 
 interface ReservationConfirmModalProps {
   station: Station;
@@ -29,8 +33,112 @@ export function ReservationConfirmModal({
   onSuccess,
   onCancel
 }: ReservationConfirmModalProps) {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [userVehicles, setUserVehicles] = useState<Vehicle[]>([]);
+  const [isValidating, setIsValidating] = useState(true);
+
+  // Load data for validation
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsValidating(true);
+      
+      let loadedVehicles: Vehicle[] = [];
+      
+      // Load user vehicles
+      if (user) {
+        const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+        loadedVehicles = await vehicleApi.getUserVehicles(userIdNum);
+        setUserVehicles(loadedVehicles);
+        console.log('✅ Loaded user vehicles:', loadedVehicles.length);
+      }
+
+      // Load charging points for this station
+      const points = await getStationChargingPoints(station.id);
+      console.log('✅ Loaded charging points:', points.length);
+
+      // Run validation with the loaded data
+      validateBooking(points, loadedVehicles);
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
+      setError('Không thể tải thông tin. Vui lòng thử lại.');
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const validateBooking = (points: ChargingPoint[], vehicles: Vehicle[]) => {
+    console.log('🔍 Validating booking...', {
+      user: !!user,
+      vehiclesCount: vehicles.length,
+      pointsCount: points.length,
+      chargingPointId
+    });
+
+    if (!user) {
+      setError('Bạn cần đăng nhập để đặt chỗ');
+      return;
+    }
+
+    if (vehicles.length === 0) {
+      setError('Bạn cần thêm xe vào tài khoản trước khi đặt chỗ');
+      return;
+    }
+
+    // If specific charging point selected, validate it
+    if (chargingPointId) {
+      const selectedPoint = points.find(p => `cp-${p.point_id}` === chargingPointId);
+      if (selectedPoint) {
+        console.log('🔍 Validating specific point:', selectedPoint.point_id, selectedPoint.status);
+        const validation = BookingValidationService.validateBooking(
+          user,
+          selectedPoint,
+          vehicles
+        );
+        
+        if (!validation.isValid) {
+          console.log('❌ Validation failed:', validation.errors);
+          setError(validation.errors.join('\n'));
+          return;
+        }
+        
+        if (validation.warnings.length > 0) {
+          console.log('⚠️ Validation warnings:', validation.warnings);
+          setWarnings(validation.warnings);
+        }
+        
+        console.log('✅ Validation passed for specific point');
+      }
+    } else {
+      // Validate station booking (any available point)
+      const availablePoints = points.filter(p => p.status === 'Available');
+      console.log('🔍 Validating station booking, available points:', availablePoints.length);
+      const validation = BookingValidationService.validateStationBooking(
+        user,
+        availablePoints.length > 0,
+        vehicles
+      );
+      
+      if (!validation.isValid) {
+        console.log('❌ Validation failed:', validation.errors);
+        setError(validation.errors.join('\n'));
+        return;
+      }
+      
+      if (validation.warnings.length > 0) {
+        console.log('⚠️ Validation warnings:', validation.warnings);
+        setWarnings(validation.warnings);
+      }
+      
+      console.log('✅ Validation passed for station booking');
+    }
+  };
 
   const handleConfirm = () => {
     console.log('🔵 handleConfirm called');
@@ -64,7 +172,7 @@ export function ReservationConfirmModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]" style={{ zIndex: 9999 }}>
       <Card className="max-w-md w-full max-h-[90vh] overflow-y-auto">
         <CardHeader className="border-b">
           <CardTitle className="flex items-center gap-2">
@@ -74,15 +182,40 @@ export function ReservationConfirmModal({
         </CardHeader>
 
         <CardContent className="space-y-4 pt-6">
+          {/* Validation Loading */}
+          {isValidating && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              <p className="text-sm text-gray-500 mt-2">Đang kiểm tra...</p>
+            </div>
+          )}
+
           {/* Error Alert */}
-          {error && (
+          {error && !isValidating && (
             <Alert className="border-red-500 bg-red-50">
               <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
+              <AlertDescription className="text-red-800 whitespace-pre-line">
                 {error}
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Warning Alerts */}
+          {warnings.length > 0 && !error && !isValidating && (
+            <Alert className="border-yellow-500 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                <div className="space-y-1">
+                  {warnings.map((warning, idx) => (
+                    <p key={idx}>{warning}</p>
+                  ))}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!isValidating && (
+            <>
 
           {/* Station Info */}
           <div className="space-y-3">
@@ -184,14 +317,14 @@ export function ReservationConfirmModal({
               variant="outline"
               className="flex-1"
               onClick={onCancel}
-              disabled={isLoading}
+              disabled={isLoading || isValidating}
             >
-              Hủy
+              {error ? 'Đóng' : 'Hủy'}
             </Button>
             <Button
               className="flex-1 bg-green-600 hover:bg-green-700"
               onClick={handleConfirm}
-              disabled={isLoading}
+              disabled={isLoading || isValidating || !!error}
             >
               {isLoading ? (
                 <>
@@ -206,6 +339,8 @@ export function ReservationConfirmModal({
               )}
             </Button>
           </div>
+          </>
+          )}
         </CardContent>
       </Card>
     </div>

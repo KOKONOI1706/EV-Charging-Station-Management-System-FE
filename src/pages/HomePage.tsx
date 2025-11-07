@@ -21,12 +21,6 @@ export default function HomePage() {
     setGuestUserId(guestId);
   }, []);
 
-  // Redirect admin users to admin page
-  if (user?.role === "admin") {
-    navigate("/admin");
-    return null;
-  }
-
   const handleAuthClick = () => {
     if (!isAuthenticated) navigate('/auth');
   };

@@ -30,7 +30,7 @@ class ReservationService {
   // Track charging points đã được reserved (stationId_pointId => userId)
   private reservedChargingPoints: Map<string, string> = new Map();
   
-  private readonly RESERVATION_DURATION = 15;
+  private readonly RESERVATION_DURATION = 15 * 60;
   private readonly STORAGE_KEY_RESERVATIONS = 'ev-reservations';
   private readonly STORAGE_KEY_RESERVED_SLOTS = 'ev-reserved-slots';
   private readonly STORAGE_KEY_RESERVED_POINTS = 'ev-reserved-points';
@@ -262,9 +262,8 @@ class ReservationService {
       
       console.log(`⏰ Timer update: ${reservation.id} - ${remaining}s remaining`);
 
-      // TEST MODE: Thông báo khi còn 5 giây (thay vì 5 phút)
-      // Đổi lại thành 5 * 60 khi deploy production
-      if (remaining <= 5 && !res.notificationSent) {
+      // Thông báo khi còn 5 phút
+      if (remaining <= 5 * 60 && !res.notificationSent) {
         console.log(`📢 Triggering 5-minute notification for ${reservation.id}`);
         res.notificationSent = true;
         this.triggerNotification(res);
@@ -463,11 +462,9 @@ class ReservationService {
 
   /**
    * Kiểm tra xem thời gian còn lại có dưới 5 phút không
-   * TEST MODE: Kiểm tra còn 5 giây thay vì 5 phút
    */
   isNearExpiration(reservation: Reservation): boolean {
-    // TEST MODE: 5 giây thay vì 5 * 60 giây
-    return reservation.remainingTime <= 5 && reservation.remainingTime > 0;
+    return reservation.remainingTime <= 5 * 60 && reservation.remainingTime > 0;
   }
 
   /**

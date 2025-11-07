@@ -67,23 +67,19 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
       </div>
 
       {/* Legend */}
-      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 z-[150] border border-gray-200">
-        <h4 className="font-semibold mb-3 text-sm">🗺️ Chú thích trạng thái</h4>
+      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 z-[9999] border border-gray-200" style={{ zIndex: 9999 }}>
+        <h4 className="font-semibold mb-3 text-sm">Chú thích trạng thái</h4>
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-green-500 shadow-sm"></div>
             <span className="text-gray-700">✅ Còn nhiều chỗ</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-yellow-500 shadow-sm"></div>
             <span className="text-gray-700">⚠️ Sắp đầy / Sắp có chỗ</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-red-500 shadow-sm"></div>
             <span className="text-gray-700">🔴 Hết chỗ</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-gray-400 shadow-sm"></div>
             <span className="text-gray-700">🔧 Bảo trì</span>
           </div>
         </div>
@@ -232,8 +228,8 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
         </Button>
       </div>
 
-      {/* Main Content */}
-      {viewMode === 'map' ? renderMapView() : renderListView()}
+      {/* Main Content - List View */}
+      {viewMode === 'list' && renderListView()}
 
       {/* No Results */}
       {filteredStations.length === 0 && searchQuery && (
@@ -251,6 +247,9 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
           </Button>
         </div>
       )}
+
+      {/* Map View - Always shown at bottom */}
+      {viewMode === 'map' && renderMapView()}
     </div>
   );
 }

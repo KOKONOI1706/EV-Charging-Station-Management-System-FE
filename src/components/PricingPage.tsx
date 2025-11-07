@@ -17,10 +17,6 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
   const [isAnnual, setIsAnnual] = useState(false);
   const { t } = useLanguage();
 
-  const getAnnualPrice = (monthlyPrice: number) => {
-    return monthlyPrice * 12 * 0.8; // 20% discount for annual
-  };
-
   // (calculateSavings removed - not used in current UI)
 
   const getPlanText = (planId: string, fallbackPlan?: any) => {
@@ -111,7 +107,9 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
       {/* Pricing Cards */}
       <div className="grid lg:grid-cols-3 gap-8 mb-16">
         {PRICING_PLANS.map((plan) => {
-          const price = isAnnual ? getAnnualPrice(plan.monthlyFee) : plan.monthlyFee;
+          // Convert USD to VND (1 USD = 25,000 VND)
+          const priceVND = plan.monthlyFee * 25000;
+          const price = isAnnual ? priceVND * 12 * 0.8 : priceVND; // 20% discount for annual
           const period = isAnnual ? "year" : "month";
           
           return (
@@ -145,7 +143,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
                   }
                 <div className="space-y-2">
                   <div className="text-4xl font-bold">
-                    ${price.toFixed(2)}
+                    {new Intl.NumberFormat('vi-VN').format(price)}₫
                     <span className="text-lg font-normal text-gray-500">
                       {` ${t.pricingPlanPricePer}${period === 'month' ? t.monthly.toLowerCase() : t.annual.toLowerCase()}`}
                     </span>
@@ -200,15 +198,15 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>{PRICING_PLANS[0].name}:</span>
-                  <span>$35.00/{t.monthly.toLowerCase()}</span>
+                  <span>875.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
                   <span>{PRICING_PLANS[1].name}:</span>
-                  <span>$41.49/{t.monthly.toLowerCase()}</span>
+                  <span>1.037.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
                   <span>{PRICING_PLANS[2].name}:</span>
-                  <span>$48.00/{t.monthly.toLowerCase()}</span>
+                  <span>1.200.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
               </div>
             </div>
@@ -218,15 +216,15 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>{PRICING_PLANS[0].name}:</span>
-                  <span>$105.00/{t.monthly.toLowerCase()}</span>
+                  <span>2.625.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
                   <span>{PRICING_PLANS[1].name}:</span>
-                  <span>$104.49/{t.monthly.toLowerCase()}</span>
+                  <span>2.612.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600 font-medium">
                   <span>{PRICING_PLANS[2].name}:</span>
-                  <span>$104.00/{t.monthly.toLowerCase()}</span>
+                  <span>2.600.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
               </div>
             </div>
@@ -236,15 +234,15 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>{PRICING_PLANS[0].name}:</span>
-                  <span>$175.00/{t.monthly.toLowerCase()}</span>
+                  <span>4.375.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
                   <span>{PRICING_PLANS[1].name}:</span>
-                  <span>$167.49/{t.monthly.toLowerCase()}</span>
+                  <span>4.187.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
                 <div className="flex justify-between text-green-600 font-medium">
                   <span>{PRICING_PLANS[2].name}:</span>
-                  <span>$160.00/{t.monthly.toLowerCase()}</span>
+                  <span>4.000.000₫/{t.monthly.toLowerCase()}</span>
                 </div>
               </div>
             </div>

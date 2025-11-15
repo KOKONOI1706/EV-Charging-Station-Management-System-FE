@@ -1,6 +1,7 @@
 import { Station } from '../data/mockDatabase';
+import { apiFetch } from '../lib/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper function to get default station images from Unsplash
 function getDefaultStationImage(stationId?: string): string {
@@ -43,6 +44,7 @@ export interface StationSearchParams {
 // Fetch all stations
 export async function fetchStations(): Promise<Station[]> {
   try {
+<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations`, {
       cache: 'no-store', // Disable caching to always get fresh data
       headers: {
@@ -59,19 +61,24 @@ export async function fetchStations(): Promise<Station[]> {
     
     console.log('📡 Fetched stations from API, first station price_per_kwh:', result.data[0]?.price_per_kwh);
     
+=======
+    const result: StationApiResponse = await apiFetch(`${API_URL}/stations`, { cache: 'no-store' } as any);
+    console.log('📡 Fetched stations from API, first station price_per_kwh:', result.data[0]?.price_per_kwh);
+
+>>>>>>> thucnc
     if (!result.success) {
       throw new Error('Failed to fetch stations from API');
     }
-    
+
     // Fetch all charging points for all stations in one call
-    const chargingPointsResponse = await fetch(`${API_URL}/charging-points`);
     let allChargingPoints: any[] = [];
-    
-    if (chargingPointsResponse.ok) {
-      const cpResult = await chargingPointsResponse.json();
-      if (cpResult.success && cpResult.data) {
+    try {
+      const cpResult = await apiFetch(`${API_URL}/charging-points` as any);
+      if (cpResult && cpResult.success && cpResult.data) {
         allChargingPoints = cpResult.data;
       }
+    } catch (e) {
+      // ignore missing charging points endpoint
     }
     
     // Group charging points by station_id
@@ -99,32 +106,22 @@ export async function fetchStations(): Promise<Station[]> {
 // Fetch station by ID
 export async function fetchStationById(id: string): Promise<Station | null> {
   try {
-    const response = await fetch(`${API_URL}/stations/${id}`);
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    
+    const result = await apiFetch(`${API_URL}/stations/${id}` as any);
     if (!result.success) {
       throw new Error('Failed to fetch station from API');
     }
-    
+
     // Fetch real charging points from database
-    const chargingPointsResponse = await fetch(`${API_URL}/charging-points?station_id=${id}`);
-    let realChargingPoints = [];
-    
-    if (chargingPointsResponse.ok) {
-      const cpResult = await chargingPointsResponse.json();
-      if (cpResult.success && cpResult.data) {
+    let realChargingPoints: any[] = [];
+    try {
+      const cpResult = await apiFetch(`${API_URL}/charging-points?station_id=${id}` as any);
+      if (cpResult && cpResult.success && cpResult.data) {
         realChargingPoints = cpResult.data;
       }
+    } catch (e) {
+      // ignore
     }
-    
+
     return transformApiStation(result.data, realChargingPoints);
   } catch (error) {
     console.error(`Error fetching station ${id} from API:`, error);
@@ -135,33 +132,24 @@ export async function fetchStationById(id: string): Promise<Station | null> {
 // Search stations with filters
 export async function searchStations(params: StationSearchParams): Promise<Station[]> {
   try {
-    const response = await fetch(`${API_URL}/stations/search`, {
+    const result: StationApiResponse = await apiFetch(`${API_URL}/stations/search`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(params),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const result: StationApiResponse = await response.json();
-    
+    } as any);
+
     if (!result.success) {
       throw new Error('Failed to search stations from API');
     }
-    
+
     // Fetch all charging points
-    const chargingPointsResponse = await fetch(`${API_URL}/charging-points`);
     let allChargingPoints: any[] = [];
-    
-    if (chargingPointsResponse.ok) {
-      const cpResult = await chargingPointsResponse.json();
-      if (cpResult.success && cpResult.data) {
+    try {
+      const cpResult = await apiFetch(`${API_URL}/charging-points` as any);
+      if (cpResult && cpResult.success && cpResult.data) {
         allChargingPoints = cpResult.data;
       }
+    } catch (e) {
+      // ignore
     }
     
     // Group charging points by station_id
@@ -381,6 +369,7 @@ export async function createStation(stationData: any): Promise<Station> {
 
     console.log('🔄 Sending to backend:', backendData);
 
+<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations`, {
       method: 'POST',
       headers: {
@@ -394,6 +383,12 @@ export async function createStation(stationData: any): Promise<Station> {
     }
 
     const result = await response.json();
+=======
+    const result = await apiFetch(`${API_URL}/stations` as any, {
+      method: 'POST',
+      body: JSON.stringify(backendData),
+    } as any);
+>>>>>>> thucnc
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to create station');
@@ -441,6 +436,7 @@ export async function updateStation(id: string, stationData: any): Promise<Stati
 
     console.log('🔄 Sending to backend:', backendData);
 
+<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations/${id}`, {
       method: 'PUT',
       headers: {
@@ -454,6 +450,12 @@ export async function updateStation(id: string, stationData: any): Promise<Stati
     }
 
     const result = await response.json();
+=======
+    const result = await apiFetch(`${API_URL}/stations/${id}` as any, {
+      method: 'PUT',
+      body: JSON.stringify(backendData),
+    } as any);
+>>>>>>> thucnc
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to update station');
@@ -469,6 +471,7 @@ export async function updateStation(id: string, stationData: any): Promise<Stati
 // Delete a station
 export async function deleteStation(id: string): Promise<void> {
   try {
+<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations/${id}`, {
       method: 'DELETE',
     });
@@ -478,6 +481,11 @@ export async function deleteStation(id: string): Promise<void> {
     }
 
     const result = await response.json();
+=======
+    const result = await apiFetch(`${API_URL}/stations/${id}` as any, {
+      method: 'DELETE',
+    } as any);
+>>>>>>> thucnc
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to delete station');

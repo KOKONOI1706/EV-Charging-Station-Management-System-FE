@@ -14,13 +14,11 @@ import {
   UserCheck,
   AlertCircle
 } from 'lucide-react';
-import { AuthService } from '../services/authService';
-import { apiService } from '../services/apiService';
-import { useAuth } from '../contexts/AuthContext';
+import { AuthService, AdminDashboardData, AdminUser } from '../services/authService';
 
 const AdminDashboard: React.FC = () => {
-  const [dashboardData, setDashboardData] = useState<any | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
+  const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +28,7 @@ const AdminDashboard: React.FC = () => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
-        const resp = await apiService.get('/admin/dashboard');
-  const data: any = (resp && (resp as any).data) ? (resp as any).data : (resp as any);
+        const data = await AuthService.getAdminDashboard();
         setDashboardData(data);
       } catch (err: any) {
         console.error('Failed to load admin dashboard:', err);
@@ -46,12 +43,11 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   // Load users for user management tab
-    const loadUsers = async () => {
+  const loadUsers = async () => {
     try {
       setUsersLoading(true);
-      const resp = await apiService.get('/admin/users');
-  const userData: any = (resp && (resp as any).data) ? (resp as any).data : (resp as any);
-  setUsers(userData);
+      const userData = await AuthService.getAdminUsers();
+      setUsers(userData);
     } catch (err: any) {
       console.error('Failed to load users:', err);
       toast.error('Failed to load users');
@@ -60,36 +56,15 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const auth = useAuth();
-
   // Handle role change
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'staff' | 'customer') => {
     try {
-      // Call backend directly via apiService; backend will enforce RBAC
-      await apiService.put(`/admin/users/${userId}/role`, { role: newRole });
+      await AuthService.updateUserRole(userId, newRole);
       
       // Update local state
       setUsers(prev => prev.map(user => 
         user.id === userId ? { ...user, role: newRole } : user
       ));
-      
-      // If the changed user is the current logged-in user, refresh auth context
-      try {
-        const current = auth.user;
-        if (current) {
-          const currId = (current as any).id || (current as any).user_id || '';
-          if (String(currId) === String(userId)) {
-            const refreshed = (AuthService as any).getCurrentUser ? (AuthService as any).getCurrentUser() : null;
-            if (refreshed && auth.login) {
-              auth.login(refreshed as any);
-            } else {
-              window.location.reload();
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to refresh auth context after role change', e);
-      }
       
       toast.success(`User role updated to ${newRole}`);
     } catch (err: any) {

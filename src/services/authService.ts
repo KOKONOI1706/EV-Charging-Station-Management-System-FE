@@ -52,9 +52,7 @@ export class AuthService {
 
       // Transform API response to match frontend User interface
       const apiUser = result.data.user;
-      const token = result.data.token || result.data.accessToken || null;
-
-      const user: any = {
+      const user: User = {
         id: apiUser.id,
         name: apiUser.name,
         email: apiUser.email,
@@ -72,12 +70,8 @@ export class AuthService {
         }
       };
 
-      if (token) {
-        user.token = token;
-      }
-
       this.saveUserToStorage(user);
-      return user as User;
+      return user;
     } catch (error) {
       // Fallback to demo mode if API fails
       console.warn('API login failed, falling back to demo mode:', error);
@@ -214,16 +208,6 @@ export class AuthService {
       localStorage.removeItem(this.STORAGE_KEY);
     }
     return null;
-  }
-
-  // Get auth token from stored user if present
-  static getAuthToken(): string | null {
-    try {
-      const u = this.getCurrentUser() as any;
-      return u?.token || u?.accessToken || null;
-    } catch (e) {
-      return null;
-    }
   }
 
   // Check if user is authenticated

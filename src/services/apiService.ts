@@ -1,7 +1,4 @@
 // API configuration and utilities
-import { AuthService } from './authService';
-import { toast } from 'sonner';
-
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 
 class ApiService {
@@ -16,72 +13,23 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-
-  // Attach Authorization header if token exists (support multiple AuthService shapes)
-  const currentAuthUser: any = (AuthService as any).getCurrentUser ? (AuthService as any).getCurrentUser() : null;
-  const token = currentAuthUser?.token || currentAuthUser?.accessToken || null;
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...((options.headers as Record<string, string>) || {}),
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    
     const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
       ...options,
-      headers,
     };
 
     try {
       const response = await fetch(url, config);
-
-      // Handle auth errors globally
-      if (response.status === 401) {
-        // Unauthorized - clear session and force login
-        try {
-          await AuthService.logout();
-        } catch (e) {
-          console.warn('Failed to logout on 401:', e);
-        }
-        toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
-        // Navigate to auth page
-        window.location.href = '/auth';
-        throw new Error('Unauthorized');
-      }
-
-      if (response.status === 403) {
-        // Forbidden - show access denied
-        toast.error('Bạn không có quyền truy cập tài nguyên này.');
-        const body = await response.text();
-        const message = body || 'Forbidden';
-        const err: any = new Error(message);
-        err.status = 403;
-        throw err;
-      }
-
+      
       if (!response.ok) {
-        const txt = await response.text();
-        let parsed: any = null;
-        try {
-          parsed = JSON.parse(txt);
-        } catch (e) {
-          // not json
-        }
-        const msg = parsed?.message || parsed?.error || txt || `HTTP error ${response.status}`;
-        throw new Error(msg);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-
-      // Parse JSON safely
-      const text = await response.text();
-      try {
-        return JSON.parse(text) as T;
-      } catch (e) {
-        // If response is empty or not JSON, return as any
-        return (text as unknown) as T;
-      }
+      
+      return await response.json();
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error);
       throw error;

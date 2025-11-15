@@ -43,13 +43,21 @@ export interface StationSearchParams {
 // Fetch all stations
 export async function fetchStations(): Promise<Station[]> {
   try {
-    const response = await fetch(`${API_URL}/stations`);
+    const response = await fetch(`${API_URL}/stations`, {
+      cache: 'no-store', // Disable caching to always get fresh data
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const result: StationApiResponse = await response.json();
+    
+    console.log('📡 Fetched stations from API, first station price_per_kwh:', result.data[0]?.price_per_kwh);
     
     if (!result.success) {
       throw new Error('Failed to fetch stations from API');
@@ -216,8 +224,29 @@ function transformApiStation(apiStation: any, realChargingPoints?: any[]): Stati
     chargingPoints = generateChargingPoints(totalSpots, availableSpots, apiStation.id?.toString());
   }
   
-  // Generate layout based on actual charging points
-  const layout = generateStationLayout(totalSpots, chargingPoints);
+  // Parse layout from backend or generate default layout
+  let layout;
+  if (apiStation.layout) {
+    try {
+      // If layout is stored as JSON string in database
+      layout = typeof apiStation.layout === 'string' 
+        ? JSON.parse(apiStation.layout) 
+        : apiStation.layout;
+      console.log('📐 Parsed layout for station:', apiStation.name, {
+        width: layout.width,
+        height: layout.height,
+        facilitiesCount: layout.facilities?.length || 0,
+        facilities: layout.facilities
+      });
+    } catch (error) {
+      console.warn('Failed to parse station layout, generating default:', error);
+      layout = generateStationLayout(totalSpots, chargingPoints);
+    }
+  } else {
+    console.log('⚠️ No layout in DB for station:', apiStation.name, ', generating default');
+    // Generate layout based on actual charging points
+    layout = generateStationLayout(totalSpots, chargingPoints);
+  }
   
   return {
     id: apiStation.id?.toString() || '',
@@ -315,4 +344,146 @@ function generateStationLayout(total: number, chargingPoints: any[]) {
       },
     ],
   };
+}
+
+// Create a new station
+export async function createStation(stationData: any): Promise<Station> {
+  try {
+    // If stationData already has snake_case fields (from StationCRUDModal), use them directly
+    // Otherwise transform from camelCase Station object
+    const hasSnakeCase = 'total_spots' in stationData || 'power_kw' in stationData;
+    
+    const backendData = hasSnakeCase ? {
+      // Data is already in backend format from modal
+      ...stationData
+    } : {
+      // Transform frontend Station object to backend format
+      name: stationData.name,
+      address: stationData.address,
+      city: stationData.city,
+      state: stationData.state,
+      zip_code: stationData.zipCode,
+      lat: stationData.lat,
+      lng: stationData.lng,
+      total_spots: stationData.total,
+      available_spots: stationData.available,
+      power_kw: stationData.powerKw,
+      price_per_kwh: stationData.pricePerKwh,
+      connector_type: stationData.connector,
+      operating_hours: stationData.operatingHours,
+      phone: stationData.phone,
+      network: stationData.network,
+      rating: stationData.rating,
+      amenities: stationData.amenities,
+      status: stationData.status || 'active',
+      layout: stationData.layout ? JSON.stringify(stationData.layout) : null,
+    };
+
+    console.log('🔄 Sending to backend:', backendData);
+
+    const response = await fetch(`${API_URL}/stations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(backendData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create station');
+    }
+
+    return transformApiStation(result.data);
+  } catch (error) {
+    console.error('Error creating station:', error);
+    throw error;
+  }
+}
+
+// Update an existing station
+export async function updateStation(id: string, stationData: any): Promise<Station> {
+  try {
+    // If stationData already has snake_case fields (from StationCRUDModal), use them directly
+    // Otherwise transform from camelCase Station object
+    const hasSnakeCase = 'total_spots' in stationData || 'power_kw' in stationData;
+    
+    const backendData = hasSnakeCase ? {
+      // Data is already in backend format from modal
+      ...stationData
+    } : {
+      // Transform frontend Station object to backend format
+      name: stationData.name,
+      address: stationData.address,
+      city: stationData.city,
+      state: stationData.state,
+      zip_code: stationData.zipCode,
+      lat: stationData.lat,
+      lng: stationData.lng,
+      total_spots: stationData.total,
+      available_spots: stationData.available,
+      power_kw: stationData.powerKw,
+      price_per_kwh: stationData.pricePerKwh,
+      connector_type: stationData.connector,
+      operating_hours: stationData.operatingHours,
+      phone: stationData.phone,
+      network: stationData.network,
+      rating: stationData.rating,
+      amenities: stationData.amenities,
+      status: stationData.status,
+      layout: stationData.layout ? JSON.stringify(stationData.layout) : null,
+    };
+
+    console.log('🔄 Sending to backend:', backendData);
+
+    const response = await fetch(`${API_URL}/stations/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(backendData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update station');
+    }
+
+    return transformApiStation(result.data);
+  } catch (error) {
+    console.error('Error updating station:', error);
+    throw error;
+  }
+}
+
+// Delete a station
+export async function deleteStation(id: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_URL}/stations/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete station');
+    }
+  } catch (error) {
+    console.error('Error deleting station:', error);
+    throw error;
+  }
 }

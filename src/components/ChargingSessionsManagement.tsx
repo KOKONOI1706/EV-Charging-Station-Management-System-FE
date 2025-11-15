@@ -17,6 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { MockDatabaseService, MOCK_USERS } from "../data/mockDatabase";
+import { apiFetch } from '../lib/api';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import staffApi from '../lib/staffApi';
+import { AuthService } from '../services/authService';
 import { 
   Battery, 
   Calendar, 
@@ -103,6 +107,11 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
   userId,
   stationId,
 }) => {
+  // Staff-only start session form state
+  const [availableUsers, setAvailableUsers] = useState(MOCK_USERS || []);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [chargingPoints, setChargingPoints] = useState<any[]>([]);
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChargingSession[]>([]);
   const [stats, setStats] = useState<SessionStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -110,7 +119,7 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
   const [selectedSession, setSelectedSession] = useState<ChargingSession | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const API_URL = "http://localhost:5000/api";
+  // Use centralized apiFetch which reads VITE_API_URL and attaches token
 
   useEffect(() => {
     // Only fetch if we have the required IDs based on role
@@ -125,6 +134,18 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
     
     fetchSessions();
     fetchStats();
+    // load staff form data
+    if (userRole === "staff" && stationId && stationId !== "all") {
+      MockDatabaseService.getChargingPointsByStationId(stationId)
+        .then(points => {
+          setChargingPoints(points || []);
+          if (points && points.length > 0) setSelectedPointId(points[0].id);
+        })
+        .catch(err => console.warn('Failed to load points for staff form', err));
+      // load mock users for selection (fallback)
+      setAvailableUsers(MOCK_USERS || []);
+      if (MOCK_USERS && MOCK_USERS.length > 0) setSelectedUserId(MOCK_USERS[0].id);
+    }
   }, [statusFilter, userRole, userId, stationId]);
 
   const fetchSessions = async () => {
@@ -147,17 +168,11 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
         return;
       }
 
-      const url = `${API_URL}/charging-sessions?${params}`;
-      console.log('[ChargingSessionsManagement] Fetching URL:', url);
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch sessions");
-
-      const result = await response.json();
+      console.log('[ChargingSessionsManagement] Fetching sessions with params:', params.toString());
+      const result = await apiFetch(`/charging-sessions?${params.toString()}`, { cache: 'no-cache' } as any);
       console.log('[ChargingSessionsManagement] API response:', result);
-      
       setSessions(result.data || result);
-      console.log('[ChargingSessionsManagement] Sessions set:', result.data?.length || 0, 'items');
+      console.log('[ChargingSessionsManagement] Sessions set:', (result.data?.length) || (result?.length) || 0, 'items');
     } catch (error) {
       console.error("Error fetching sessions:", error);
       toast.error("Không thể tải danh sách phiên sạc");
@@ -183,15 +198,9 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
         params.append("stationId", stationId); // Already a string (UUID)
       }
 
-      const url = `${API_URL}/charging-sessions/stats/summary?${params}`;
-      console.log('[ChargingSessionsManagement] Fetching stats URL:', url);
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch stats");
-
-      const result = await response.json();
+      console.log('[ChargingSessionsManagement] Fetching stats with params:', params.toString());
+      const result = await apiFetch(`/charging-sessions/stats/summary?${params.toString()}` as any);
       console.log('[ChargingSessionsManagement] Stats response:', result);
-      
       setStats(result.data || result);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -201,6 +210,125 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
   const viewSessionDetails = (session: ChargingSession) => {
     setSelectedSession(session);
     setDetailsOpen(true);
+  };
+
+  // STAFF: Start session
+  const startSession = async () => {
+    if (!selectedUserId || !selectedPointId || !stationId) {
+      toast.error('Vui lòng chọn khách hàng và điểm sạc');
+      return;
+    }
+
+    try {
+      // Try backend staff endpoint first
+      const payload = {
+        userId: selectedUserId as string,
+        vehicleId: '0',
+        stationId: stationId as string,
+        pointId: selectedPointId as string,
+        meter_start: 0,
+      };
+
+      console.debug('[ChargingSessionsManagement] auth token:', AuthService.getAuthToken());
+      await staffApi.staffStartSession(payload as any);
+      toast.success('Bắt đầu phiên sạc thành công');
+      fetchSessions();
+      fetchStats();
+      return;
+    } catch (err: any) {
+      // If backend returns business rule (unpaid invoices), surface message
+      const message = err?.message || String(err);
+      if (message.toLowerCase().includes('invoice') || message.toLowerCase().includes('outstanding')) {
+        toast.error(message);
+        return;
+      }
+
+      console.warn('Staff API start failed, falling back to demo:', err);
+      try {
+        const point = await MockDatabaseService.updateChargingPointStatus(selectedPointId, 'in-use', selectedUserId, 120);
+        const newSession: any = {
+          session_id: Date.now(),
+          user_id: parseInt(String(selectedUserId).replace(/\D/g, '')) || 0,
+          vehicle_id: 0,
+          point_id: parseInt(String(selectedPointId).replace(/\D/g, '')) || 0,
+          booking_id: 0,
+          start_time: new Date().toISOString(),
+          end_time: null,
+          meter_start: 0,
+          meter_end: null,
+          energy_consumed_kwh: 0,
+          idle_minutes: 0,
+          idle_fee: 0,
+          cost: 0,
+          status: 'Active',
+          users: {
+            user_id: parseInt(String(selectedUserId).replace(/\D/g, '')) || 0,
+            name: availableUsers.find(u => u.id === selectedUserId)?.name || 'Unknown',
+            email: availableUsers.find(u => u.id === selectedUserId)?.email || '',
+          },
+          vehicles: {
+            vehicle_id: 0,
+            plate_number: '',
+            battery_capacity_kwh: 0,
+          },
+          charging_points: {
+            point_id: String(point?.id || selectedPointId),
+            name: String(point?.number || 'Point'),
+            power_kw: point?.powerKw || 0,
+            stations: {
+              station_id: String(stationId),
+              name: '',
+              address: '',
+            }
+          }
+        };
+
+        setSessions(prev => [newSession, ...prev]);
+        toast.success('Bắt đầu phiên sạc (demo)');
+        fetchStats();
+      } catch (e) {
+        console.error('Demo fallback failed for startSession', e);
+        toast.error('Không thể bắt đầu phiên sạc');
+      }
+    }
+  };
+
+  // STAFF: Stop session
+  const stopSession = async (session: ChargingSession) => {
+    try {
+      // Try staff backend endpoint first
+      await staffApi.staffStopSession({ sessionId: String(session.session_id) } as any);
+      toast.success('Dừng phiên sạc thành công');
+      fetchSessions();
+      fetchStats();
+      return;
+    } catch (err: any) {
+      const message = err?.message || String(err);
+      if (message.toLowerCase().includes('invoice') || message.toLowerCase().includes('outstanding')) {
+        toast.error(message);
+        return;
+      }
+
+      console.warn('Staff API stop failed, falling back to demo:', err);
+      try {
+        await MockDatabaseService.updateChargingPointStatus(String(session.point_id), 'available');
+        setSessions(prev => prev.map(s => s.session_id === session.session_id ? {
+          ...s,
+          end_time: new Date().toISOString(),
+          status: 'Completed',
+          energy_consumed_kwh: Number((Math.random() * 40).toFixed(2)),
+          idle_minutes: 0,
+          idle_fee: 0,
+          cost: Number((Math.random() * 50 + 5).toFixed(2))
+        } : s));
+        toast.success('Dừng phiên (demo) thành công');
+        fetchStats();
+      } catch (e) {
+        console.error('Demo fallback failed for stopSession', e);
+        toast.error('Không thể dừng phiên sạc');
+      }
+    }
+
   };
 
   const getStatusBadge = (status: string) => {
@@ -259,6 +387,50 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
           <CardContent className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
             <p className="text-lg font-semibold">Chưa chọn trạm</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Staff: Start Session Form */}
+      {userRole === 'staff' && stationId && stationId !== 'all' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Bắt đầu phiên sạc</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <div>
+                <label className="block text-sm mb-1">Khách hàng</label>
+                <Select value={selectedUserId || ''} onValueChange={(v: string) => setSelectedUserId(v || null)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Chọn khách hàng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.name} — {u.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">Điểm sạc</label>
+                <Select value={selectedPointId || ''} onValueChange={(v: string) => setSelectedPointId(v || null)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Chọn điểm sạc" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chargingPoints.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>{`#${p.number} — ${p.connectorType} (${p.powerKw} kW)`}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Button onClick={startSession} className="w-full">Bắt đầu sạc</Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -428,7 +600,7 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
                         {formatCurrency(session.cost)}
                       </TableCell>
                       <TableCell>{getStatusBadge(session.status)}</TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-2 items-center">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -436,6 +608,15 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
+                        {userRole === 'staff' && session.status === 'Active' && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => stopSession(session)}
+                          >
+                            Dừng sạc
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

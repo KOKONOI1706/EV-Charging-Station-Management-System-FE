@@ -1,6 +1,7 @@
 // API service for charging session management
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { apiFetch } from "../lib/api";
 
 export interface Invoice {
   invoice_id: number;
@@ -122,24 +123,11 @@ class ChargingSessionApiService {
     console.log('Starting session with data:', data);
     console.log('POST URL:', this.baseUrl);
     
-    const response = await fetch(this.baseUrl, {
+    const result = await apiFetch(this.baseUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     });
 
-    console.log('Response status:', response.status);
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Start session error:', error);
-      throw new Error(error.error || 'Failed to start charging session');
-    }
-
-    const result = await response.json();
-    console.log('Start session result:', result);
     return result.data;
   }
 
@@ -147,20 +135,10 @@ class ChargingSessionApiService {
    * Stop an active charging session
    */
   async stopSession(sessionId: number, data: StopSessionRequest): Promise<ChargingSession> {
-    const response = await fetch(`${this.baseUrl}/${sessionId}/stop`, {
+    const result = await apiFetch(`${this.baseUrl}/${sessionId}/stop`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to stop charging session');
-    }
-
-    const result = await response.json();
     return result.data;
   }
 
@@ -171,41 +149,20 @@ class ChargingSessionApiService {
     const url = `${this.baseUrl}/active/user/${userId}`;
     console.log(`📡 GET ${url}`);
     
-    const response = await fetch(url, {
-      cache: 'no-cache', // Prevent browser caching
-      headers: {
-        'Cache-Control': 'no-cache',
-      },
-    });
-
-    console.log(`📡 Response status: ${response.status}`);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.log('📡 404 - No active session');
-        return null;
-      }
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get active session');
+    try {
+      const result = await apiFetch(url, { cache: 'no-cache' } as any);
+      return result.data;
+    } catch (err: any) {
+      if (err.message && err.message.includes('404')) return null;
+      throw err;
     }
-
-    const result = await response.json();
-    console.log(`📡 Response data:`, result);
-    return result.data;
   }
 
   /**
    * Get session details by ID
    */
   async getSessionById(sessionId: number): Promise<ChargingSession> {
-    const response = await fetch(`${this.baseUrl}/${sessionId}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get session details');
-    }
-
-    const result = await response.json();
+    const result = await apiFetch(`${this.baseUrl}/${sessionId}`);
     return result.data;
   }
 
@@ -221,14 +178,7 @@ class ChargingSessionApiService {
     if (filters.limit) params.append('limit', filters.limit.toString());
     if (filters.offset) params.append('offset', filters.offset.toString());
 
-    const response = await fetch(`${this.baseUrl}?${params.toString()}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get sessions');
-    }
-
-    const result = await response.json();
+    const result = await apiFetch(`${this.baseUrl}?${params.toString()}`);
     return {
       sessions: result.data,
       total: result.total || 0,
@@ -244,20 +194,10 @@ class ChargingSessionApiService {
     current_meter: number;
     energy_consumed_so_far: number;
   }> {
-    const response = await fetch(`${this.baseUrl}/${sessionId}/update-meter`, {
+    const result = await apiFetch(`${this.baseUrl}/${sessionId}/update-meter`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update meter reading');
-    }
-
-    const result = await response.json();
     return result.data;
   }
 
@@ -319,19 +259,10 @@ class ChargingSessionApiService {
    * Get or create invoice for a completed session
    */
   async getOrCreateInvoice(sessionId: number): Promise<Invoice> {
-    const response = await fetch(`${API_BASE_URL}/charging-sessions/${sessionId}/invoice`, {
+    const result = await apiFetch(`${API_BASE_URL}/charging-sessions/${sessionId}/invoice`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to get or create invoice');
-    }
-
-    const result = await response.json();
+      credentials: 'include' as any,
+    } as any);
     return result.data;
   }
 

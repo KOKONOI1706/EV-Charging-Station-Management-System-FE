@@ -21,8 +21,30 @@ export interface RegisterData {
   };
 }
 
+// Admin dashboard / user management types
+export interface AdminDashboardData {
+  totalUsers: number;
+  totalStations: number;
+  totalBookings: number;
+  adminInfo: {
+    id: string;
+    email: string;
+    role: string;
+    full_name: string;
+  };
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'admin' | 'staff' | 'customer';
+  created_at: string;
+}
+
 export class AuthService {
   private static readonly STORAGE_KEY = "chargetech_user";
+  private static readonly TOKEN_KEY = "chargetech_token";
   private static users: User[] = [...MOCK_USERS];
 
   // Login with email and password
@@ -71,6 +93,11 @@ export class AuthService {
       };
 
       this.saveUserToStorage(user);
+      // Save token if provided by API (check multiple possible shapes)
+      const token = result.token || result.access_token || result.authToken || result.data?.token || result.data?.access_token || result.data?.authToken;
+      if (token) {
+        localStorage.setItem(this.TOKEN_KEY, token);
+      }
       return user;
     } catch (error) {
       // Fallback to demo mode if API fails
@@ -185,6 +212,8 @@ export class AuthService {
     }
 
     this.saveUserToStorage(user);
+    // clear any token in demo quick login
+    localStorage.removeItem(this.TOKEN_KEY);
     return user;
   }
 
@@ -194,6 +223,7 @@ export class AuthService {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     localStorage.removeItem(this.STORAGE_KEY);
+    localStorage.removeItem(this.TOKEN_KEY);
   }
 
   // Get current user from storage
@@ -208,6 +238,15 @@ export class AuthService {
       localStorage.removeItem(this.STORAGE_KEY);
     }
     return null;
+  }
+
+  // Get stored auth token (if any)
+  static getAuthToken(): string | null {
+    try {
+      return localStorage.getItem(this.TOKEN_KEY);
+    } catch (error) {
+      return null;
+    }
   }
 
   // Check if user is authenticated
@@ -381,6 +420,87 @@ export class AuthService {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 600));
     return [...this.users];
+  }
+
+  // Admin: get dashboard data
+  static async getAdminDashboard(): Promise<AdminDashboardData> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to fetch admin dashboard');
+      return result.data as AdminDashboardData;
+    } catch (error) {
+      console.warn('Failed to fetch admin dashboard, returning mock data', error);
+      // Fallback mock
+      const admin = this.users.find(u => u.role === 'admin') || this.users[0];
+      return {
+        totalUsers: this.users.length,
+        totalStations: 0,
+        totalBookings: 0,
+        adminInfo: {
+          id: admin.id,
+          email: admin.email,
+          role: admin.role,
+          full_name: admin.name,
+        }
+      };
+    }
+  }
+
+  // Admin: fetch users list
+  static async getAdminUsers(): Promise<AdminUser[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to fetch admin users');
+      return result.data as AdminUser[];
+    } catch (error) {
+      console.warn('Failed to fetch admin users, falling back to local mock', error);
+      return this.users.map(u => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.name,
+        role: u.role as 'admin'|'staff'|'customer',
+        created_at: u.memberSince || new Date().toISOString(),
+      }));
+    }
+  }
+
+  // Admin: update user role
+  static async updateUserRole(userId: string, role: 'admin' | 'staff' | 'customer'): Promise<AdminUser> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to update role');
+      return result.data as AdminUser;
+    } catch (error) {
+      console.warn('Failed to update role on server, updating mock local user', error);
+      const idx = this.users.findIndex(u => u.id === userId);
+      if (idx !== -1) {
+        this.users[idx] = { ...this.users[idx], role } as User;
+        return {
+          id: this.users[idx].id,
+          email: this.users[idx].email,
+          full_name: this.users[idx].name,
+          role: this.users[idx].role as 'admin'|'staff'|'customer',
+          created_at: this.users[idx].memberSince || new Date().toISOString(),
+        };
+      }
+      throw error;
+    }
   }
 
   // Delete user account

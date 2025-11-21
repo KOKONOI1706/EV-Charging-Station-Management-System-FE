@@ -28,6 +28,9 @@ import {
 } from "./ui/dialog";
 import staffApi from '../lib/staffApi';
 import { AuthService } from '../services/authService';
+import { usersApi, User } from '../api/usersApi';
+import { vehicleApi, Vehicle } from '../api/vehicleApi';
+import { getStationChargingPoints } from '../api/chargingPointsApi';
 import { 
   Battery, 
   Calendar, 
@@ -39,7 +42,8 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
-  AlertTriangle
+  AlertTriangle,
+  Car
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -102,14 +106,27 @@ interface ChargingSessionsManagementProps {
   stationId?: string; // UUID for stations table
 }
 
+interface UnpaidInvoice {
+  invoice_id: number;
+  user_id: number;
+  session_id: number;
+  total_amount: number;
+  issued_at: string;
+  status: 'Issued';
+}
+
 export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProps> = ({
   userRole,
   userId,
   stationId,
 }) => {
   // Staff-only start session form state
-  const [availableUsers, setAvailableUsers] = useState(MOCK_USERS || []);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [userVehicles, setUserVehicles] = useState<Vehicle[]>([]);
+  const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [chargingPoints, setChargingPoints] = useState<any[]>([]);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChargingSession[]>([]);
@@ -118,8 +135,36 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedSession, setSelectedSession] = useState<ChargingSession | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [stopSessionDialogOpen, setStopSessionDialogOpen] = useState(false);
+  const [sessionToStop, setSessionToStop] = useState<ChargingSession | null>(null);
 
   // Use centralized apiFetch which reads VITE_API_URL and attaches token
+
+  // Load users for staff
+  useEffect(() => {
+    if (userRole === "staff") {
+      loadUsers();
+    }
+  }, [userRole]);
+
+  // Load charging points for staff
+  useEffect(() => {
+    if (userRole === "staff" && stationId && stationId !== "all") {
+      loadChargingPoints();
+    }
+  }, [userRole, stationId]);
+
+  // Load vehicles when user is selected
+  useEffect(() => {
+    if (userRole === "staff" && selectedUserId) {
+      loadUserVehicles(selectedUserId);
+      checkUnpaidInvoices(selectedUserId);
+    } else {
+      setUserVehicles([]);
+      setUnpaidInvoices([]);
+      setSelectedVehicleId(null);
+    }
+  }, [selectedUserId, userRole]);
 
   useEffect(() => {
     // Only fetch if we have the required IDs based on role
@@ -134,19 +179,67 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
     
     fetchSessions();
     fetchStats();
-    // load staff form data
-    if (userRole === "staff" && stationId && stationId !== "all") {
-      MockDatabaseService.getChargingPointsByStationId(stationId)
-        .then(points => {
-          setChargingPoints(points || []);
-          if (points && points.length > 0) setSelectedPointId(points[0].id);
-        })
-        .catch(err => console.warn('Failed to load points for staff form', err));
-      // load mock users for selection (fallback)
-      setAvailableUsers(MOCK_USERS || []);
-      if (MOCK_USERS && MOCK_USERS.length > 0) setSelectedUserId(MOCK_USERS[0].id);
-    }
   }, [statusFilter, userRole, userId, stationId]);
+
+  const loadUsers = async () => {
+    try {
+      const result = await usersApi.getUsers({ role: 'customer', limit: 100 });
+      setAvailableUsers(result.users || []);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      // Fallback to mock data
+      setAvailableUsers(MOCK_USERS || []);
+    }
+  };
+
+  const loadChargingPoints = async () => {
+    try {
+      const points = await getStationChargingPoints(stationId!);
+      setChargingPoints(points || []);
+      if (points && points.length > 0) {
+        setSelectedPointId(String(points[0].point_id));
+      }
+    } catch (error) {
+      console.error('Error loading charging points:', error);
+      // Fallback to mock
+      try {
+        const points = await MockDatabaseService.getChargingPointsByStationId(stationId!);
+        setChargingPoints(points || []);
+        if (points && points.length > 0) setSelectedPointId(points[0].id);
+      } catch (e) {
+        console.error('Failed to load points', e);
+      }
+    }
+  };
+
+  const loadUserVehicles = async (userId: string) => {
+    try {
+      const vehicles = await vehicleApi.getUserVehicles(parseInt(userId));
+      setUserVehicles(vehicles || []);
+      if (vehicles && vehicles.length > 0) {
+        setSelectedVehicleId(String(vehicles[0].vehicle_id));
+      } else {
+        setSelectedVehicleId(null);
+      }
+    } catch (error) {
+      console.error('Error loading user vehicles:', error);
+      setUserVehicles([]);
+      setSelectedVehicleId(null);
+    }
+  };
+
+  const checkUnpaidInvoices = async (userId: string) => {
+    try {
+      setLoadingInvoices(true);
+      const invoices = await staffApi.getUnpaidInvoices(userId);
+      setUnpaidInvoices(invoices || []);
+    } catch (error) {
+      console.error('Error checking unpaid invoices:', error);
+      setUnpaidInvoices([]);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
 
   const fetchSessions = async () => {
     try {
@@ -219,116 +312,112 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
       return;
     }
 
+    // Check for unpaid invoices
+    if (unpaidInvoices.length > 0) {
+      const totalDebt = unpaidInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+      toast.error(
+        `Khách hàng còn ${unpaidInvoices.length} hóa đơn chưa thanh toán (Tổng: ${formatCurrency(totalDebt)}). Vui lòng thanh toán trước khi bắt đầu phiên sạc mới.`,
+        { duration: 5000 }
+      );
+      return;
+    }
+
     try {
       // Try backend staff endpoint first
       const payload = {
         userId: selectedUserId as string,
-        vehicleId: '0',
+        vehicleId: selectedVehicleId || '0',
         stationId: stationId as string,
         pointId: selectedPointId as string,
         meter_start: 0,
       };
 
       console.debug('[ChargingSessionsManagement] auth token:', AuthService.getAuthToken());
-      await staffApi.staffStartSession(payload as any);
+      const newSession = await staffApi.staffStartSession(payload as any);
       toast.success('Bắt đầu phiên sạc thành công');
+      
+      // Show session info
+      if (newSession) {
+        setSelectedSession(newSession);
+        setDetailsOpen(true);
+      }
+      
       fetchSessions();
       fetchStats();
+      
+      // Reset form
+      setSelectedUserId(null);
+      setSelectedVehicleId(null);
       return;
     } catch (err: any) {
       // If backend returns business rule (unpaid invoices), surface message
       const message = err?.message || String(err);
-      if (message.toLowerCase().includes('invoice') || message.toLowerCase().includes('outstanding')) {
-        toast.error(message);
+      if (message.toLowerCase().includes('invoice') || message.toLowerCase().includes('outstanding') || message.toLowerCase().includes('nợ')) {
+        toast.error(message, { duration: 5000 });
         return;
       }
 
       console.warn('Staff API start failed, falling back to demo:', err);
-      try {
-        const point = await MockDatabaseService.updateChargingPointStatus(selectedPointId, 'in-use', selectedUserId, 120);
-        const newSession: any = {
-          session_id: Date.now(),
-          user_id: parseInt(String(selectedUserId).replace(/\D/g, '')) || 0,
-          vehicle_id: 0,
-          point_id: parseInt(String(selectedPointId).replace(/\D/g, '')) || 0,
-          booking_id: 0,
-          start_time: new Date().toISOString(),
-          end_time: null,
-          meter_start: 0,
-          meter_end: null,
-          energy_consumed_kwh: 0,
-          idle_minutes: 0,
-          idle_fee: 0,
-          cost: 0,
-          status: 'Active',
-          users: {
-            user_id: parseInt(String(selectedUserId).replace(/\D/g, '')) || 0,
-            name: availableUsers.find(u => u.id === selectedUserId)?.name || 'Unknown',
-            email: availableUsers.find(u => u.id === selectedUserId)?.email || '',
-          },
-          vehicles: {
-            vehicle_id: 0,
-            plate_number: '',
-            battery_capacity_kwh: 0,
-          },
-          charging_points: {
-            point_id: String(point?.id || selectedPointId),
-            name: String(point?.number || 'Point'),
-            power_kw: point?.powerKw || 0,
-            stations: {
-              station_id: String(stationId),
-              name: '',
-              address: '',
-            }
-          }
-        };
-
-        setSessions(prev => [newSession, ...prev]);
-        toast.success('Bắt đầu phiên sạc (demo)');
-        fetchStats();
-      } catch (e) {
-        console.error('Demo fallback failed for startSession', e);
-        toast.error('Không thể bắt đầu phiên sạc');
-      }
+      toast.error('Không thể bắt đầu phiên sạc: ' + message);
     }
   };
 
   // STAFF: Stop session
-  const stopSession = async (session: ChargingSession) => {
+  const handleStopSessionClick = async (session: ChargingSession) => {
+    // Check for unpaid invoices before allowing stop
+    if (session.user_id) {
+      try {
+        const invoices = await staffApi.getUnpaidInvoices(String(session.user_id));
+        if (invoices && invoices.length > 0) {
+          const totalDebt = invoices.reduce((sum: number, inv: UnpaidInvoice) => sum + inv.total_amount, 0);
+          toast.error(
+            `Khách hàng còn ${invoices.length} hóa đơn chưa thanh toán (Tổng: ${formatCurrency(totalDebt)}). Vui lòng thanh toán trước khi dừng phiên sạc.`,
+            { duration: 5000 }
+          );
+          setUnpaidInvoices(invoices);
+          return;
+        }
+        setUnpaidInvoices([]);
+      } catch (error) {
+        console.error('Error checking unpaid invoices:', error);
+        // Continue anyway if check fails
+      }
+    }
+    setSessionToStop(session);
+    setStopSessionDialogOpen(true);
+  };
+
+  const stopSession = async () => {
+    if (!sessionToStop) return;
+
     try {
       // Try staff backend endpoint first
-      await staffApi.staffStopSession({ sessionId: String(session.session_id) } as any);
+      const result = await staffApi.staffStopSession({ sessionId: String(sessionToStop.session_id) } as any);
       toast.success('Dừng phiên sạc thành công');
+      
+      // Show session details with fees
+      if (result) {
+        setSelectedSession(result);
+        setDetailsOpen(true);
+      }
+      
+      setStopSessionDialogOpen(false);
+      setSessionToStop(null);
       fetchSessions();
       fetchStats();
       return;
     } catch (err: any) {
       const message = err?.message || String(err);
-      if (message.toLowerCase().includes('invoice') || message.toLowerCase().includes('outstanding')) {
-        toast.error(message);
+      if (message.toLowerCase().includes('invoice') || message.toLowerCase().includes('outstanding') || message.toLowerCase().includes('nợ')) {
+        toast.error(message, { duration: 5000 });
+        setStopSessionDialogOpen(false);
+        setSessionToStop(null);
         return;
       }
 
-      console.warn('Staff API stop failed, falling back to demo:', err);
-      try {
-        await MockDatabaseService.updateChargingPointStatus(String(session.point_id), 'available');
-        setSessions(prev => prev.map(s => s.session_id === session.session_id ? {
-          ...s,
-          end_time: new Date().toISOString(),
-          status: 'Completed',
-          energy_consumed_kwh: Number((Math.random() * 40).toFixed(2)),
-          idle_minutes: 0,
-          idle_fee: 0,
-          cost: Number((Math.random() * 50 + 5).toFixed(2))
-        } : s));
-        toast.success('Dừng phiên (demo) thành công');
-        fetchStats();
-      } catch (e) {
-        console.error('Demo fallback failed for stopSession', e);
-        toast.error('Không thể dừng phiên sạc');
-      }
+      console.error('Staff API stop failed:', err);
+      toast.error('Không thể dừng phiên sạc: ' + message);
     }
-
   };
 
   const getStatusBadge = (status: string) => {
@@ -397,38 +486,109 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
           <CardHeader>
             <CardTitle>Bắt đầu phiên sạc</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+          <CardContent className="space-y-4">
+            {/* Unpaid Invoices Warning */}
+            {selectedUserId && unpaidInvoices.length > 0 && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-red-900 mb-2">
+                      Cảnh báo: Khách hàng còn {unpaidInvoices.length} hóa đơn chưa thanh toán
+                    </h4>
+                    <div className="space-y-1 text-sm text-red-800">
+                      {unpaidInvoices.map((inv) => (
+                        <div key={inv.invoice_id} className="flex justify-between">
+                          <span>Hóa đơn #{inv.invoice_id}</span>
+                          <span className="font-medium">{formatCurrency(inv.total_amount)}</span>
+                        </div>
+                      ))}
+                      <div className="pt-2 mt-2 border-t border-red-300 flex justify-between font-semibold">
+                        <span>Tổng nợ:</span>
+                        <span>{formatCurrency(unpaidInvoices.reduce((sum, inv) => sum + inv.total_amount, 0))}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-red-700 mt-2">
+                      Không thể bắt đầu phiên sạc mới cho đến khi thanh toán hết các hóa đơn trên.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
               <div>
-                <label className="block text-sm mb-1">Khách hàng</label>
-                <Select value={selectedUserId || ''} onValueChange={(v: string) => setSelectedUserId(v || null)}>
+                <label className="block text-sm mb-1">Khách hàng *</label>
+                <Select 
+                  value={selectedUserId || ''} 
+                  onValueChange={(v: string) => {
+                    setSelectedUserId(v || null);
+                    setSelectedVehicleId(null);
+                  }}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Chọn khách hàng" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableUsers.map(u => (
-                      <SelectItem key={u.id} value={u.id}>{u.name} — {u.email}</SelectItem>
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} — {u.email}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <label className="block text-sm mb-1">Điểm sạc</label>
+                <label className="block text-sm mb-1">Xe</label>
+                <Select 
+                  value={selectedVehicleId || ''} 
+                  onValueChange={(v: string) => setSelectedVehicleId(v || null)}
+                  disabled={!selectedUserId || userVehicles.length === 0}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={!selectedUserId ? "Chọn khách hàng trước" : userVehicles.length === 0 ? "Không có xe" : "Chọn xe"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userVehicles.map(v => (
+                      <SelectItem key={v.vehicle_id} value={String(v.vehicle_id)}>
+                        {v.plate_number} {v.make && v.model ? `(${v.make} ${v.model})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">Điểm sạc *</label>
                 <Select value={selectedPointId || ''} onValueChange={(v: string) => setSelectedPointId(v || null)}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Chọn điểm sạc" />
                   </SelectTrigger>
                   <SelectContent>
-                    {chargingPoints.map((p: any) => (
-                      <SelectItem key={p.id} value={p.id}>{`#${p.number} — ${p.connectorType} (${p.powerKw} kW)`}</SelectItem>
-                    ))}
+                    {chargingPoints.map((p: any) => {
+                      const pointId = p.point_id || p.id;
+                      const pointName = p.name || `#${p.number || pointId}`;
+                      const connectorType = p.connector_type || p.connectorType || 'Unknown';
+                      const powerKw = p.power_kw || p.powerKw || 0;
+                      return (
+                        <SelectItem key={pointId} value={String(pointId)}>
+                          {pointName} — {connectorType} ({powerKw} kW)
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Button onClick={startSession} className="w-full">Bắt đầu sạc</Button>
+                <Button 
+                  onClick={startSession} 
+                  className="w-full"
+                  disabled={!selectedUserId || !selectedPointId || unpaidInvoices.length > 0}
+                >
+                  Bắt đầu sạc
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -485,6 +645,106 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
         </div>
       )}
 
+      {/* Active Sessions Section for Staff */}
+      {userRole === 'staff' && !loading && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-600" />
+              Phiên sạc đang hoạt động ({sessions.filter(s => s.status === 'Active').length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {sessions.filter(s => s.status === 'Active').length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Không có phiên sạc đang hoạt động
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Khách hàng</TableHead>
+                      <TableHead>Điểm sạc</TableHead>
+                      <TableHead>Bắt đầu</TableHead>
+                      <TableHead>Thời gian</TableHead>
+                      <TableHead>Điện năng (kWh)</TableHead>
+                      <TableHead>Hành động</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.filter(s => s.status === 'Active').map((session) => (
+                      <TableRow key={session.session_id}>
+                        <TableCell className="font-medium">
+                          #{session.session_id}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{session.users?.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {session.users?.email}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-yellow-500" />
+                            <div>
+                              <div>{session.charging_points?.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {session.charging_points?.power_kw} kW
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">
+                            {formatDateTime(session.start_time)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {formatDuration(session.start_time, session.end_time)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Battery className="w-4 h-4 text-green-500" />
+                            <span className="font-medium">
+                              {session.energy_consumed_kwh.toFixed(2)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="flex gap-2 items-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => viewSessionDetails(session)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleStopSessionClick(session)}
+                          >
+                            Dừng sạc
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Sessions Table */}
       {!loading && (
         <Card>
@@ -492,7 +752,7 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
             <div className="flex items-center justify-between">
               <CardTitle>
                 {userRole === "admin" && "Tất cả phiên sạc"}
-                {userRole === "staff" && "Phiên sạc tại trạm"}
+                {userRole === "staff" && "Tất cả phiên sạc"}
                 {userRole === "customer" && "Lịch sử sạc của bạn"}
               </CardTitle>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -612,7 +872,7 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => stopSession(session)}
+                            onClick={() => handleStopSessionClick(session)}
                           >
                             Dừng sạc
                           </Button>
@@ -735,31 +995,39 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
               </div>
 
               {/* Cost Breakdown */}
-              <div className="p-4 border rounded-lg space-y-2">
-                <h3 className="font-semibold">Chi phí</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Phí sạc điện:</span>
-                    <span className="font-medium">
+              <div className="p-4 border rounded-lg space-y-2 bg-green-50">
+                <h3 className="font-semibold text-lg">Chi phí</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700">Phí sạc điện:</span>
+                    <span className="font-semibold text-base">
                       {formatCurrency(
-                        selectedSession.cost - selectedSession.idle_fee
+                        selectedSession.cost - (selectedSession.idle_fee || 0)
                       )}
                     </span>
                   </div>
-                  {selectedSession.idle_minutes > 0 && (
-                    <div className="flex justify-between text-orange-600">
-                      <span>Phí chờ ({selectedSession.idle_minutes} phút):</span>
-                      <span className="font-medium">
+                  {selectedSession.idle_minutes > 0 && selectedSession.idle_fee > 0 && (
+                    <div className="flex justify-between items-center text-orange-700 bg-orange-50 p-2 rounded">
+                      <span>
+                        <span className="font-medium">Phí đậu/chờ:</span>
+                        <span className="text-xs ml-2">({selectedSession.idle_minutes} phút)</span>
+                      </span>
+                      <span className="font-semibold text-base">
                         {formatCurrency(selectedSession.idle_fee)}
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between pt-2 border-t font-semibold text-base">
-                    <span>Tổng cộng:</span>
+                  <div className="flex justify-between pt-3 border-t-2 border-green-200 font-bold text-lg">
+                    <span className="text-gray-900">Tổng cộng:</span>
                     <span className="text-green-600">
                       {formatCurrency(selectedSession.cost)}
                     </span>
                   </div>
+                  {selectedSession.status === 'Completed' && (
+                    <div className="pt-2 text-xs text-gray-600">
+                      * Phiên sạc đã hoàn thành. Hóa đơn sẽ được tạo tự động.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -787,6 +1055,40 @@ export const ChargingSessionsManagement: React.FC<ChargingSessionsManagementProp
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Stop Session Confirmation Dialog */}
+      <Dialog open={stopSessionDialogOpen} onOpenChange={setStopSessionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận dừng phiên sạc</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn dừng phiên sạc này?
+            </DialogDescription>
+          </DialogHeader>
+          {sessionToStop && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="text-sm space-y-1">
+                  <div><strong>Phiên sạc:</strong> #{sessionToStop.session_id}</div>
+                  <div><strong>Khách hàng:</strong> {sessionToStop.users?.name || 'N/A'}</div>
+                  <div><strong>Điểm sạc:</strong> {sessionToStop.charging_points?.name || 'N/A'}</div>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => {
+                  setStopSessionDialogOpen(false);
+                  setSessionToStop(null);
+                }}>
+                  Hủy
+                </Button>
+                <Button variant="destructive" onClick={stopSession}>
+                  Xác nhận dừng
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

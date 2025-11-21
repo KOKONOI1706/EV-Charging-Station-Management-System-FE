@@ -149,10 +149,10 @@ export function ReservationConfirmModal({
     setIsLoading(true);
     setError(null);
 
-    // Giả lập API call (có thể thay thế bằng actual API)
-    setTimeout(() => {
+    // Call reservation service (now async with backend API)
+    setTimeout(async () => {
       console.log('⏰ Timeout executed, creating reservation...');
-      const result = reservationService.createReservation(
+      const result = await reservationService.createReservation(
         userId,
         station,
         chargingPointId

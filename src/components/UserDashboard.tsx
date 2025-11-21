@@ -279,7 +279,7 @@ export function UserDashboard({
               <div className="w-full">
                 <p className="text-sm text-gray-600">{t.totalSpent}</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {userStats ? new Intl.NumberFormat('vi-VN').format(userStats.totalSpent) : (loadingStats ? "..." : "0")}₫
+                  {userStats ? userStats.totalSpent.toFixed(2) : (loadingStats ? "..." : "0.00")} vnđ
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {userStats ? userStats.totalEnergyConsumed.toFixed(1) : (loadingStats ? "..." : "0.0")} kWh

@@ -91,10 +91,10 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
     }
   };
 
-  const handleCancelReservation = () => {
+  const handleCancelReservation = async () => {
     console.log('🔵 handleCancelReservation called');
     if (activeReservation) {
-      const success = reservationService.cancelReservation(activeReservation.id);
+      const success = await reservationService.cancelReservation(activeReservation.id);
       console.log('📊 Cancel result:', success);
       if (success) {
         // Clear active reservation immediately

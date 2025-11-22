@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { 
   BarChart, 
   Bar, 
@@ -63,7 +64,7 @@ export function EnhancedStaffDashboard() {
   const navigate = useNavigate();
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('analytics');
+  const [activeTab, setActiveTab] = useState<string>('chargingSessions');
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
   const [analytics, setAnalytics] = useState<StaffAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +72,10 @@ export function EnhancedStaffDashboard() {
   // Pagination states
   const [sessionsPerPage] = useState(10);
   const [currentSessionPage, setCurrentSessionPage] = useState(1);
+
+  // Session detail dialog states
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
 
   // Load stations and user's assigned station
   useEffect(() => {
@@ -178,6 +183,18 @@ export function EnhancedStaffDashboard() {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const viewSessionDetails = (session: any) => {
+    setSelectedSession(session);
+    setDetailsOpen(true);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
   };
 
   if (isLoading || !metrics || !analytics) {
@@ -332,7 +349,6 @@ export function EnhancedStaffDashboard() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
-          <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
           <TabsTrigger value="chargingPoints">{t.chargingPointsTab}</TabsTrigger>
           <TabsTrigger value="sessions">{t.sessions}</TabsTrigger>
@@ -355,113 +371,6 @@ export function EnhancedStaffDashboard() {
             userRole="staff"
             stationId={selectedStation}
           />
-        </TabsContent>
-
-        {/* Analytics */}
-        <TabsContent value="analytics">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  {t.dailyUsageTrend}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={analytics.dailyUsage}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="sessions" fill="#16a34a" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.hourlyUsagePattern}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={analytics.hourlyPattern}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="hour" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="sessions" stroke="#16a34a" strokeWidth={3} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.weeklyPerformance}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={analytics.weeklyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="revenue" fill="#059669" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.performanceSummary}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
-                      <span>{t.weeklyRevenue}</span>
-                    </div>
-                    <span className="font-bold">
-                      {new Intl.NumberFormat('vi-VN').format(analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0))}₫
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Zap className="w-5 h-5 text-blue-600" />
-                      <span>{t.totalSessions}</span>
-                    </div>
-                    <span className="font-bold">
-                      {analytics.weeklyTrend.reduce((sum, day) => sum + day.sessions, 0)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Activity className="w-5 h-5 text-purple-600" />
-                      <span>{t.peakHour}</span>
-                    </div>
-                    <span className="font-bold">
-                      {analytics.hourlyPattern.reduce((max, curr) => 
-                        curr.sessions > max.sessions ? curr : max
-                      ).hour}:00
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="w-5 h-5 text-green-600" />
-                      <span>{t.avgRevenuePerDay}</span>
-                    </div>
-                    <span className="font-bold">
-                      {new Intl.NumberFormat('vi-VN').format(Math.round(analytics.weeklyTrend.reduce((sum, day) => sum + day.revenue, 0) / 7))}₫
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
 
         {/* Sessions */}
@@ -497,7 +406,11 @@ export function EnhancedStaffDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => viewSessionDetails(session)}
+                          >
                             {t.view}
                           </Button>
                           {session.status === 'in-progress' && (
@@ -719,6 +632,80 @@ export function EnhancedStaffDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Session Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Chi tiết phiên sạc</DialogTitle>
+            <DialogDescription>
+              Thông tin chi tiết về phiên sạc
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSession && (
+            <div className="space-y-4">
+              {/* Status */}
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <span className="font-medium">Trạng thái:</span>
+                <Badge className={getStatusColor(selectedSession.status)}>
+                  {selectedSession.status}
+                </Badge>
+              </div>
+
+              {/* Customer Info */}
+              <div className="p-4 border rounded-lg space-y-2">
+                <h3 className="font-semibold">Thông tin khách hàng</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>Tên: {selectedSession.customer}</div>
+                </div>
+              </div>
+
+              {/* Station Info */}
+              {selectedSession.station && (
+                <div className="p-4 border rounded-lg space-y-2">
+                  <h3 className="font-semibold">Thông tin trạm sạc</h3>
+                  <div className="space-y-1 text-sm">
+                    <div>Trạm: {selectedSession.station}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Charging Details */}
+              <div className="p-4 border rounded-lg space-y-2">
+                <h3 className="font-semibold">Chi tiết sạc</h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Thời gian:</span>
+                    <div className="font-medium">{selectedSession.duration}</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Trạng thái:</span>
+                    <div className="font-medium">
+                      <Badge className={getStatusColor(selectedSession.status)}>
+                        {selectedSession.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cost */}
+              <div className="p-4 border rounded-lg space-y-2">
+                <h3 className="font-semibold">Chi phí</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between pt-2 border-t font-semibold text-base">
+                    <span>Tổng cộng:</span>
+                    <span className="text-green-600">
+                      {formatCurrency(selectedSession.amount)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

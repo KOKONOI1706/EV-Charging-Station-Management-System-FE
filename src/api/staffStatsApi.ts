@@ -46,10 +46,17 @@ export interface StaffAnalytics {
 /**
  * Get staff metrics for dashboard
  * @param stationId - Station UUID from stations.id (optional, 'all' for all stations)
+ * @param startDate - Start date in YYYY-MM-DD format (optional)
+ * @param endDate - End date in YYYY-MM-DD format (optional)
  */
-export async function getStaffMetrics(stationId?: string): Promise<StaffMetrics> {
+export async function getStaffMetrics(stationId?: string, startDate?: string, endDate?: string): Promise<StaffMetrics> {
   try {
-    const response = await fetch(`${API_URL}/staff-stats/metrics?stationId=${stationId || 'all'}`);
+    const params = new URLSearchParams();
+    if (stationId) params.append('stationId', stationId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await fetch(`${API_URL}/staff-stats/metrics?${params.toString()}`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch staff metrics: ${response.statusText}`);
@@ -73,10 +80,18 @@ export async function getStaffMetrics(stationId?: string): Promise<StaffMetrics>
 
 /**
  * Get staff analytics data for charts
+ * @param stationId - Station UUID from stations.id (optional, 'all' for all stations)
+ * @param startDate - Start date in YYYY-MM-DD format (optional)
+ * @param endDate - End date in YYYY-MM-DD format (optional)
  */
-export async function getStaffAnalytics(stationId?: string): Promise<StaffAnalytics> {
+export async function getStaffAnalytics(stationId?: string, startDate?: string, endDate?: string): Promise<StaffAnalytics> {
   try {
-    const response = await fetch(`${API_URL}/staff-stats/analytics?stationId=${stationId || 'all'}`);
+    const params = new URLSearchParams();
+    if (stationId) params.append('stationId', stationId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await fetch(`${API_URL}/staff-stats/analytics?${params.toString()}`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch staff analytics: ${response.statusText}`);

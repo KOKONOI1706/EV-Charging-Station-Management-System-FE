@@ -6,6 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
+import { 
+  BarChart, 
+  Bar, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 import {
   Users,
   Calendar,
@@ -16,14 +27,15 @@ import {
   Download,
   MapPin,
   Settings,
-  BarChart,
+  BarChart as BarChartIcon,
   DollarSign,
   TrendingUp,
   UserCheck,
   Shield,
   Activity,
   Plus,
-  Trash2
+  Trash2,
+  BarChart3
 } from "lucide-react";
 import { Station, Booking, MockDatabaseService } from "../data/mockDatabase";
 import { usersApi, type User } from "../api/usersApi";
@@ -36,7 +48,9 @@ import { toast } from "sonner";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 import { ChargingPointsManagement } from "./ChargingPointsManagement";
 import { StationCRUDModal } from "./StationCRUDModal";
+import { UserCRUDModal } from "./UserCRUDModal";
 import { fetchStations, deleteStation } from "../api/stationApi";
+import * as staffStatsApi from '../api/staffStatsApi';
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -44,6 +58,24 @@ interface SystemSettings {
   emailNotifications: boolean;
   smsNotifications: boolean;
   debugMode: boolean;
+}
+
+interface StaffAnalytics {
+  dailyUsage: { date: string; sessions: number; revenue: number }[];
+  hourlyPattern: { hour: number; sessions: number; utilization: number }[];
+  weeklyTrend: { day: string; sessions: number; revenue: number }[];
+  recentSessions: { id: string; customer: string; duration: string; amount: number; status: string; station?: string }[];
+}
+
+interface StationMetrics {
+  todaysSessions: number;
+  todaysRevenue: number;
+  currentUtilization: number;
+  averageSessionDuration: number;
+  customerSatisfaction: number;
+  maintenanceAlerts: number;
+  yesterdaysSessions?: number;
+  yesterdaysRevenue?: number;
 }
 
 export function EnhancedAdminDashboard() {
@@ -55,6 +87,82 @@ export function EnhancedAdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Analytics states
+  const [analytics, setAnalytics] = useState<StaffAnalytics | null>(null);
+  const [metrics, setMetrics] = useState<StationMetrics | null>(null);
+  const [selectedStationForAnalytics, setSelectedStationForAnalytics] = useState<string>('');
+  
+  // Date range filter states
+  const [dateRange, setDateRange] = useState<string>('month'); // Default current month
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(1); // First day of current month
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  
+  // Update date range when dropdown changes
+  const handleDateRangeChange = (range: string) => {
+    setDateRange(range);
+    const end = new Date();
+    const start = new Date();
+    
+    switch(range) {
+      case 'today':
+        // Hôm nay
+        start.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        // 7 ngày gần nhất
+        start.setDate(end.getDate() - 7);
+        break;
+      case 'month':
+        // Tháng này
+        start.setDate(1);
+        break;
+      case 'quarter':
+        // Quý này
+        const currentMonth = end.getMonth();
+        const quarterStartMonth = Math.floor(currentMonth / 3) * 3;
+        start.setMonth(quarterStartMonth);
+        start.setDate(1);
+        break;
+      case 'year':
+        // Năm này
+        start.setMonth(0);
+        start.setDate(1);
+        break;
+      case 'last-month':
+        // Tháng trước
+        start.setMonth(end.getMonth() - 1);
+        start.setDate(1);
+        end.setDate(0); // Last day of previous month
+        break;
+      case 'last-quarter':
+        // Quý trước
+        const lastQuarterMonth = Math.floor(end.getMonth() / 3) * 3 - 3;
+        start.setMonth(lastQuarterMonth);
+        start.setDate(1);
+        end.setMonth(lastQuarterMonth + 3);
+        end.setDate(0);
+        break;
+      case 'last-year':
+        // Năm trước
+        start.setFullYear(end.getFullYear() - 1);
+        start.setMonth(0);
+        start.setDate(1);
+        end.setFullYear(end.getFullYear() - 1);
+        end.setMonth(11);
+        end.setDate(31);
+        break;
+    }
+    
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(end.toISOString().split('T')[0]);
+  };
   
   // Real data states
   const [revenueStats, setRevenueStats] = useState<RevenueStats>({ today: 0, thisWeek: 0, thisMonth: 0, yearToDate: 0 });
@@ -78,18 +186,61 @@ export function EnhancedAdminDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('view');
+  
+  // User modal states
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userModalMode, setUserModalMode] = useState<'create' | 'edit' | 'view'>('view');
 
   useEffect(() => {
     loadData();
   }, []);
 
+  // Load analytics when station selected or date range changed
+  useEffect(() => {
+    if (selectedStationForAnalytics) {
+      loadAnalytics();
+    }
+  }, [selectedStationForAnalytics, dateRange]);
+
+  const loadAnalytics = async () => {
+    try {
+      if (!selectedStationForAnalytics) return;
+      
+      console.log('🔄 Loading analytics for station:', selectedStationForAnalytics, 'from', startDate, 'to', endDate);
+      
+      const [metricsData, analyticsData] = await Promise.all([
+        staffStatsApi.getStaffMetrics(selectedStationForAnalytics, startDate, endDate),
+        staffStatsApi.getStaffAnalytics(selectedStationForAnalytics, startDate, endDate),
+      ]);
+      
+      console.log('✅ Analytics loaded:', { metricsData, analyticsData });
+      
+      setMetrics(metricsData);
+      setAnalytics(analyticsData);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      toast.error('Không thể tải dữ liệu phân tích');
+    }
+  };
+
   const loadData = async () => {
     try {
       console.log('🔄 loadData() called - fetching fresh data from API...');
       setIsLoading(true);
+<<<<<<< HEAD
       const [stationsData, bookingsData] = await Promise.all([
         fetchStations(), // Use API instead of mock data
         MockDatabaseService.getUserBookings("user_001") // In real app, get all bookings
+=======
+      const [stationsData, bookingsData, usersData, dashboardStats] = await Promise.all([
+        
+        MockDatabaseService.getStations(),
+        MockDatabaseService.getUserBookings("user_001"),
+        usersApi.getUsers({ page: currentPage, limit: usersPerPage }),
+        adminStatsApi.getDashboardStats(),
+        fetchStations()
+>>>>>>> hieu
       ]);
       console.log('✅ Fetched stations:', stationsData.length);
       setStations(stationsData);
@@ -153,6 +304,44 @@ export function EnhancedAdminDashboard() {
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     toast.success(`${key} ${value ? 'enabled' : 'disabled'}`);
+  };
+
+  // User CRUD handlers
+  const handleCreateUser = () => {
+    setSelectedUser(null);
+    setUserModalMode('create');
+    setUserModalOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setUserModalMode('edit');
+    setUserModalOpen(true);
+  };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setUserModalMode('view');
+    setUserModalOpen(true);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+      return;
+    }
+
+    try {
+      await usersApi.deleteUser(userId);
+      toast.success('Xóa người dùng thành công');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Không thể xóa người dùng');
+    }
+  };
+
+  const handleSaveUser = () => {
+    loadData();
   };
 
   const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
@@ -305,6 +494,7 @@ export function EnhancedAdminDashboard() {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+          <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
           <TabsTrigger value="chargingPoints">{t.chargingPointsTab}</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
@@ -321,6 +511,261 @@ export function EnhancedAdminDashboard() {
         {/* Charging Points Management */}
         <TabsContent value="chargingPoints">
           <ChargingPointsManagement userRole="admin" />
+        </TabsContent>
+
+        {/* Analytics */}
+        <TabsContent value="analytics">
+          <div className="mb-6">
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="text-sm font-medium block mb-2">Chọn trạm:</label>
+                <select
+                  value={selectedStationForAnalytics}
+                  onChange={(e) => setSelectedStationForAnalytics(e.target.value)}
+                  className="border rounded px-3 py-2 min-w-[250px]"
+                >
+                  <option value="">-- Chọn trạm --</option>
+                  {stations.map((station) => (
+                    <option key={station.id} value={station.id}>
+                      {station.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedStationForAnalytics && (
+                <div>
+                  <label className="text-sm font-medium block mb-2">Khoảng thời gian:</label>
+                  <select
+                    value={dateRange}
+                    onChange={(e) => handleDateRangeChange(e.target.value)}
+                    className="border rounded px-3 py-2 min-w-[200px]"
+                  >
+                    <option value="today">Hôm nay</option>
+                    <option value="week">7 ngày gần nhất</option>
+                    <option value="month">Tháng này</option>
+                    <option value="last-month">Tháng trước</option>
+                    <option value="quarter">Quý này</option>
+                    <option value="last-quarter">Quý trước</option>
+                    <option value="year">Năm này</option>
+                    <option value="last-year">Năm trước</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {!selectedStationForAnalytics && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-6 text-center">
+                <BarChart3 className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+                <p className="text-lg font-semibold">Vui lòng chọn trạm để xem phân tích</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedStationForAnalytics && metrics && analytics && (
+            <>
+              {/* Real-time Metrics */}
+              <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.todaysSessions}</p>
+                        <p className="text-2xl font-bold">{metrics.todaysSessions}</p>
+                        <p className="text-xs text-green-600">
+                          {metrics.yesterdaysSessions !== undefined
+                            ? staffStatsApi.calculatePercentageChange(metrics.todaysSessions, metrics.yesterdaysSessions)
+                            : '+0%'}{' '}
+                          {t.vsYesterday}
+                        </p>
+                      </div>
+                      <Zap className="w-8 h-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.todaysRevenue}</p>
+                        <p className="text-2xl font-bold">{new Intl.NumberFormat('vi-VN').format(metrics.todaysRevenue)}₫</p>
+                        <p className="text-xs text-green-600">
+                          {metrics.yesterdaysRevenue !== undefined
+                            ? staffStatsApi.calculatePercentageChange(metrics.todaysRevenue, metrics.yesterdaysRevenue)
+                            : '+0%'}{' '}
+                          {t.vsYesterday}
+                        </p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-blue-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.utilization}</p>
+                        <p className="text-2xl font-bold">{metrics.currentUtilization.toFixed(1)}%</p>
+                        <p className="text-xs text-gray-500">{t.currentLoad}</p>
+                      </div>
+                      <Activity className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.avgDuration}</p>
+                        <p className="text-2xl font-bold">{metrics.averageSessionDuration.toFixed(1)}h</p>
+                        <p className="text-xs text-gray-500">{t.perSession}</p>
+                      </div>
+                      <Clock className="w-8 h-8 text-orange-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.satisfaction}</p>
+                        <p className="text-2xl font-bold">{metrics.customerSatisfaction}</p>
+                        <p className="text-xs text-green-600">{t.customerRating}</p>
+                      </div>
+                      <Users className="w-8 h-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.alerts}</p>
+                        <p className="text-2xl font-bold">{metrics.maintenanceAlerts}</p>
+                        <p className="text-xs text-yellow-600">{t.maintenanceLabel}</p>
+                      </div>
+                      <AlertTriangle className="w-8 h-8 text-yellow-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5" />
+                      {t.dailyUsageTrend}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={analytics.dailyUsage}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => {
+                            const d = new Date(date);
+                            return `${d.getDate()}/${d.getMonth() + 1}`;
+                          }}
+                        />
+                        <YAxis />
+                        <Tooltip 
+                          labelFormatter={(date) => {
+                            const d = new Date(date);
+                            return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+                          }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="sessions" 
+                          stroke="#16a34a" 
+                          strokeWidth={3} 
+                          name="Phiên sạc"
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.hourlyUsagePattern}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={analytics.hourlyPattern}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="hour" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="sessions" stroke="#16a34a" strokeWidth={3} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.weeklyPerformance}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={analytics.weeklyTrend}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="revenue" fill="#059669" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.performanceSummary}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <TrendingUp className="w-5 h-5 text-green-600" />
+                          <span className="font-medium">{t.peakHours}</span>
+                        </div>
+                        <span className="text-green-600 font-bold">14:00 - 18:00</span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-blue-600" />
+                          <span className="font-medium">{t.avgSessionsPerDay}</span>
+                        </div>
+                        <span className="text-blue-600 font-bold">{metrics.todaysSessions}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <DollarSign className="w-5 h-5 text-purple-600" />
+                          <span className="font-medium">{t.avgRevenuePerDay}</span>
+                        </div>
+                        <span className="text-purple-600 font-bold">
+                          {new Intl.NumberFormat('vi-VN').format(metrics.todaysRevenue)}₫
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </TabsContent>
 
         {/* Overview */}
@@ -476,7 +921,10 @@ export function EnhancedAdminDashboard() {
                     <Download className="w-4 h-4 mr-2" />
                     Export Users
                   </Button>
-                  <Button className="bg-green-600 hover:bg-green-700">
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={handleCreateUser}
+                  >
                     Add User
                   </Button>
                 </div>
@@ -513,11 +961,27 @@ export function EnhancedAdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewUser(user)}
+                          >
                             View
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                          >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:border-red-600"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
@@ -863,6 +1327,15 @@ export function EnhancedAdminDashboard() {
         station={selectedStation}
         mode={modalMode}
         onSave={handleSaveStation}
+      />
+
+      {/* User CRUD Modal */}
+      <UserCRUDModal
+        open={userModalOpen}
+        onClose={() => setUserModalOpen(false)}
+        user={selectedUser}
+        mode={userModalMode}
+        onSave={handleSaveUser}
       />
     </div>
   );

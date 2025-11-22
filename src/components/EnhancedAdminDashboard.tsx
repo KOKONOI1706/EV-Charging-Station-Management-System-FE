@@ -27,7 +27,6 @@ import {
   Download,
   MapPin,
   Settings,
-  BarChart as BarChartIcon,
   DollarSign,
   TrendingUp,
   UserCheck,
@@ -214,7 +213,9 @@ export function EnhancedAdminDashboard() {
         staffStatsApi.getStaffAnalytics(selectedStationForAnalytics, startDate, endDate),
       ]);
       
-      console.log('✅ Analytics loaded:', { metricsData, analyticsData });
+      console.log('✅ Analytics loaded - Metrics:', metricsData);
+      console.log('✅ Analytics loaded - Analytics:', analyticsData);
+      console.log('📊 Revenue:', metricsData.todaysRevenue, 'Sessions:', metricsData.todaysSessions);
       
       setMetrics(metricsData);
       setAnalytics(analyticsData);
@@ -320,6 +321,14 @@ export function EnhancedAdminDashboard() {
   };
 
   const handleDeleteUser = async (userId: string) => {
+    // Find user to check role
+    const userToDelete = users.find(u => u.id === userId);
+    
+    if (userToDelete?.role === 'admin') {
+      toast.error('Không thể xóa tài khoản.');
+      return;
+    }
+    
     if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
       return;
     }
@@ -338,7 +347,8 @@ export function EnhancedAdminDashboard() {
     loadData();
   };
 
-  const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
+  // Use real revenue from backend API instead of mock bookings
+  const totalRevenue = revenueStats.thisMonth;
   const activeUsers = users.length; // In real app, filter active users
   const totalSessions = bookings.length;
 
@@ -566,13 +576,10 @@ export function EnhancedAdminDashboard() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600">{t.todaysSessions}</p>
+                        <p className="text-sm text-gray-600">Số phiên sạc</p>
                         <p className="text-2xl font-bold">{metrics.todaysSessions}</p>
                         <p className="text-xs text-green-600">
-                          {metrics.yesterdaysSessions !== undefined
-                            ? staffStatsApi.calculatePercentageChange(metrics.todaysSessions, metrics.yesterdaysSessions)
-                            : '+0%'}{' '}
-                          {t.vsYesterday}
+                          Trong khoảng thời gian đã chọn
                         </p>
                       </div>
                       <Zap className="w-8 h-8 text-green-600" />
@@ -584,13 +591,10 @@ export function EnhancedAdminDashboard() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600">{t.todaysRevenue}</p>
+                        <p className="text-sm text-gray-600">Doanh thu</p>
                         <p className="text-2xl font-bold">{new Intl.NumberFormat('vi-VN').format(metrics.todaysRevenue)}₫</p>
                         <p className="text-xs text-green-600">
-                          {metrics.yesterdaysRevenue !== undefined
-                            ? staffStatsApi.calculatePercentageChange(metrics.todaysRevenue, metrics.yesterdaysRevenue)
-                            : '+0%'}{' '}
-                          {t.vsYesterday}
+                          Trong khoảng thời gian đã chọn
                         </p>
                       </div>
                       <DollarSign className="w-8 h-8 text-blue-600" />
@@ -734,14 +738,14 @@ export function EnhancedAdminDashboard() {
                       <div className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <TrendingUp className="w-5 h-5 text-green-600" />
-                          <span className="font-medium">{t.peakHours}</span>
+                          <span className="font-medium">{t.peakHour}</span>
                         </div>
                         <span className="text-green-600 font-bold">14:00 - 18:00</span>
                       </div>
                       <div className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <Users className="w-5 h-5 text-blue-600" />
-                          <span className="font-medium">{t.avgSessionsPerDay}</span>
+                          <span className="font-medium">Trung bình phiên/ngày</span>
                         </div>
                         <span className="text-blue-600 font-bold">{metrics.todaysSessions}</span>
                       </div>

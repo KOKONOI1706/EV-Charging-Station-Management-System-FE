@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
@@ -26,15 +27,27 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <DashboardPage />,
+    element: (
+      <ProtectedRoute allowedRoles={['customer']}>
+        <DashboardPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/staff",
-    element: <StaffPage />,
+    element: (
+      <ProtectedRoute allowedRoles={['staff']}>
+        <StaffPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/admin",
-    element: <AdminPage />,
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <AdminPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/pricing",
@@ -46,15 +59,27 @@ const router = createBrowserRouter([
   },
   {
     path: "/user-history",
-    element: <UserHistoryPage />,
+    element: (
+      <ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}>
+        <UserHistoryPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/personal-report",
-    element: <PersonalReportPage />,
+    element: (
+      <ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}>
+        <PersonalReportPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/charging-session",
-    element: <ChargingSessionPage />,
+    element: (
+      <ProtectedRoute allowedRoles={['customer', 'staff', 'admin']}>
+        <ChargingSessionPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/payment/callback",

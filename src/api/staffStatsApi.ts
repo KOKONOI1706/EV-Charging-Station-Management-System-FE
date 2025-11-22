@@ -56,13 +56,18 @@ export async function getStaffMetrics(stationId?: string, startDate?: string, en
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     
-    const response = await fetch(`${API_URL}/staff-stats/metrics?${params.toString()}`);
+    const url = `${API_URL}/staff-stats/metrics?${params.toString()}`;
+    console.log('📡 Fetching metrics from:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
+      console.error('❌ Metrics API error:', response.status, response.statusText);
       throw new Error(`Failed to fetch staff metrics: ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('✅ Metrics response:', data);
     return data;
   } catch (error) {
     console.error('Error fetching staff metrics:', error);
@@ -91,13 +96,18 @@ export async function getStaffAnalytics(stationId?: string, startDate?: string, 
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     
-    const response = await fetch(`${API_URL}/staff-stats/analytics?${params.toString()}`);
+    const url = `${API_URL}/staff-stats/analytics?${params.toString()}`;
+    console.log('📡 Fetching analytics from:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
+      console.error('❌ Analytics API error:', response.status, response.statusText);
       throw new Error(`Failed to fetch staff analytics: ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('✅ Analytics response:', data);
     return data;
   } catch (error) {
     console.error('Error fetching staff analytics:', error);

@@ -10,7 +10,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { LanguageSelector } from "./LanguageSelector";
 import { getPackages, ServicePackage } from "../services/packageService";
 import { AuthService } from "../services/authService";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface PricingPageProps {
   onGetStarted: (planId: string) => void;
@@ -22,22 +22,25 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
   const [packages, setPackages] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     loadPackages();
   }, []);
 
-  // Check if user came back from login with a selected plan
+  // Check if user just logged in and had selected a plan before
   useEffect(() => {
-    const state = location.state as { planId?: string };
-    if (state?.planId) {
-      // User logged in and returned with a plan selection
-      onGetStarted(state.planId);
-      // Clear the state
-      navigate(location.pathname, { replace: true, state: {} });
+    const selectedPlanId = sessionStorage.getItem('selectedPlanId');
+    if (selectedPlanId) {
+      // User is logged in and there's a saved plan selection
+      const currentUser = AuthService.getCurrentUser();
+      if (currentUser) {
+        // Clear the stored plan ID
+        sessionStorage.removeItem('selectedPlanId');
+        // Auto-proceed with the selected plan
+        onGetStarted(selectedPlanId);
+      }
     }
-  }, [location, onGetStarted, navigate]);
+  }, [onGetStarted]);
 
   const loadPackages = async () => {
     try {

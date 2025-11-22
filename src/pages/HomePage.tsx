@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Hero } from "../components/Hero";
@@ -8,7 +8,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   const [guestUserId, setGuestUserId] = useState<string>('');
 
@@ -21,15 +20,6 @@ export default function HomePage() {
     }
     setGuestUserId(guestId);
   }, []);
-
-  // Check if user logged in and returned with a selected plan
-  useEffect(() => {
-    const state = location.state as { planId?: string };
-    if (state?.planId && isAuthenticated) {
-      // Navigate to pricing to complete the purchase
-      navigate('/pricing', { state: { planId: state.planId }, replace: true });
-    }
-  }, [location, isAuthenticated, navigate]);
 
   const handleAuthClick = () => {
     if (!isAuthenticated) navigate('/auth');

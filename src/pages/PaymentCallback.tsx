@@ -12,7 +12,54 @@ export default function PaymentCallback() {
   const [countdown, setCountdown] = useState<number>(3);
   const [retryCount, setRetryCount] = useState<number>(0);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [isPackagePayment, setIsPackagePayment] = useState<boolean>(false);
+  const [manualCompleting, setManualCompleting] = useState<boolean>(false);
   const manualUpdateDone = useRef<boolean>(false);
+
+  // Manual complete handler
+  const handleManualComplete = async () => {
+    const orderId = searchParams.get('orderId');
+    const resultCode = searchParams.get('resultCode');
+    const amount = searchParams.get('amount');
+    const message = searchParams.get('message');
+
+    if (!orderId) {
+      toast.error('Không có mã đơn hàng để xử lý');
+      return;
+    }
+
+    setManualCompleting(true);
+    
+    try {
+      console.log('🔧 Manually completing payment:', orderId);
+      
+      const updateRes = await fetch(`${API_BASE_URL}/payments/momo/manual-complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, resultCode: resultCode || '0', amount, message })
+      });
+      
+      const updateData = await updateRes.json();
+      
+      if (updateRes.ok && updateData.success) {
+        console.log('✅ Payment manually completed:', updateData);
+        toast.success('Đã hoàn thành thanh toán thủ công!');
+        
+        // Wait 1 second then reload to verify
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        console.error('❌ Failed to complete payment:', updateData);
+        toast.error(updateData.error || 'Không thể hoàn thành thanh toán');
+      }
+    } catch (err: any) {
+      console.error('⚠️ Manual complete error:', err);
+      toast.error('Lỗi khi hoàn thành thanh toán: ' + err.message);
+    } finally {
+      setManualCompleting(false);
+    }
+  };
 
   useEffect(() => {
     const orderId = searchParams.get('orderId');
@@ -101,20 +148,28 @@ export default function PaymentCallback() {
         const st = data.data?.status;
         console.log('💳 Payment status:', st);
         
+        // Check if this is a package payment or session payment
+        const isPkgPayment = data.data?.package_id != null;
+        console.log('📦 Is package payment:', isPkgPayment);
+        setIsPackagePayment(isPkgPayment);
+        
         if (st === 'Completed') {
           setStatus('completed');
           setMessage(`Thanh toán thành công (${amount || ''} VND). Cảm ơn bạn!`);
           
-          // ✅ Backend automatically marks session as 'Completed' when payment succeeds
-          // No need to call stopSession() here anymore
-          console.log('✅ Payment completed! Session automatically updated by backend.');
+          if (isPkgPayment) {
+            // For package payments, redirect to profile page with package tab
+            toast.success('🎉 Mua gói thành công!', {
+              description: 'Bạn sẽ được chuyển đến trang hồ sơ sau 3 giây...'
+            });
+          } else {
+            // For session payments, redirect to dashboard
+            toast.success('🎉 Thanh toán thành công!', {
+              description: 'Bạn sẽ được chuyển về dashboard sau 3 giây...'
+            });
+          }
           
-          // Show success toast
-          toast.success('🎉 Thanh toán thành công!', {
-            description: 'Bạn sẽ được chuyển về dashboard sau 3 giây...'
-          });
-          
-          // Countdown and redirect to dashboard after 3 seconds
+          // Countdown and redirect after 3 seconds
           let timeLeft = 3;
           setCountdown(timeLeft);
           
@@ -124,7 +179,12 @@ export default function PaymentCallback() {
             
             if (timeLeft <= 0) {
               clearInterval(countdownInterval);
-              navigate('/dashboard');
+              if (isPkgPayment) {
+                // Redirect to profile with package tab
+                navigate('/profile?tab=package');
+              } else {
+                navigate('/dashboard');
+              }
             }
           }, 1000);
           
@@ -196,6 +256,13 @@ export default function PaymentCallback() {
                 >
                   Làm mới trang
                 </button>
+                <button 
+                  onClick={handleManualComplete}
+                  disabled={manualCompleting}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {manualCompleting ? '⏳ Đang xử lý...' : '⚡ Hoàn thành thủ công'}
+                </button>
                 <Link
                   to="/dashboard"
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm inline-block"
@@ -225,10 +292,10 @@ export default function PaymentCallback() {
             
             <div className="flex gap-3 justify-center">
               <Link 
-                to="/dashboard" 
+                to={isPackagePayment ? "/profile?tab=package" : "/dashboard"}
                 className="inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
-                Về trang chủ ngay
+                {isPackagePayment ? 'Xem gói của tôi' : 'Về trang chủ ngay'}
               </Link>
               <Link 
                 to="/user-history" 
@@ -277,6 +344,13 @@ export default function PaymentCallback() {
                 className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
               >
                 Làm mới ngay
+              </button>
+              <button 
+                onClick={handleManualComplete}
+                disabled={manualCompleting}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {manualCompleting ? '⏳ Đang xử lý...' : '⚡ Hoàn thành thủ công'}
               </button>
               <Link
                 to="/dashboard"

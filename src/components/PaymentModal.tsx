@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
@@ -8,10 +8,13 @@ import {
   Zap,
   Clock,
   AlertCircle,
-  Loader2
+  Loader2,
+  Gift,
+  TrendingDown
 } from 'lucide-react';
 import { PaymentMethodSelector, PaymentMethod } from './PaymentMethodSelector';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 // API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -47,9 +50,53 @@ export function PaymentModal({
     sessionData
   });
 
+  const { user } = useAuth();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('momo');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Benefits & pricing state
+  const [priceInfo, setPriceInfo] = useState<any>(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
+
+  // Load price with benefits when modal opens
+  useEffect(() => {
+    if (open && user && sessionData) {
+      loadPriceWithBenefits();
+    }
+  }, [open, user, sessionData]);
+
+  const loadPriceWithBenefits = async () => {
+    if (!user) return;
+    
+    setLoadingPrice(true);
+    try {
+      const userId = parseInt(user.id);
+      const response = await fetch(`${API_BASE_URL}/benefits/calculate-price`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          original_price: sessionData.amount
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setPriceInfo(result.data);
+      } else {
+        setPriceInfo(null);
+      }
+    } catch (err) {
+      console.error('Error loading price with benefits:', err);
+      setPriceInfo(null);
+    } finally {
+      setLoadingPrice(false);
+    }
+  };
+
+  const finalAmount = priceInfo?.discounted_price || sessionData.amount;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -84,7 +131,7 @@ export function PaymentModal({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               session_id: sessionId,
-              amount: sessionData.amount,
+              amount: finalAmount, // Use discounted amount
               currency: 'VND',
               description: `Thanh toán phiên sạc #${sessionId} - ${sessionData.stationName}`
             })
@@ -209,17 +256,53 @@ export function PaymentModal({
                 </span>
               </div>
               
+              {!loadingPrice && priceInfo && priceInfo.discount_rate > 0 && (
+                <>
+                  <Separator className="my-2" />
+                  
+                  <div className="flex justify-between text-gray-600">
+                    <span>Tạm tính:</span>
+                    <span className="line-through">{formatCurrency(priceInfo.original_price)}</span>
+                  </div>
+                  
+                  <div className="flex justify-between text-green-700 font-medium">
+                    <span className="flex items-center gap-1">
+                      <Gift className="w-4 h-4" />
+                      Giảm giá ({priceInfo.discount_rate}%):
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <TrendingDown className="w-4 h-4" />
+                      -{formatCurrency(priceInfo.savings)}
+                    </span>
+                  </div>
+                  
+                  {priceInfo.session_limit_info && (
+                    <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
+                      <AlertCircle className="w-3 h-3 inline mr-1" />
+                      {priceInfo.session_limit_info.message}
+                    </div>
+                  )}
+                </>
+              )}
+              
               <Separator className="my-2" />
               
               <div className="flex justify-between items-center">
                 <span className="text-green-800 font-semibold">Tổng tiền:</span>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(sessionData.amount)}
+                    {formatCurrency(finalAmount)}
                   </div>
-                  <span className="text-xs text-green-700">
-                    (Đã bao gồm VAT)
-                  </span>
+                  {priceInfo && priceInfo.savings > 0 && (
+                    <span className="text-xs text-green-700">
+                      Tiết kiệm {formatCurrency(priceInfo.savings)}!
+                    </span>
+                  )}
+                  {!priceInfo?.savings && (
+                    <span className="text-xs text-green-700">
+                      (Đã bao gồm VAT)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -265,7 +348,7 @@ export function PaymentModal({
               ) : (
                 <>
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Thanh toán {formatCurrency(sessionData.amount)}
+                  Thanh toán {formatCurrency(finalAmount)}
                 </>
               )}
             </Button>

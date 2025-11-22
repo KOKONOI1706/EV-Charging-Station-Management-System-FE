@@ -12,11 +12,15 @@ import {
   Gauge,
   Car,
   Plus,
+  Gift,
+  TrendingDown,
 } from 'lucide-react';
 import { chargingSessionApi, StartSessionRequest } from '../api/chargingSessionApi';
 import { vehicleApi, Vehicle } from '../api/vehicleApi';
 import { useAuth } from '../contexts/AuthContext';
 import { BatteryInputModal } from './BatteryInputModal';
+
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 
 interface StartChargingModalProps {
   isOpen: boolean;
@@ -53,17 +57,44 @@ export function StartChargingModal({
   
   // Battery modal state
   const [showBatteryModal, setShowBatteryModal] = useState(false);
+  
+  // Benefits state
+  const [benefits, setBenefits] = useState<any>(null);
+  const [loadingBenefits, setLoadingBenefits] = useState(false);
 
-  // Load user vehicles when modal opens
+  // Load user vehicles and benefits when modal opens
   useEffect(() => {
     if (isOpen && user) {
       loadUserVehicles();
+      loadUserBenefits();
       // Reset form when modal opens
       setMeterStart('');
       setError(null);
       setSelectedVehicle(null);
     }
   }, [isOpen, user]);
+
+  const loadUserBenefits = async () => {
+    if (!user) return;
+    
+    setLoadingBenefits(true);
+    try {
+      const userId = parseInt(user.id);
+      const response = await fetch(`${API_BASE_URL}/benefits/active/${userId}`);
+      const result = await response.json();
+      
+      if (result.success && result.data.has_active_package) {
+        setBenefits(result.data);
+      } else {
+        setBenefits(null);
+      }
+    } catch (err) {
+      console.error('Error loading benefits:', err);
+      setBenefits(null);
+    } finally {
+      setLoadingBenefits(false);
+    }
+  };
 
   const loadUserVehicles = async () => {
     if (!user) return;
@@ -195,11 +226,49 @@ export function StartChargingModal({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Giá</span>
-              <span className="font-semibold">
-                {chargingSessionApi.formatCost(pricePerKwh)}/kWh
-              </span>
+              <div className="text-right">
+                {benefits && benefits.aggregated.discount_rate > 0 ? (
+                  <>
+                    <div className="text-xs text-gray-400 line-through">
+                      {chargingSessionApi.formatCost(pricePerKwh)}/kWh
+                    </div>
+                    <div className="font-semibold text-green-600 flex items-center gap-1">
+                      <TrendingDown className="w-3 h-3" />
+                      {chargingSessionApi.formatCost(pricePerKwh * (1 - benefits.aggregated.discount_rate / 100))}/kWh
+                      <span className="text-xs bg-green-100 text-green-700 px-1 rounded">
+                        -{benefits.aggregated.discount_rate}%
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="font-semibold">
+                    {chargingSessionApi.formatCost(pricePerKwh)}/kWh
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Benefits Info */}
+          {!loadingBenefits && benefits && benefits.has_active_package && (
+            <Alert className="border-green-500 bg-green-50">
+              <Gift className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 text-sm">
+                <div className="font-semibold mb-1">🎉 Gói {benefits.package_name} đang áp dụng!</div>
+                <ul className="space-y-1 text-xs">
+                  {benefits.aggregated.discount_rate > 0 && (
+                    <li>✓ Giảm {benefits.aggregated.discount_rate}% mọi phiên sạc</li>
+                  )}
+                  {benefits.aggregated.free_start_fee && (
+                    <li>✓ Miễn phí khởi động phiên sạc</li>
+                  )}
+                  {benefits.aggregated.bonus_minutes > 0 && (
+                    <li>✓ {benefits.aggregated.bonus_minutes} phút miễn phí idle fee</li>
+                  )}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Vehicle Selection */}
           <div className="space-y-2">

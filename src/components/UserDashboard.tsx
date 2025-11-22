@@ -21,6 +21,7 @@ import { StartChargingModal } from "./StartChargingModal";
 import { useLanguage } from "../hooks/useLanguage";
 import { ProfileModal } from "./ProfileModal";
 import { ChangePasswordModal } from "./ChangePasswordModal";
+import { UserPackageCard } from "./UserPackageCard";
 import { AuthService } from "../services/authService";
 import { VehicleManagement } from "./VehicleManagement";
 import { userStatsApi, UserStats } from "../api/userStatsApi";
@@ -324,10 +325,50 @@ export function UserDashboard({
         <TabsContent value="upcoming">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                {t.upcomingSessions}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  {t.upcomingSessions}
+                </CardTitle>
+                {upcomingBookings.length > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={async () => {
+                      if (!currentUser?.id) {
+                        toast.error('Vui lòng đăng nhập');
+                        return;
+                      }
+                      
+                      if (!confirm('Bạn có chắc muốn hủy TẤT CẢ booking đang active không?')) {
+                        return;
+                      }
+                      
+                      try {
+                        const response = await fetch('http://localhost:5000/api/bookings/cancel-all-active', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ user_id: parseInt(currentUser.id) })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                          toast.success(result.message || 'Đã hủy tất cả booking!');
+                          window.location.reload();
+                        } else {
+                          toast.error(result.error || 'Không thể hủy booking');
+                        }
+                      } catch (err) {
+                        console.error('Error cancelling bookings:', err);
+                        toast.error('Lỗi khi hủy booking');
+                      }
+                    }}
+                  >
+                    Hủy tất cả booking
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {upcomingBookings.length === 0 ? (
@@ -462,6 +503,18 @@ export function UserDashboard({
 
         <TabsContent value="settings">
           <div className="grid lg:grid-cols-2 gap-6">
+            {/* User Package Card - Full width on top */}
+            {currentUser?.id && (
+              <div className="lg:col-span-2">
+                <UserPackageCard 
+                  userId={parseInt(currentUser.id)} 
+                  onPackageCancelled={() => {
+                    toast.success('Gói đã được hủy thành công');
+                  }}
+                />
+              </div>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

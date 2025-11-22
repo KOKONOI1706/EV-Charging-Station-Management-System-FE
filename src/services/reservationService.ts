@@ -166,13 +166,34 @@ class ReservationService {
       };
     }
 
-    // Nếu không có chargingPointId, không thể tạo reservation (backend yêu cầu pointId)
+    // Nếu không có chargingPointId, tự động chọn một điểm available
     if (!chargingPointId) {
-      console.log('❌ No charging point ID provided');
-      return {
-        success: false,
-        error: 'Vui lòng chọn điểm sạc cụ thể để đặt chỗ.'
-      };
+      console.log('⚠️ No charging point ID provided, auto-selecting available point');
+      
+      // Fetch available charging points for this station
+      try {
+        const { getStationChargingPoints } = await import('../api/chargingPointsApi');
+        const points = await getStationChargingPoints(station.id);
+        const availablePoint = points.find(p => p.status === 'available');
+        
+        if (!availablePoint) {
+          console.log('❌ No available charging points at this station');
+          return {
+            success: false,
+            error: 'Trạm này hiện không có điểm sạc nào khả dụng. Vui lòng thử trạm khác.'
+          };
+        }
+        
+        // Use the first available point
+        chargingPointId = availablePoint.point_id.toString();
+        console.log('✅ Auto-selected charging point:', chargingPointId);
+      } catch (error) {
+        console.error('❌ Failed to fetch charging points:', error);
+        return {
+          success: false,
+          error: 'Không thể kiểm tra điểm sạc khả dụng. Vui lòng thử lại.'
+        };
+      }
     }
 
     // Call backend API to create reservation

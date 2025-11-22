@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 import { ChargingPointsManagement } from "./ChargingPointsManagement";
 import { StationCRUDModal } from "./StationCRUDModal";
+import { UserCRUDModal } from "./UserCRUDModal";
 import { fetchStations, deleteStation } from "../api/stationApi";
 import * as staffStatsApi from '../api/staffStatsApi';
 
@@ -92,6 +93,77 @@ export function EnhancedAdminDashboard() {
   const [metrics, setMetrics] = useState<StationMetrics | null>(null);
   const [selectedStationForAnalytics, setSelectedStationForAnalytics] = useState<string>('');
   
+  // Date range filter states
+  const [dateRange, setDateRange] = useState<string>('month'); // Default current month
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(1); // First day of current month
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  
+  // Update date range when dropdown changes
+  const handleDateRangeChange = (range: string) => {
+    setDateRange(range);
+    const end = new Date();
+    const start = new Date();
+    
+    switch(range) {
+      case 'today':
+        // Hôm nay
+        start.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        // 7 ngày gần nhất
+        start.setDate(end.getDate() - 7);
+        break;
+      case 'month':
+        // Tháng này
+        start.setDate(1);
+        break;
+      case 'quarter':
+        // Quý này
+        const currentMonth = end.getMonth();
+        const quarterStartMonth = Math.floor(currentMonth / 3) * 3;
+        start.setMonth(quarterStartMonth);
+        start.setDate(1);
+        break;
+      case 'year':
+        // Năm này
+        start.setMonth(0);
+        start.setDate(1);
+        break;
+      case 'last-month':
+        // Tháng trước
+        start.setMonth(end.getMonth() - 1);
+        start.setDate(1);
+        end.setDate(0); // Last day of previous month
+        break;
+      case 'last-quarter':
+        // Quý trước
+        const lastQuarterMonth = Math.floor(end.getMonth() / 3) * 3 - 3;
+        start.setMonth(lastQuarterMonth);
+        start.setDate(1);
+        end.setMonth(lastQuarterMonth + 3);
+        end.setDate(0);
+        break;
+      case 'last-year':
+        // Năm trước
+        start.setFullYear(end.getFullYear() - 1);
+        start.setMonth(0);
+        start.setDate(1);
+        end.setFullYear(end.getFullYear() - 1);
+        end.setMonth(11);
+        end.setDate(31);
+        break;
+    }
+    
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(end.toISOString().split('T')[0]);
+  };
+  
   // Real data states
   const [revenueStats, setRevenueStats] = useState<RevenueStats>({ today: 0, thisWeek: 0, thisMonth: 0, yearToDate: 0 });
   const [topStations, setTopStations] = useState<TopStation[]>([]);
@@ -114,27 +186,32 @@ export function EnhancedAdminDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('view');
+  
+  // User modal states
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userModalMode, setUserModalMode] = useState<'create' | 'edit' | 'view'>('view');
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Load analytics when station selected
+  // Load analytics when station selected or date range changed
   useEffect(() => {
     if (selectedStationForAnalytics) {
       loadAnalytics();
     }
-  }, [selectedStationForAnalytics]);
+  }, [selectedStationForAnalytics, dateRange]);
 
   const loadAnalytics = async () => {
     try {
       if (!selectedStationForAnalytics) return;
       
-      console.log('🔄 Loading analytics for station:', selectedStationForAnalytics);
+      console.log('🔄 Loading analytics for station:', selectedStationForAnalytics, 'from', startDate, 'to', endDate);
       
       const [metricsData, analyticsData] = await Promise.all([
-        staffStatsApi.getStaffMetrics(selectedStationForAnalytics),
-        staffStatsApi.getStaffAnalytics(selectedStationForAnalytics),
+        staffStatsApi.getStaffMetrics(selectedStationForAnalytics, startDate, endDate),
+        staffStatsApi.getStaffAnalytics(selectedStationForAnalytics, startDate, endDate),
       ]);
       
       console.log('✅ Analytics loaded:', { metricsData, analyticsData });
@@ -221,6 +298,44 @@ export function EnhancedAdminDashboard() {
   const handleSettingChange = (key: keyof SystemSettings, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     toast.success(`${key} ${value ? 'enabled' : 'disabled'}`);
+  };
+
+  // User CRUD handlers
+  const handleCreateUser = () => {
+    setSelectedUser(null);
+    setUserModalMode('create');
+    setUserModalOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setUserModalMode('edit');
+    setUserModalOpen(true);
+  };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setUserModalMode('view');
+    setUserModalOpen(true);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+      return;
+    }
+
+    try {
+      await usersApi.deleteUser(userId);
+      toast.success('Xóa người dùng thành công');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Không thể xóa người dùng');
+    }
+  };
+
+  const handleSaveUser = () => {
+    loadData();
   };
 
   const totalRevenue = bookings.reduce((sum, booking) => sum + parseFloat(booking.price), 0);
@@ -394,20 +509,44 @@ export function EnhancedAdminDashboard() {
 
         {/* Analytics */}
         <TabsContent value="analytics">
-          <div className="mb-4">
-            <label className="text-sm font-medium">Chọn trạm để xem phân tích:</label>
-            <select
-              value={selectedStationForAnalytics}
-              onChange={(e) => setSelectedStationForAnalytics(e.target.value)}
-              className="ml-2 border rounded px-3 py-2"
-            >
-              <option value="">-- Chọn trạm --</option>
-              {stations.map((station) => (
-                <option key={station.id} value={station.id}>
-                  {station.name}
-                </option>
-              ))}
-            </select>
+          <div className="mb-6">
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="text-sm font-medium block mb-2">Chọn trạm:</label>
+                <select
+                  value={selectedStationForAnalytics}
+                  onChange={(e) => setSelectedStationForAnalytics(e.target.value)}
+                  className="border rounded px-3 py-2 min-w-[250px]"
+                >
+                  <option value="">-- Chọn trạm --</option>
+                  {stations.map((station) => (
+                    <option key={station.id} value={station.id}>
+                      {station.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedStationForAnalytics && (
+                <div>
+                  <label className="text-sm font-medium block mb-2">Khoảng thời gian:</label>
+                  <select
+                    value={dateRange}
+                    onChange={(e) => handleDateRangeChange(e.target.value)}
+                    className="border rounded px-3 py-2 min-w-[200px]"
+                  >
+                    <option value="today">Hôm nay</option>
+                    <option value="week">7 ngày gần nhất</option>
+                    <option value="month">Tháng này</option>
+                    <option value="last-month">Tháng trước</option>
+                    <option value="quarter">Quý này</option>
+                    <option value="last-quarter">Quý trước</option>
+                    <option value="year">Năm này</option>
+                    <option value="last-year">Năm trước</option>
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
           {!selectedStationForAnalytics && (
@@ -517,19 +656,37 @@ export function EnhancedAdminDashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5" />
+                      <TrendingUp className="w-5 h-5" />
                       {t.dailyUsageTrend}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={analytics.dailyUsage}>
+                      <LineChart data={analytics.dailyUsage}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => {
+                            const d = new Date(date);
+                            return `${d.getDate()}/${d.getMonth() + 1}`;
+                          }}
+                        />
                         <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="sessions" fill="#16a34a" />
-                      </BarChart>
+                        <Tooltip 
+                          labelFormatter={(date) => {
+                            const d = new Date(date);
+                            return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+                          }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="sessions" 
+                          stroke="#16a34a" 
+                          strokeWidth={3} 
+                          name="Phiên sạc"
+                          dot={false}
+                        />
+                      </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
@@ -758,7 +915,10 @@ export function EnhancedAdminDashboard() {
                     <Download className="w-4 h-4 mr-2" />
                     Export Users
                   </Button>
-                  <Button className="bg-green-600 hover:bg-green-700">
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={handleCreateUser}
+                  >
                     Add User
                   </Button>
                 </div>
@@ -795,11 +955,27 @@ export function EnhancedAdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewUser(user)}
+                          >
                             View
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                          >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:border-red-600"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
@@ -1145,6 +1321,15 @@ export function EnhancedAdminDashboard() {
         station={selectedStation}
         mode={modalMode}
         onSave={handleSaveStation}
+      />
+
+      {/* User CRUD Modal */}
+      <UserCRUDModal
+        open={userModalOpen}
+        onClose={() => setUserModalOpen(false)}
+        user={selectedUser}
+        mode={userModalMode}
+        onSave={handleSaveUser}
       />
     </div>
   );

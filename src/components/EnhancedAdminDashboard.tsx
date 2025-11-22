@@ -6,6 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
+import { 
+  BarChart, 
+  Bar, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 import {
   Users,
   Calendar,
@@ -16,14 +27,15 @@ import {
   Download,
   MapPin,
   Settings,
-  BarChart,
+  BarChart as BarChartIcon,
   DollarSign,
   TrendingUp,
   UserCheck,
   Shield,
   Activity,
   Plus,
-  Trash2
+  Trash2,
+  BarChart3
 } from "lucide-react";
 import { Station, Booking, MockDatabaseService } from "../data/mockDatabase";
 import { usersApi, type User } from "../api/usersApi";
@@ -37,6 +49,7 @@ import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 import { ChargingPointsManagement } from "./ChargingPointsManagement";
 import { StationCRUDModal } from "./StationCRUDModal";
 import { fetchStations, deleteStation } from "../api/stationApi";
+import * as staffStatsApi from '../api/staffStatsApi';
 
 interface SystemSettings {
   maintenanceMode: boolean;
@@ -44,6 +57,24 @@ interface SystemSettings {
   emailNotifications: boolean;
   smsNotifications: boolean;
   debugMode: boolean;
+}
+
+interface StaffAnalytics {
+  dailyUsage: { date: string; sessions: number; revenue: number }[];
+  hourlyPattern: { hour: number; sessions: number; utilization: number }[];
+  weeklyTrend: { day: string; sessions: number; revenue: number }[];
+  recentSessions: { id: string; customer: string; duration: string; amount: number; status: string; station?: string }[];
+}
+
+interface StationMetrics {
+  todaysSessions: number;
+  todaysRevenue: number;
+  currentUtilization: number;
+  averageSessionDuration: number;
+  customerSatisfaction: number;
+  maintenanceAlerts: number;
+  yesterdaysSessions?: number;
+  yesterdaysRevenue?: number;
 }
 
 export function EnhancedAdminDashboard() {
@@ -55,6 +86,11 @@ export function EnhancedAdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Analytics states
+  const [analytics, setAnalytics] = useState<StaffAnalytics | null>(null);
+  const [metrics, setMetrics] = useState<StationMetrics | null>(null);
+  const [selectedStationForAnalytics, setSelectedStationForAnalytics] = useState<string>('');
   
   // Real data states
   const [revenueStats, setRevenueStats] = useState<RevenueStats>({ today: 0, thisWeek: 0, thisMonth: 0, yearToDate: 0 });
@@ -82,6 +118,34 @@ export function EnhancedAdminDashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Load analytics when station selected
+  useEffect(() => {
+    if (selectedStationForAnalytics) {
+      loadAnalytics();
+    }
+  }, [selectedStationForAnalytics]);
+
+  const loadAnalytics = async () => {
+    try {
+      if (!selectedStationForAnalytics) return;
+      
+      console.log('🔄 Loading analytics for station:', selectedStationForAnalytics);
+      
+      const [metricsData, analyticsData] = await Promise.all([
+        staffStatsApi.getStaffMetrics(selectedStationForAnalytics),
+        staffStatsApi.getStaffAnalytics(selectedStationForAnalytics),
+      ]);
+      
+      console.log('✅ Analytics loaded:', { metricsData, analyticsData });
+      
+      setMetrics(metricsData);
+      setAnalytics(analyticsData);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      toast.error('Không thể tải dữ liệu phân tích');
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -309,6 +373,7 @@ export function EnhancedAdminDashboard() {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="inline-flex w-full justify-start overflow-x-auto flex-wrap gap-1">
           <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+          <TabsTrigger value="analytics">{t.analytics}</TabsTrigger>
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
           <TabsTrigger value="chargingPoints">{t.chargingPointsTab}</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
@@ -325,6 +390,219 @@ export function EnhancedAdminDashboard() {
         {/* Charging Points Management */}
         <TabsContent value="chargingPoints">
           <ChargingPointsManagement userRole="admin" />
+        </TabsContent>
+
+        {/* Analytics */}
+        <TabsContent value="analytics">
+          <div className="mb-4">
+            <label className="text-sm font-medium">Chọn trạm để xem phân tích:</label>
+            <select
+              value={selectedStationForAnalytics}
+              onChange={(e) => setSelectedStationForAnalytics(e.target.value)}
+              className="ml-2 border rounded px-3 py-2"
+            >
+              <option value="">-- Chọn trạm --</option>
+              {stations.map((station) => (
+                <option key={station.id} value={station.id}>
+                  {station.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {!selectedStationForAnalytics && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-6 text-center">
+                <BarChart3 className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+                <p className="text-lg font-semibold">Vui lòng chọn trạm để xem phân tích</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedStationForAnalytics && metrics && analytics && (
+            <>
+              {/* Real-time Metrics */}
+              <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.todaysSessions}</p>
+                        <p className="text-2xl font-bold">{metrics.todaysSessions}</p>
+                        <p className="text-xs text-green-600">
+                          {metrics.yesterdaysSessions !== undefined
+                            ? staffStatsApi.calculatePercentageChange(metrics.todaysSessions, metrics.yesterdaysSessions)
+                            : '+0%'}{' '}
+                          {t.vsYesterday}
+                        </p>
+                      </div>
+                      <Zap className="w-8 h-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.todaysRevenue}</p>
+                        <p className="text-2xl font-bold">{new Intl.NumberFormat('vi-VN').format(metrics.todaysRevenue)}₫</p>
+                        <p className="text-xs text-green-600">
+                          {metrics.yesterdaysRevenue !== undefined
+                            ? staffStatsApi.calculatePercentageChange(metrics.todaysRevenue, metrics.yesterdaysRevenue)
+                            : '+0%'}{' '}
+                          {t.vsYesterday}
+                        </p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-blue-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.utilization}</p>
+                        <p className="text-2xl font-bold">{metrics.currentUtilization.toFixed(1)}%</p>
+                        <p className="text-xs text-gray-500">{t.currentLoad}</p>
+                      </div>
+                      <Activity className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.avgDuration}</p>
+                        <p className="text-2xl font-bold">{metrics.averageSessionDuration.toFixed(1)}h</p>
+                        <p className="text-xs text-gray-500">{t.perSession}</p>
+                      </div>
+                      <Clock className="w-8 h-8 text-orange-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.satisfaction}</p>
+                        <p className="text-2xl font-bold">{metrics.customerSatisfaction}</p>
+                        <p className="text-xs text-green-600">{t.customerRating}</p>
+                      </div>
+                      <Users className="w-8 h-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">{t.alerts}</p>
+                        <p className="text-2xl font-bold">{metrics.maintenanceAlerts}</p>
+                        <p className="text-xs text-yellow-600">{t.maintenanceLabel}</p>
+                      </div>
+                      <AlertTriangle className="w-8 h-8 text-yellow-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5" />
+                      {t.dailyUsageTrend}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={analytics.dailyUsage}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="sessions" fill="#16a34a" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.hourlyUsagePattern}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={analytics.hourlyPattern}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="hour" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="sessions" stroke="#16a34a" strokeWidth={3} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.weeklyPerformance}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={analytics.weeklyTrend}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="revenue" fill="#059669" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.performanceSummary}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <TrendingUp className="w-5 h-5 text-green-600" />
+                          <span className="font-medium">{t.peakHours}</span>
+                        </div>
+                        <span className="text-green-600 font-bold">14:00 - 18:00</span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-blue-600" />
+                          <span className="font-medium">{t.avgSessionsPerDay}</span>
+                        </div>
+                        <span className="text-blue-600 font-bold">{metrics.todaysSessions}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <DollarSign className="w-5 h-5 text-purple-600" />
+                          <span className="font-medium">{t.avgRevenuePerDay}</span>
+                        </div>
+                        <span className="text-purple-600 font-bold">
+                          {new Intl.NumberFormat('vi-VN').format(metrics.todaysRevenue)}₫
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </TabsContent>
 
         {/* Overview */}

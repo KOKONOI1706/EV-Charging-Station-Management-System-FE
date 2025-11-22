@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
-import { Check, Zap, Calculator, TrendingUp, Users } from "lucide-react";
+import { Check, Zap, Calculator, TrendingUp, Users, Loader2 } from "lucide-react";
 import { PRICING_PLANS } from "../data/mockDatabase";
 import { useLanguage } from "../hooks/useLanguage";
 import { LanguageSelector } from "./LanguageSelector";
+import { getPackages, ServicePackage } from "../services/packageService";
+import { AuthService } from "../services/authService";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface PricingPageProps {
   onGetStarted: (planId: string) => void;
@@ -16,54 +19,100 @@ interface PricingPageProps {
 export function PricingPage({ onGetStarted }: PricingPageProps) {
   const [isAnnual, setIsAnnual] = useState(false);
   const { t } = useLanguage();
+  const [packages, setPackages] = useState<ServicePackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // (calculateSavings removed - not used in current UI)
+  useEffect(() => {
+    loadPackages();
+  }, []);
 
-  const getPlanText = (planId: string, fallbackPlan?: any) => {
-    switch (planId) {
-      case 'basic':
-        return {
-          name: t.planBasicName,
-          description: t.planBasicDescription,
-          features: [
-            t.planBasicFeature1,
-            t.planBasicFeature2,
-            t.planBasicFeature3,
-            t.planBasicFeature4,
-          ],
-        };
-      case 'plus':
-        return {
-          name: t.planPlusName,
-          description: t.planPlusDescription,
-          features: [
-            t.planPlusFeature1,
-            t.planPlusFeature2,
-            t.planPlusFeature3,
-            t.planPlusFeature4,
-            t.planPlusFeature5,
-          ],
-        };
-      case 'premium':
-        return {
-          name: t.planPremiumName,
-          description: t.planPremiumDescription,
-          features: [
-            t.planPremiumFeature1,
-            t.planPremiumFeature2,
-            t.planPremiumFeature3,
-            t.planPremiumFeature4,
-            t.planPremiumFeature5,
-            t.planPremiumFeature6,
-          ],
-        };
-      default:
-        return {
-          name: planId,
-          description: '',
-          features: fallbackPlan?.features || [],
-        };
+  // Check if user came back from login with a selected plan
+  useEffect(() => {
+    const state = location.state as { planId?: string };
+    if (state?.planId) {
+      // User logged in and returned with a plan selection
+      onGetStarted(state.planId);
+      // Clear the state
+      navigate(location.pathname, { replace: true, state: {} });
     }
+  }, [location, onGetStarted, navigate]);
+
+  const loadPackages = async () => {
+    try {
+      setLoading(true);
+      const data = await getPackages();
+      console.log('All packages from API:', data);
+      // Filter only active packages (case-insensitive)
+      const activePackages = data.filter(pkg => pkg.status?.toLowerCase() === 'active');
+      console.log('Filtered active packages:', activePackages);
+      
+      // Sort packages: ensure Plus/middle-priced package is in the middle for "Most Popular"
+      const sortedPackages = activePackages.sort((a, b) => a.price - b.price);
+      
+      setPackages(sortedPackages);
+    } catch (error) {
+      console.error('Failed to load packages:', error);
+      // Keep packages empty to show error state or fallback
+      setPackages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChoosePlan = (planId: string) => {
+    const currentUser = AuthService.getCurrentUser();
+    if (!currentUser) {
+      // User not logged in, save plan ID and redirect to auth page
+      sessionStorage.setItem('selectedPlanId', planId);
+      navigate('/auth');
+    } else {
+      // User logged in, proceed with package selection
+      onGetStarted(planId);
+    }
+  };
+
+  // Convert database package benefits to feature list
+  const benefitsToFeatures = (benefits: ServicePackage['benefits']): string[] => {
+    const features: string[] = [];
+    
+    if (benefits.discount_rate) {
+      features.push(`${benefits.discount_rate}% discount on all charging`);
+    }
+    if (benefits.bonus_minutes) {
+      features.push(`${benefits.bonus_minutes} minutes free charging time`);
+    }
+    if (benefits.max_sessions) {
+      features.push(`Up to ${benefits.max_sessions} sessions per month`);
+    }
+    if (benefits.priority_support) {
+      features.push('Priority customer support');
+    }
+    if (benefits.support_24_7) {
+      features.push('24/7 premium support');
+    }
+    if (benefits.booking_priority) {
+      features.push('Priority booking access');
+    }
+    if (benefits.free_start_fee) {
+      features.push('No start fee');
+    }
+    if (benefits.energy_tracking) {
+      features.push('Advanced energy tracking');
+    }
+    if (benefits.after_limit_discount) {
+      features.push(`${benefits.after_limit_discount}% discount after session limit`);
+    }
+    
+    // Add other benefit keys dynamically
+    Object.entries(benefits).forEach(([key, value]) => {
+      if (typeof value === 'string' && !key.includes('discount') && !key.includes('minutes') && !key.includes('sessions')) {
+        features.push(value);
+      }
+    });
+    
+    return features;
   };
 
   return (
@@ -105,23 +154,47 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid lg:grid-cols-3 gap-8 mb-16">
-        {PRICING_PLANS.map((plan) => {
-          // Convert USD to VND (1 USD = 25,000 VND)
-          const priceVND = plan.monthlyFee * 25000;
-          const price = isAnnual ? priceVND * 12 * 0.8 : priceVND; // 20% discount for annual
-          const period = isAnnual ? "year" : "month";
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+        </div>
+      ) : packages.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-xl text-gray-600 mb-4">
+            Không có gói dịch vụ nào. Vui lòng kiểm tra backend hoặc thêm gói trong Quản lý gói.
+          </p>
+          <p className="text-sm text-gray-500">
+            Backend URL: http://localhost:5000/api/packages
+          </p>
+        </div>
+      ) : (
+        <div className="grid lg:grid-cols-3 gap-8 mb-16">
+          {packages.map((plan) => {
+            // For database packages, use package data
+            const planName = plan.name;
+            const planDesc = plan.description || '';
+            const monthlyFee = plan.price;
+            const discountRate = plan.benefits?.discount_rate || 0;
+            const features = benefitsToFeatures(plan.benefits);
+            
+            // Mark middle-priced package as popular (if we have 3 packages)
+            const popular = packages.length === 3 && packages[1].package_id === plan.package_id;
+            
+            // Price is already in VND from database
+            const price = isAnnual ? monthlyFee * 12 * 0.8 : monthlyFee; // 20% discount for annual
+            const period = isAnnual ? "year" : "month";
+            const key = plan.package_id.toString();
           
           return (
             <Card
-              key={plan.id}
+              key={key}
               className={`relative ${
-                plan.popular
+                popular
                   ? "border-green-500 shadow-lg scale-105"
                   : "border-gray-200"
               }`}
             >
-              {plan.popular && (
+              {popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-green-600 text-white px-4 py-1">
                     {t.mostPopular}
@@ -130,17 +203,8 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
               )}
               
                 <CardHeader className="text-center pb-4">
-                  {
-                    (() => {
-                      const p = getPlanText(plan.id);
-                      return (
-                        <>
-                          <CardTitle className="text-2xl mb-2">{p.name}</CardTitle>
-                          <p className="text-gray-600 mb-4">{p.description}</p>
-                        </>
-                      );
-                    })()
-                  }
+                  <CardTitle className="text-2xl mb-2">{planName}</CardTitle>
+                  <p className="text-gray-600 mb-4">{planDesc}</p>
                 <div className="space-y-2">
                   <div className="text-4xl font-bold">
                     {new Intl.NumberFormat('vi-VN').format(price)}₫
@@ -148,9 +212,9 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
                       {` ${t.pricingPlanPricePer}${period === 'month' ? t.monthly.toLowerCase() : t.annual.toLowerCase()}`}
                     </span>
                   </div>
-                  {plan.discountRate > 0 && (
+                  {discountRate > 0 && (
                     <p className="text-green-600 font-medium">
-                      {plan.discountRate}% {t.save.toLowerCase()} all charging
+                      {discountRate}% {t.save.toLowerCase()} all charging
                     </p>
                   )}
                 </div>
@@ -158,7 +222,7 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
 
               <CardContent className="space-y-6">
                 <ul className="space-y-3">
-                  {getPlanText(plan.id, plan).features.map((feature: string, index: number) => (
+                  {features.map((feature: string, index: number) => (
                     <li key={index} className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{feature}</span>
@@ -167,21 +231,22 @@ export function PricingPage({ onGetStarted }: PricingPageProps) {
                 </ul>
 
                 <Button
-                  onClick={() => onGetStarted(plan.id)}
+                  onClick={() => handleChoosePlan(key)}
                   className={
-                    plan.popular
+                    popular
                       ? "w-full bg-green-600 hover:bg-green-700"
                       : "w-full"
                   }
-                  variant={plan.popular ? "default" : "outline"}
+                  variant={popular ? "default" : "outline"}
                 >
-                  {plan.monthlyFee === 0 ? t.getStartedFree : t.choosePlan2}
+                  {monthlyFee === 0 ? t.getStartedFree : t.choosePlan2}
                 </Button>
               </CardContent>
             </Card>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Savings Calculator */}
       <Card className="mb-16">

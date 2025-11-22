@@ -505,6 +505,7 @@ export interface Translation {
   adminDashboard: string;
   stationManagement: string;
   userManagement: string;
+  packageManagement: string;
   bookingManagement: string;
   reports: string;
   systemSettings: string;
@@ -1069,6 +1070,7 @@ export const translations: Record<Language, Translation> = {
     adminDashboard: "Admin Dashboard",
     stationManagement: "Station Management",
     userManagement: "User Management",
+    packageManagement: "Package Management",
     bookingManagement: "Booking Management",
     reports: "Reports",
     systemSettings: "System Settings",
@@ -1631,6 +1633,7 @@ export const translations: Record<Language, Translation> = {
     adminDashboard: "Bảng điều khiển quản trị",
     stationManagement: "Quản lý trạm",
     userManagement: "Quản lý người dùng",
+    packageManagement: "Quản lý gói",
     bookingManagement: "Quản lý đặt chỗ",
     reports: "Báo cáo",
     systemSettings: "Cài đặt hệ thống",

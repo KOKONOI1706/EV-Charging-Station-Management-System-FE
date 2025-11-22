@@ -10,7 +10,17 @@ export default function AuthRoute() {
   const handleSuccess = (user: User) => {
     login(user);
     
-    // Redirect based on user role from database
+    // Check if user came from pricing page to select a package
+    const selectedPlanId = sessionStorage.getItem('selectedPlanId');
+    if (selectedPlanId) {
+      // Clear the stored plan ID
+      sessionStorage.removeItem('selectedPlanId');
+      // Navigate to home page, which will then handle the package purchase
+      navigate('/', { state: { planId: selectedPlanId } });
+      return;
+    }
+    
+    // Default redirect based on user role from database
     switch (user.role) {
       case "admin":
         navigate("/admin");

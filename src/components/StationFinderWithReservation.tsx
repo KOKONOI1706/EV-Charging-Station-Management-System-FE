@@ -1,32 +1,24 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Station } from '../data/mockDatabase';
-import { reservationService, Reservation, ReservationResult } from '../services/reservationService';
+import { reservationService, ReservationResult } from '../services/reservationService';
 import { StationFinder } from './StationFinder';
 import { ReservationConfirmModal } from './ReservationConfirmModal';
-import { ReservationTimer } from './ReservationTimer';
 import { Alert, AlertDescription } from './ui/alert';
 import { Bell } from 'lucide-react';
+import { useReservation } from '../contexts/ReservationContext';
 
 interface StationFinderWithReservationProps {
   userId: string; // ID của user đang đăng nhập
 }
 
 export function StationFinderWithReservation({ userId }: StationFinderWithReservationProps) {
-  const navigate = useNavigate();
+  const { activeReservation, setActiveReservation } = useReservation();
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargingPointId, setSelectedChargingPointId] = useState<string | undefined>(undefined);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user already has active reservation
-    const existing = reservationService.getActiveReservationByUser(userId);
-    if (existing) {
-      setActiveReservation(existing);
-    }
-
     // Subscribe to notifications (5 phút cuối)
     reservationService.onNotification((reservation) => {
       if (reservation.userId === userId) {
@@ -49,7 +41,6 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
     // Subscribe to expiration
     reservationService.onExpiration((reservation) => {
       if (reservation.userId === userId) {
-        setActiveReservation(null);
         setNotification(`❌ Chỗ của bạn tại ${reservation.stationName} đã hết hạn`);
         setTimeout(() => setNotification(null), 10000);
       }
@@ -91,114 +82,8 @@ export function StationFinderWithReservation({ userId }: StationFinderWithReserv
     }
   };
 
-  const handleCancelReservation = async () => {
-    console.log('🔵 handleCancelReservation called');
-    if (activeReservation) {
-      const success = await reservationService.cancelReservation(activeReservation.id);
-      console.log('📊 Cancel result:', success);
-      if (success) {
-        // Clear active reservation immediately
-        setActiveReservation(null);
-        setNotification('❌ Đã hủy đặt chỗ');
-        setTimeout(() => setNotification(null), 5000);
-        console.log('✅ Active reservation cleared');
-      }
-    }
-  };
-
-  const handleCompleteReservation = () => {
-    console.log('🎯 handleCompleteReservation called, activeReservation:', activeReservation?.id);
-    if (activeReservation) {
-      const success = reservationService.completeReservation(activeReservation.id);
-      console.log('📊 Complete result:', success);
-      if (success) {
-        console.log('✅ Check-in successful, clearing activeReservation');
-        
-        // If no specific charging point was reserved, assign "any"
-        const chargingPointId = activeReservation.chargingPointId || 'any';
-        
-        // Save reservation data to localStorage for Dashboard to pick up
-        const reservationData = {
-          stationId: activeReservation.stationId,
-          stationName: activeReservation.stationName,
-          chargingPointId: chargingPointId,
-          reservationId: activeReservation.id,
-          autoStartCharging: true, // Flag to auto-open start charging modal
-        };
-        localStorage.setItem('pending-charging-session', JSON.stringify(reservationData));
-        
-        setActiveReservation(null);        
-        // Redirect to dashboard after 1 second
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
-      } else {
-        // Nếu complete thất bại (đã completed/expired/cancelled)
-        console.log('⚠️ Complete returned false - reservation may already be processed');
-        
-        // Kiểm tra status thực tế
-        const currentRes = reservationService.getReservation(activeReservation.id);
-        if (currentRes) {
-          console.log('📋 Current status:', currentRes.status);
-          
-          if (currentRes.status === 'expired') {
-            setNotification('⏰ Reservation đã hết hạn. Vui lòng đặt chỗ lại.');
-          } else if (currentRes.status === 'completed') {
-            setNotification('✅ Đã check-in rồi! Đang chuyển đến trang bắt đầu sạc...');
-            
-            // If no specific charging point was reserved, assign "any"
-            const chargingPointId = currentRes.chargingPointId || 'any';
-            
-            // Save reservation data even if already completed
-            const reservationData = {
-              stationId: currentRes.stationId,
-              stationName: currentRes.stationName,
-              chargingPointId: chargingPointId,
-              reservationId: currentRes.id,
-              autoStartCharging: true,
-            };
-            localStorage.setItem('pending-charging-session', JSON.stringify(reservationData));
-            
-            // Vẫn redirect nếu đã completed
-            setTimeout(() => {
-              navigate('/dashboard');
-            }, 1000);
-          } else if (currentRes.status === 'cancelled') {
-            setNotification('❌ Reservation đã bị hủy.');
-          } else {
-            setNotification('⚠️ Không thể check-in. Vui lòng thử lại.');
-          }
-        } else {
-          setNotification('❌ Không tìm thấy reservation.');
-        }
-        
-        // Clear activeReservation sau khi xử lý
-        setActiveReservation(null);
-        setTimeout(() => setNotification(null), 5000);
-      }
-    } else {
-      console.log('⚠️ No active reservation to complete');
-    }
-  };
-
-  const handleReservationExpired = () => {
-    setActiveReservation(null);
-  };
-
   return (
     <>
-      {/* Floating Reservation Status */}
-      {activeReservation && activeReservation.status === 'active' && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm">
-          <ReservationTimer
-            reservation={activeReservation}
-            onCancel={handleCancelReservation}
-            onComplete={handleCompleteReservation}
-            onExpired={handleReservationExpired}
-          />
-        </div>
-      )}
-
       {/* Floating Notification */}
       {notification && (
         <div className="fixed top-6 right-6 z-50 max-w-md animate-in slide-in-from-top-5">

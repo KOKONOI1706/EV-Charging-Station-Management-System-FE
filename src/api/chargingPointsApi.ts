@@ -150,11 +150,20 @@ export async function updateChargingPoint(pointId: number, data: {
       body: JSON.stringify(data),
     });
     
-    if (!response.ok) {
-      throw new Error(`Failed to update charging point: ${response.statusText}`);
-    }
+      if (!response.ok) {
+        // Try to parse JSON error body for a more specific message
+        let errMsg = response.statusText || 'Unknown error';
+        try {
+          const errBody = await response.json();
+          if (errBody?.message) errMsg = errBody.message;
+          else if (errBody?.error) errMsg = errBody.error;
+        } catch (e) {
+          // ignore parse errors
+        }
+        throw new Error(`Failed to update charging point: ${errMsg}`);
+      }
 
-    const result = await response.json();
+      const result = await response.json();
     const point = result.data;
     
     return {

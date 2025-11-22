@@ -44,7 +44,6 @@ export interface StationSearchParams {
 // Fetch all stations
 export async function fetchStations(): Promise<Station[]> {
   try {
-<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations`, {
       cache: 'no-store', // Disable caching to always get fresh data
       headers: {
@@ -61,11 +60,6 @@ export async function fetchStations(): Promise<Station[]> {
     
     console.log('📡 Fetched stations from API, first station price_per_kwh:', result.data[0]?.price_per_kwh);
     
-=======
-    const result: StationApiResponse = await apiFetch(`${API_URL}/stations`, { cache: 'no-store' } as any);
-    console.log('📡 Fetched stations from API, first station price_per_kwh:', result.data[0]?.price_per_kwh);
-
->>>>>>> thucnc
     if (!result.success) {
       throw new Error('Failed to fetch stations from API');
     }
@@ -369,7 +363,6 @@ export async function createStation(stationData: any): Promise<Station> {
 
     console.log('🔄 Sending to backend:', backendData);
 
-<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations`, {
       method: 'POST',
       headers: {
@@ -383,12 +376,6 @@ export async function createStation(stationData: any): Promise<Station> {
     }
 
     const result = await response.json();
-=======
-    const result = await apiFetch(`${API_URL}/stations` as any, {
-      method: 'POST',
-      body: JSON.stringify(backendData),
-    } as any);
->>>>>>> thucnc
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to create station');
@@ -436,7 +423,6 @@ export async function updateStation(id: string, stationData: any): Promise<Stati
 
     console.log('🔄 Sending to backend:', backendData);
 
-<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations/${id}`, {
       method: 'PUT',
       headers: {
@@ -450,12 +436,6 @@ export async function updateStation(id: string, stationData: any): Promise<Stati
     }
 
     const result = await response.json();
-=======
-    const result = await apiFetch(`${API_URL}/stations/${id}` as any, {
-      method: 'PUT',
-      body: JSON.stringify(backendData),
-    } as any);
->>>>>>> thucnc
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to update station');
@@ -471,7 +451,6 @@ export async function updateStation(id: string, stationData: any): Promise<Stati
 // Delete a station
 export async function deleteStation(id: string): Promise<void> {
   try {
-<<<<<<< HEAD
     const response = await fetch(`${API_URL}/stations/${id}`, {
       method: 'DELETE',
     });
@@ -481,11 +460,6 @@ export async function deleteStation(id: string): Promise<void> {
     }
 
     const result = await response.json();
-=======
-    const result = await apiFetch(`${API_URL}/stations/${id}` as any, {
-      method: 'DELETE',
-    } as any);
->>>>>>> thucnc
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to delete station');

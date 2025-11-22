@@ -110,9 +110,7 @@ export default function PaymentCallback() {
           console.log('✅ Payment completed! Session automatically updated by backend.');
           
           // Show success toast
-          toast.success('🎉 Thanh toán thành công!', {
-            description: 'Bạn sẽ được chuyển về dashboard sau 3 giây...'
-          });
+          toast.success('Thanh toán thành công!');
           
           // Countdown and redirect to dashboard after 3 seconds
           let timeLeft = 3;

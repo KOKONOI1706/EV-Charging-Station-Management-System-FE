@@ -235,7 +235,7 @@ export function StationFinder({ onBookStation }: StationFinderProps) {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => handleStationSelect(station)}
+                        onClick={() => handleViewDetails(station)}
                         disabled={station.available === 0}
                         className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
                       >

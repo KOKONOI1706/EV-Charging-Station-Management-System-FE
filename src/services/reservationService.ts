@@ -217,7 +217,7 @@ class ReservationService {
       });
 
       const reservation: Reservation = {
-        id: this.generateReservationId(),
+        id: `RES-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         userId,
         stationId: station.id,
         stationName: station.name,
@@ -385,46 +385,58 @@ class ReservationService {
    * Hủy reservation
    */
   async cancelReservation(reservationId: string): Promise<boolean> {
-    const reservation = this.reservations.get(reservationId);
-    if (!reservation || reservation.status !== 'active') {
-      return false;
-    }
+  const reservation = this.reservations.get(reservationId);
 
-    // Call backend API to cancel reservation
-    if (reservation.backendReservationId) {
-      try {
-        const userId = parseInt(reservation.userId);
+  if (!reservation || reservation.status !== 'active') {
+    return false;
+  }
+
+  const { backendReservationId, userId } = reservation;
+
+  // Call backend API to cancel reservation if possible
+  if (backendReservationId) {
+    try {
+      const parsedUserId = Number(userId);
+
+      if (!Number.isFinite(parsedUserId)) {
+        console.warn(`⚠️ Invalid userId '${userId}' for reservation ${reservationId}`);
+      } else {
         const apiResult = await reservationApi.cancelReservation(
-          reservation.backendReservationId,
-          userId
+          backendReservationId,
+          parsedUserId
         );
 
         if (!apiResult.success) {
-          console.error('❌ Failed to cancel reservation via API:', apiResult.error);
-          // Still cancel locally even if API fails
+          console.error(
+            `❌ Backend cancellation failed for ${reservationId}:`,
+            apiResult.error
+          );
         } else {
-          console.log('✅ Reservation cancelled via backend API');
+          console.log(`✅ Backend reservation ${backendReservationId} cancelled`);
         }
-      } catch (error) {
-        console.error('❌ Error calling cancel API:', error);
       }
+    } catch (error) {
+      console.error(`❌ Error calling backend cancel API for ${reservationId}:`, error);
     }
-
-    reservation.status = 'cancelled';
-    
-    // Release reserved slot and charging point
-    this.releaseReservedSlot(reservationId);
-    
-    // Clear timer
-    const timer = this.timers.get(reservationId);
-    if (timer) {
-      clearInterval(timer);
-      this.timers.delete(reservationId);
-    }
-
-    console.log(`❌ Reservation ${reservationId} cancelled`);
-    return true;
   }
+
+  // Update local status
+  reservation.status = 'cancelled';
+
+  // Release reserved slot & charging point
+  this.releaseReservedSlot(reservationId);
+
+  // Stop and remove timer
+  const timer = this.timers.get(reservationId);
+  if (timer) {
+    clearInterval(timer);
+    this.timers.delete(reservationId);
+  }
+
+  console.log(`❌ Reservation ${reservationId} cancelled locally`);
+  return true;
+}
+
 
   /**
    * Hoàn thành reservation (check-in)

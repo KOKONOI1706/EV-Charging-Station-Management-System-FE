@@ -835,7 +835,7 @@ export function InteractiveStationLayout({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Available">Available</SelectItem>
-                    <SelectItem value="In Use">In Use</SelectItem>
+                    <SelectItem value="InUse">In Use</SelectItem>
                     <SelectItem value="Reserved">Reserved</SelectItem>
                     <SelectItem value="Maintenance">Maintenance</SelectItem>
                     <SelectItem value="Offline">Offline</SelectItem>

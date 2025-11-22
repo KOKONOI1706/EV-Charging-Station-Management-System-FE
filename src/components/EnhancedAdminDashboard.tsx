@@ -229,11 +229,6 @@ export function EnhancedAdminDashboard() {
     try {
       console.log('🔄 loadData() called - fetching fresh data from API...');
       setIsLoading(true);
-<<<<<<< HEAD
-      const [stationsData, bookingsData] = await Promise.all([
-        fetchStations(), // Use API instead of mock data
-        MockDatabaseService.getUserBookings("user_001") // In real app, get all bookings
-=======
       const [stationsData, bookingsData, usersData, dashboardStats] = await Promise.all([
         
         MockDatabaseService.getStations(),
@@ -241,7 +236,6 @@ export function EnhancedAdminDashboard() {
         usersApi.getUsers({ page: currentPage, limit: usersPerPage }),
         adminStatsApi.getDashboardStats(),
         fetchStations()
->>>>>>> hieu
       ]);
       console.log('✅ Fetched stations:', stationsData.length);
       setStations(stationsData);

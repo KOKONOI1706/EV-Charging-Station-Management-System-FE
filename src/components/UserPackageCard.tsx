@@ -343,14 +343,14 @@ export function UserPackageCard({ userId, onPackageCancelled }: UserPackageCardP
               </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={cancelling}>
-              Không, giữ gói
+          <AlertDialogFooter className="flex gap-3">
+            <AlertDialogCancel disabled={cancelling} className="flex-1">
+              No
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelPackage}
               disabled={cancelling}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 flex-1"
             >
               {cancelling ? (
                 <>
@@ -358,10 +358,7 @@ export function UserPackageCard({ userId, onPackageCancelled }: UserPackageCardP
                   Đang hủy...
                 </>
               ) : (
-                <>
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Có, hủy gói
-                </>
+                "Yes"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

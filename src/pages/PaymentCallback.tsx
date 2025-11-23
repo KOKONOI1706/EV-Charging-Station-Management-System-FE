@@ -179,12 +179,8 @@ export default function PaymentCallback() {
             
             if (timeLeft <= 0) {
               clearInterval(countdownInterval);
-              if (isPkgPayment) {
-                // Redirect to profile with package tab
-                navigate('/profile?tab=package');
-              } else {
-                navigate('/dashboard');
-              }
+              // Always redirect to dashboard after payment
+              navigate('/dashboard');
             }
           }, 1000);
           
@@ -292,7 +288,7 @@ export default function PaymentCallback() {
             
             <div className="flex gap-3 justify-center">
               <Link 
-                to={isPackagePayment ? "/profile?tab=package" : "/dashboard"}
+                to="/dashboard"
                 className="inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 {isPackagePayment ? 'Xem gói của tôi' : 'Về trang chủ ngay'}

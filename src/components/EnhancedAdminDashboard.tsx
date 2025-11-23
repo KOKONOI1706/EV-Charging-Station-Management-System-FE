@@ -48,6 +48,7 @@ import { ChargingSessionsManagement } from "./ChargingSessionsManagement";
 import { ChargingPointsManagement } from "./ChargingPointsManagement";
 import { StationCRUDModal } from "./StationCRUDModal";
 import { UserCRUDModal } from "./UserCRUDModal";
+import PackageManagement from "./PackageManagement";
 import { fetchStations, deleteStation } from "../api/stationApi";
 import * as staffStatsApi from '../api/staffStatsApi';
 
@@ -502,6 +503,7 @@ export function EnhancedAdminDashboard() {
           <TabsTrigger value="chargingSessions">{t.chargingSessions}</TabsTrigger>
           <TabsTrigger value="chargingPoints">{t.chargingPointsTab}</TabsTrigger>
           <TabsTrigger value="users">{t.userManagement}</TabsTrigger>
+          <TabsTrigger value="packages">{t.packageManagement}</TabsTrigger>
           <TabsTrigger value="stations">{t.stationManagement}</TabsTrigger>
           <TabsTrigger value="reports">{t.reports}</TabsTrigger>
           <TabsTrigger value="settings">{t.systemSettings}</TabsTrigger>
@@ -906,6 +908,11 @@ export function EnhancedAdminDashboard() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Package Management */}
+        <TabsContent value="packages">
+          <PackageManagement />
         </TabsContent>
 
         {/* User Management */}

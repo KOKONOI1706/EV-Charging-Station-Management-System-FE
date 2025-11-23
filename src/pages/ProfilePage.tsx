@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { Button } from "../components/ui/button";
@@ -7,6 +7,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { UserPackageCard } from "../components/UserPackageCard";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { User, Mail, Phone, Car, Calendar, Shield, Edit2, Save, X, CheckCircle } from "lucide-react";
@@ -15,10 +16,20 @@ import { AuthService } from "../services/authService";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isAuthenticated, updateUser } = useAuth();
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('profile');
+
+  // Handle tab from URL query parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['profile', 'package', 'vehicle', 'security'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   const [profileData, setProfileData] = useState({
     name: user?.name || "",
@@ -226,10 +237,13 @@ export default function ProfilePage() {
         </div>
 
         {/* Tabs - Simplified */}
-        <Tabs defaultValue="profile" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-100 p-1">
             <TabsTrigger value="profile" className="rounded-md px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               Hồ sơ
+            </TabsTrigger>
+            <TabsTrigger value="package" className="rounded-md px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Gói dịch vụ
             </TabsTrigger>
             <TabsTrigger value="vehicle" className="rounded-md px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               Phương tiện
@@ -316,6 +330,17 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Package Tab */}
+          <TabsContent value="package">
+            <UserPackageCard 
+              userId={user.user_id} 
+              onPackageCancelled={() => {
+                toast.success('Gói đã được hủy thành công');
+                // Optionally refresh user data or navigate
+              }}
+            />
           </TabsContent>
 
           {/* Vehicle Tab */}

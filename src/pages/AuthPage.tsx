@@ -20,7 +20,8 @@ export default function AuthRoute() {
         break;
       case "customer":
       default:
-        // Customer goes to home page to find stations
+        // Customer goes to home page
+        // Note: selectedPlanId is still in sessionStorage for later use
         navigate("/");
         break;
     }

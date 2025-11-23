@@ -31,7 +31,7 @@ const PackageManagement: React.FC = () => {
     price: string;
     duration_days: string;
     benefits: string;
-    status: "Active" | "Inactive";
+    status: "active" | "inactive";
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -40,19 +40,86 @@ const PackageManagement: React.FC = () => {
     price: "",
     duration_days: "",
     benefits: "",
-    status: "Active",
+    status: "active",
   });
+
+  // Mock data for testing
+  const mockPackages: ServicePackage[] = [
+    {
+      package_id: 1,
+      name: "Basic",
+      description: "Perfect for occasional charging",
+      price: 0,
+      duration_days: 30,
+      benefits: {
+        discount_rate: 0,
+        bonus_minutes: 0,
+        max_sessions: 5,
+        priority_support: false,
+        support_24_7: false
+      },
+      status: "active",
+      created_at: "2024-11-01T00:00:00Z"
+    },
+    {
+      package_id: 2,
+      name: "Plus",
+      description: "Great for regular commuters",
+      price: 299000,
+      duration_days: 30,
+      benefits: {
+        discount_rate: 10,
+        bonus_minutes: 60,
+        max_sessions: 20,
+        priority_support: true,
+        support_24_7: false,
+        booking_priority: true
+      },
+      status: "active",
+      created_at: "2024-11-01T00:00:00Z"
+    },
+    {
+      package_id: 3,
+      name: "Premium",
+      description: "Best value for frequent travelers",
+      price: 599000,
+      duration_days: 30,
+      benefits: {
+        discount_rate: 20,
+        bonus_minutes: 120,
+        max_sessions: 50,
+        priority_support: true,
+        support_24_7: true,
+        booking_priority: true,
+        free_start_fee: true,
+        energy_tracking: true
+      },
+      status: "active",
+      created_at: "2024-11-01T00:00:00Z"
+    }
+  ];
 
   // Fetch all packages
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getPackages();
-      setPackages(data);
+      
+      // Try to fetch from API first
+      try {
+        const data = await getPackages();
+        setPackages(data);
+        console.log('✅ Loaded packages from API:', data.length);
+      } catch (apiError) {
+        // If API fails, use mock data
+        console.warn('⚠️ API failed, using mock data:', apiError);
+        setPackages(mockPackages);
+        setError("Đang sử dụng dữ liệu mẫu (API chưa khả dụng)");
+      }
     } catch (err) {
       console.error("Error loading data:", err);
-      setError("Không thể tải danh sách gói dịch vụ!");
+      setPackages(mockPackages);
+      setError("Không thể tải từ API, hiển thị dữ liệu mẫu");
     } finally {
       setLoading(false);
     }
@@ -69,130 +136,76 @@ const PackageManagement: React.FC = () => {
       price: "",
       duration_days: "",
       benefits: "",
-      status: "Active",
+      status: "active",
     });
     setEditingPackage(null);
     setIsDialogOpen(false);
   };
 
-  interface BenefitsStructure {
-    label: string;
-    features: string[];
-    max_sessions: number | null;
-    discount_rate: number;
-    charging_speed: string;
-    priority_support: boolean;
-    bonus_minutes: number;
-    after_limit_discount: boolean;
-    reward_points: number;
-    free_start_fee: boolean;
-    booking_priority: boolean;
-    support_24_7: boolean;
-    energy_tracking: boolean;
-  }
+  // Use the benefits structure from ServicePackage interface
 
   // Function to parse text input into benefits structure
-  const parseBenefitsInput = (text: string): BenefitsStructure => {
-    // Split by newlines and remove empty lines
-    const lines = text.split('\n').filter(line => line.trim());
-    
-    let max_sessions: number | null = null;
-    let discount_rate = 0;
-    let charging_speed = '';
-    let priority_support = false;
-    let bonus_minutes = 0;
-    let reward_points = 0;
-    let after_limit_discount = false;
-    let free_start_fee = false;
-    let booking_priority = false;
-    let support_24_7 = false;
-    let energy_tracking = false;
+  const parseBenefitsInput = (text: string): ServicePackage['benefits'] => {
+    try {
+      // Try to parse as JSON first
+      return JSON.parse(text);
+    } catch {
+      // Parse plain text format - flexible, can be on multiple lines or comma-separated
+      const benefits: ServicePackage['benefits'] = {
+        discount_rate: 0,
+        bonus_minutes: 0,
+        max_sessions: 0,
+        priority_support: false,
+        support_24_7: false,
+        booking_priority: false,
+        free_start_fee: false,
+        energy_tracking: false,
+        after_limit_discount: false
+      };
 
-    // Parse each line for specific information
-    lines.forEach(line => {
-      const lowerLine = line.toLowerCase().trim();
-      if (lowerLine.includes('phiên sạc')) {
-        if (lowerLine.includes('không giới hạn')) {
-          max_sessions = null;
-        } else {
-          const match = line.match(/(\d+)/);
-          if (match) {
-            max_sessions = parseInt(match[1]);
-          }
-        }
-      }
-      if (lowerLine.includes('giảm') && lowerLine.includes('%')) {
-        const match = line.match(/(\d+)%/);
-        if (match) {
-          discount_rate = parseInt(match[1]);
-        }
-      }
-      if (lowerLine.includes('siêu nhanh')) {
-        charging_speed = 'Ultra Fast (≤ 350kW)';
-      } else if (lowerLine.includes('nhanh')) {
-        charging_speed = 'Fast (≤ 60kW)';
-      }
+      // Split by both newlines and commas
+      const parts = text.split(/[\n,]/).filter(part => part.trim());
       
-      // Parse priority support and 24/7
-      if (lowerLine.includes('ưu tiên khách hàng')) {
-        priority_support = true;
-      }
-      if (lowerLine.includes('24/7')) {
-        support_24_7 = true;
-      }
-
-      // Parse bonus minutes
-      if (lowerLine.includes('phút sạc miễn phí')) {
-        const match = line.match(/(\d+)/);
-        if (match) {
-          bonus_minutes = parseInt(match[1]);
+      parts.forEach(part => {
+        const lower = part.toLowerCase().trim();
+        
+        // Parse sessions: "20 phiên sạc/tháng" or "20 phiên/tháng"
+        if (lower.includes('phiên')) {
+          const match = part.match(/([0-9]+)/);
+          if (match) benefits.max_sessions = parseInt(match[1]);
         }
-      }
-
-      // Parse reward points
-      if (lowerLine.includes('điểm thưởng')) {
-        const match = line.match(/(\d+)/);
-        if (match) {
-          reward_points = parseInt(match[1]);
+        
+        // Parse discount: "Giảm 10%" or "10%"
+        if (lower.includes('giảm') || (lower.includes('%') && !lower.includes('phiên'))) {
+          const match = part.match(/([0-9]+)/);
+          if (match) benefits.discount_rate = parseInt(match[1]);
         }
-      }
+        
+        // Parse bonus minutes: "60 phút" or "60 phút miễn phí"
+        if (lower.includes('phút')) {
+          const match = part.match(/([0-9]+)/);
+          if (match) benefits.bonus_minutes = parseInt(match[1]);
+        }
+        
+        // Parse boolean benefits
+        if (lower.includes('ưu tiên') && !lower.includes('đặt lịch')) benefits.priority_support = true;
+        if (lower.includes('24/7')) benefits.support_24_7 = true;
+        if (lower.includes('đặt lịch')) benefits.booking_priority = true;
+        if (lower.includes('miễn phí') && lower.includes('khởi động')) benefits.free_start_fee = true;
+        if (lower.includes('theo dõi') || lower.includes('năng lượng')) benefits.energy_tracking = true;
+        if (lower.includes('hết lượt')) benefits.after_limit_discount = true;
+      });
 
-      // Parse other benefits
-      if (lowerLine.includes('hết lượt vẫn sạc với giá ưu đãi')) {
-        after_limit_discount = true;
-      }
-      if (lowerLine.includes('miễn phí phí khởi động')) {
-        free_start_fee = true;
-      }
-      if (lowerLine.includes('ưu tiên đặt lịch')) {
-        booking_priority = true;
-      }
-      if (lowerLine.includes('theo dõi năng lượng')) {
-        energy_tracking = true;
-      }
-    });
-
-    return {
-      label: "Standard",
-      features: lines,
-      max_sessions,
-      discount_rate,
-      charging_speed,
-      priority_support,
-      bonus_minutes,
-      after_limit_discount,
-      reward_points,
-      free_start_fee,
-      booking_priority,
-      support_24_7,
-      energy_tracking
-    };
+      return benefits;
+    }
   };
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let benefitsData: BenefitsStructure;
+    let benefitsData: ServicePackage['benefits'];
     try {
       benefitsData = parseBenefitsInput(formData.benefits);
     } catch (err: any) {
@@ -242,12 +255,27 @@ const PackageManagement: React.FC = () => {
 
   const handleEdit = (pkg: ServicePackage) => {
     setEditingPackage(pkg);
+    
+    // Convert benefits to plain text format
+    const benefitsText: string[] = [];
+    if (pkg.benefits) {
+      if (pkg.benefits.max_sessions) benefitsText.push(`${pkg.benefits.max_sessions} phiên sạc/tháng`);
+      if (pkg.benefits.discount_rate) benefitsText.push(`Giảm ${pkg.benefits.discount_rate}% phí sạc`);
+      if (pkg.benefits.bonus_minutes) benefitsText.push(`${pkg.benefits.bonus_minutes} phút sạc miễn phí`);
+      if (pkg.benefits.priority_support) benefitsText.push('Hỗ trợ ưu tiên khách hàng');
+      if (pkg.benefits.support_24_7) benefitsText.push('Hỗ trợ 24/7');
+      if (pkg.benefits.booking_priority) benefitsText.push('Ưu tiên đặt lịch');
+      if (pkg.benefits.free_start_fee) benefitsText.push('Miễn phí phí khởi động');
+      if (pkg.benefits.energy_tracking) benefitsText.push('Theo dõi năng lượng tiêu thụ');
+      if (pkg.benefits.after_limit_discount) benefitsText.push('Hết lượt vẫn sạc với giá ưu đãi');
+    }
+    
     setFormData({
       name: pkg.name,
       description: pkg.description || "",
       price: pkg.price.toString(),
       duration_days: pkg.duration_days?.toString() || "",
-      benefits: pkg.benefits?.features?.join('\n') || "",
+      benefits: benefitsText.join('\n'),
       status: pkg.status,
     });
     setIsDialogOpen(true);
@@ -302,34 +330,35 @@ const PackageManagement: React.FC = () => {
          HƯỚNG DẪN NHẬP QUYỀN LỢI GÓI
 =========================================
 
-Phần này giúp bạn nhập quyền lợi của gói dịch vụ 
-sao cho hệ thống hiểu đúng.
-
-Vui lòng ghi đúng theo mẫu bên dưới, chỉ thay:
-- Số lượng phiên sạc
-- Phần trăm giảm giá
-- Tốc độ sạc (nhanh / siêu nhanh)
-- Hỗ trợ ưu tiên (có / không)
+Nhập quyền lợi linh hoạt, có thể:
+- Nhiều dòng
+- Hoặc gộp 1 dòng, ngăn cách bằng dấu phẩy
 
 -----------------------------------------
-              CÁCH GHI ĐÚNG MẪU
+              VÍ DỤ NHẬP
 -----------------------------------------
 
-1. Số phiên sạc/tháng:
-   - Ghi theo mẫu: X phiên sạc/tháng
-   - Ví dụ: 25 phiên sạc/tháng
+Cách 1 (nhiều dòng):
+20 phiên/tháng
+Giảm 15%
+60 phút miễn phí
+Hỗ trợ ưu tiên
 
-2. Giảm phí sạc (%):
-   - Ghi theo mẫu: Giảm X% phí sạc
-   - Ví dụ: Giảm 10% phí sạc
+Cách 2 (1 dòng):
+Giảm 15%, 20 phiên/tháng, 60 phút miễn phí
 
-3. Tốc độ sạc:
-   - Cách 1: Tốc độ sạc nhanh
-   - Cách 2: Tốc độ sạc siêu nhanh
+-----------------------------------------
+           CÚ PHÁP NHẬN DẠNG
+-----------------------------------------
 
-4. Hỗ trợ ưu tiên:
-   - Cách 1: Hỗ trợ ưu tiên khách hàng
-   - Cách 2: Không hỗ trợ ưu tiên khách hàng
+• X phiên/tháng → max_sessions = X
+• Giảm X% → discount_rate = X
+• X phút → bonus_minutes = X
+• Hỗ trợ ưu tiên → priority_support = true
+• 24/7 → support_24_7 = true
+• Ưu tiên đặt lịch → booking_priority = true
+• Miễn phí khởi động → free_start_fee = true
+• Theo dõi năng lượng → energy_tracking = true
 
 5. Phút sạc miễn phí:
    - Ghi theo mẫu: Tặng X phút sạc miễn phí
@@ -454,20 +483,21 @@ Theo dõi năng lượng tiêu thụ
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                     <Textarea
-                      placeholder="Nhập quyền lợi"
+                      placeholder="Giảm 15%, 20 phiên/tháng, 60 phút miễn phí, Hỗ trợ ưu tiên"
                       value={formData.benefits}
                       onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                      rows={3}
                     />
                     <Select
                       value={formData.status}
-                      onValueChange={(value: string) => setFormData({ ...formData, status: value as "Active" | "Inactive" })}
+                      onValueChange={(value: string) => setFormData({ ...formData, status: value as "active" | "inactive" })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn trạng thái" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
                     <div className="flex justify-end gap-3">
@@ -534,24 +564,22 @@ Theo dõi năng lượng tiêu thụ
                       <TableCell className="w-[10%]">
                         <div className="truncate">{pkg.duration_days} ngày</div>
                       </TableCell>
-                      <TableCell className="text-sm relative group w-[20%]">
-                        <div className="max-w-[120px] truncate" title={pkg.benefits?.features?.join(", ")}>
-                          {pkg.benefits?.features?.length ? 
-                            (pkg.benefits.features[0].length > 20 
-                              ? pkg.benefits.features[0].substring(0, 20) + "..."
-                              : pkg.benefits.features[0]) + 
-                            (pkg.benefits.features.length > 1 ? ", ..." : "")
-                            : "-"}
+                      <TableCell className="text-sm w-[20%]">
+                        <div className="text-xs space-y-1">
+                          {(pkg.benefits?.discount_rate || 0) > 0 && (
+                            <div className="truncate">Giảm {pkg.benefits.discount_rate}%</div>
+                          )}
+                          {(pkg.benefits?.max_sessions || 0) > 0 && (
+                            <div className="truncate">{pkg.benefits.max_sessions} phiên/tháng</div>
+                          )}
+                          {(pkg.benefits?.bonus_minutes || 0) > 0 && (
+                            <div className="truncate">{pkg.benefits.bonus_minutes} phút free</div>
+                          )}
                         </div>
-                        {pkg.benefits?.features?.length > 1 && (
-                          <div className="invisible group-hover:visible absolute z-50 bg-black text-white text-sm rounded p-2 w-48 left-0 mt-1 shadow-lg">
-                            {pkg.benefits.features.join("\n")}
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell className="w-[10%]">
                         <span className={`inline-block px-2 py-1 rounded text-sm ${
-                          pkg.status === 'Active'
+                          pkg.status === 'active'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>

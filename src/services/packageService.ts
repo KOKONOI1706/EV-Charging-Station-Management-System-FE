@@ -1,22 +1,24 @@
 import { apiService } from './apiService';
 
-export interface BenefitsStructure {
-  label: string;
-  features: string[];
-  max_sessions: number | null;
-  discount_rate: number;
-  charging_speed: string;
-  priority_support: boolean;
-}
-
 export interface ServicePackage {
   package_id: number;
   name: string;
   description?: string;
   price: number;
   duration_days?: number;
-  benefits: BenefitsStructure;
-  status: 'Active' | 'Inactive';
+  benefits: {
+    discount_rate?: number;
+    bonus_minutes?: number;
+    max_sessions?: number;
+    priority_support?: boolean;
+    support_24_7?: boolean;
+    booking_priority?: boolean;
+    free_start_fee?: boolean;
+    energy_tracking?: boolean;
+    after_limit_discount?: boolean;
+    [key: string]: any;
+  };
+  status: 'active' | 'inactive';
   created_at?: string;
   updated_at?: string;
 }

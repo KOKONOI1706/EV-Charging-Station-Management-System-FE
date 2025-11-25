@@ -1,14 +1,58 @@
+/**
+ * ========================================
+ * USE LANGUAGE HOOK
+ * ========================================
+ * Custom React Hook để quản lý đa ngôn ngữ (i18n)
+ * 
+ * Chức năng:
+ * - Quản lý ngôn ngữ hiện tại (Vietnamese/English)
+ * - Lưu preference vào localStorage
+ * - Cung cấp object translations (t) cho ngôn ngữ hiện tại
+ * - Tự động cập nhật document.lang attribute
+ * 
+ * Ngôn ngữ support:
+ * - "vi": Tiếng Việt (default)
+ * - "en": English
+ * 
+ * Cách sử dụng:
+ * ```tsx
+ * const { language, setLanguage, t } = useLanguage();
+ * 
+ * // Thay đổi ngôn ngữ
+ * setLanguage('en');
+ * 
+ * // Sử dụng translations
+ * <h1>{t.welcome}</h1>
+ * ```
+ * 
+ * Lưu ý:
+ * - Preference được lưu vào localStorage key: "chargetech-language"
+ * - Nếu không có preference, mặc định là "vi"
+ * - Nếu localStorage error, fallback về "vi" và log warning
+ */
+
+// Import React hooks
 import { useState, useEffect, createContext, useContext } from "react";
+
+// Import translations data và types
 import { Language, Translation, getTranslation } from "../data/translations";
 
+/**
+ * Interface định nghĩa cấu trúc LanguageContext
+ */
 interface LanguageContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: Translation;
+  language: Language;                    // Ngôn ngữ hiện tại
+  setLanguage: (lang: Language) => void; // Hàm đổi ngôn ngữ
+  t: Translation;                        // Object chứa tất cả translations
 }
 
+// Tạo LanguageContext
 export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+/**
+ * Hook để sử dụng LanguageContext
+ * Throw error nếu dùng ngoài LanguageProvider
+ */
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {

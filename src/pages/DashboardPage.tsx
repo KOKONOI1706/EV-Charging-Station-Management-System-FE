@@ -1,3 +1,45 @@
+/**
+ * ===============================================================
+ * DASHBOARD PAGE
+ * ===============================================================
+ * Trang dashboard chính của user sau khi đăng nhập
+ * 
+ * Chức năng:
+ * - 📊 Hiển thị UserDashboard component với thông tin user
+ * - 🔐 Protected route: Tự động redirect về /auth nếu chưa đăng nhập
+ * - ⚡ Auto start charging: Check localStorage cho pending charging session từ reservation
+ * - 🚗 Hiển thị bookings, vehicles, active sessions
+ * - 📱 Responsive layout với Header + Main + Footer
+ * 
+ * Flow:
+ * 1. User login → Navigate to /dashboard
+ * 2. useEffect check isAuthenticated → Nếu false, redirect /auth
+ * 3. Check localStorage cho 'pending-charging-session' (từ reservation check-in)
+ * 4. Render UserDashboard với pendingChargingData → Auto mở StartChargingModal
+ * 
+ * localStorage 'pending-charging-session':
+ * ```json
+ * {
+ *   "autoStartCharging": true,
+ *   "bookingId": 123,
+ *   "pointId": 456,
+ *   "stationName": "Trạm ABC"
+ * }
+ * ```
+ * 
+ * Props pass to UserDashboard:
+ * - userName: Tên user hiển thị "Welcome, [name]"
+ * - bookings: Danh sách bookings (trống [], UserDashboard sẽ tự fetch)
+ * - autoOpenStartCharging: Boolean mở modal sạc
+ * - pendingChargingData: Data từ localStorage để pre-fill form
+ * 
+ * Dependencies:
+ * - UserDashboard: Component chính hiển thị dashboard
+ * - Header/Footer: Layout components
+ * - useAuth: Context lấy user, isAuthenticated
+ * - useNavigate: React Router navigation
+ */
+
 import { useEffect} from "react";
 import { UserDashboard } from "../components/UserDashboard";
 import { useAuth } from "../contexts/AuthContext";

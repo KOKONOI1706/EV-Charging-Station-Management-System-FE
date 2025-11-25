@@ -1,11 +1,51 @@
+/**
+ * ========================================
+ * HOME PAGE
+ * ========================================
+ * Trang chủ của ứng dụng - điểm đến đầu tiên của người dùng
+ * 
+ * Cấu trúc:
+ * 1. Header: Thanh điều hướng với menu và auth button
+ * 2. Hero Section: Banner chính với CTA buttons
+ * 3. Station Finder: Công cụ tìm trạm sạc và đặt chỗ
+ * 4. Footer: Thông tin liên hệ và links
+ * 
+ * Tính năng:
+ * - Hỗ trợ cả user đã đăng nhập và guest
+ * - Tự động tạo guest user ID cho người chưa đăng nhập
+ * - Smooth scroll đến Station Finder khi click "Tìm trạm sạc"
+ * - Navigation đến các trang khác: pricing, support, dashboard
+ * 
+ * Guest User:
+ * - Guest user ID được tạo ngẫu nhiên và lưu trong localStorage
+ * - Format: "guest-{timestamp}-{random}"
+ * - Cho phép guest tìm trạm và xem thông tin (không đặt chỗ)
+ * 
+ * Props navigation:
+ * - onAuthClick: Mở trang đăng nhập nếu chưa auth
+ * - onNavigate: Điều hướng đến các trang khác
+ * - onFindStations: Scroll đến section tìm trạm
+ * - onLearnMore: Điều hướng đến trang pricing
+ */
+
+// Import React Router
 import { useNavigate } from "react-router-dom";
+
+// Import React hooks
 import { useState, useEffect } from "react";
-import { Header } from "../components/Header";
-import { Hero } from "../components/Hero";
-import { StationFinderWithReservation } from "../components/StationFinderWithReservation";
-import { Footer } from "../components/Footer";
+
+// Import components
+import { Header } from "../components/Header";                                       // Thanh điều hướng
+import { Hero } from "../components/Hero";                                           // Banner chính
+import { StationFinderWithReservation } from "../components/StationFinderWithReservation"; // Tìm trạm + đặt chỗ
+import { Footer } from "../components/Footer";                                       // Footer
+
+// Import AuthContext để kiểm tra authentication
 import { useAuth } from "../contexts/AuthContext";
 
+/**
+ * Component HomePage - Trang chủ của ứng dụng
+ */
 export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();

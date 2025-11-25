@@ -1,30 +1,66 @@
+/**
+ * ========================================
+ * ACTIVE CHARGING SESSION COMPONENT
+ * ========================================
+ * Component hiển thị phiên sạc đang hoạt động theo thời gian thực
+ * 
+ * Chức năng chính:
+ * - Hiển thị thông tin phiên sạc đang diễn ra
+ * - Cập nhật real-time: số điện, chi phí, % pin
+ * - Theo dõi tiến độ sạc (battery progress)
+ * - Dừng phiên sạc và chuyển sang thanh toán
+ * - Hiển thị cảnh báo khi pin gần đầy
+ * 
+ * Cơ chế hoạt động:
+ * 1. Poll API mỗi 5 giây để lấy dữ liệu backend (authoritative)
+ * 2. Interpolate giá trị UI mỗi 1 giây để có trải nghiệm real-time mượt mà
+ * 3. Backend calculation luôn được ưu tiên (prevent overshoot)
+ * 4. Hiển thị cảnh báo thông minh khi xe có thể đã sạc đầy
+ */
+
+// Import các thư viện React cần thiết
 import { useState, useEffect } from 'react';
+
+// Import UI components từ thư viện shadcn/ui
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
+
+// Import icons từ lucide-react
 import {
-  Zap,
-  Battery,
-  DollarSign,
-  Gauge,
-  StopCircle,
-  MapPin,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  Timer,
-  TrendingUp,
-  Bolt,
+  Zap,          // Icon sét (sạc điện)
+  Battery,      // Icon pin
+  DollarSign,   // Icon tiền
+  Gauge,        // Icon đồng hồ đo
+  StopCircle,   // Icon dừng
+  MapPin,       // Icon vị trí
+  AlertCircle,  // Icon cảnh báo
+  CheckCircle,  // Icon hoàn thành
+  Loader2,      // Icon loading xoay
+  Timer,        // Icon đồng hồ
+  TrendingUp,   // Icon xu hướng tăng
+  Bolt,         // Icon sét nhỏ
 } from 'lucide-react';
+
+// Import API service và types
 import { chargingSessionApi, ChargingSession } from '../api/chargingSessionApi';
+
+// Import context để lấy thông tin user
 import { useAuth } from '../contexts/AuthContext';
+
+// Import component modal thanh toán
 import { PaymentModal } from './PaymentModal';
+
+// Import thư viện thông báo toast
 import { toast } from 'sonner';
 
+/**
+ * Interface định nghĩa props của component
+ */
 interface ActiveChargingSessionProps {
-  onSessionEnd?: () => void;
+  onSessionEnd?: () => void; // Callback khi phiên sạc kết thúc (optional)
 }
 
 export function ActiveChargingSession({ onSessionEnd }: ActiveChargingSessionProps) {

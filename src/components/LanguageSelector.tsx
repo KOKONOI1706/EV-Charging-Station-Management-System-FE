@@ -1,6 +1,34 @@
+/**
+ * ========================================
+ * LANGUAGE SELECTOR COMPONENT
+ * ========================================
+ * Component chọn ngôn ngữ (English/Tiếng Việt)
+ * 
+ * Chức năng:
+ * - Dropdown menu hiển thị các ngôn ngữ khả dụng
+ * - Icon cờ + tên ngôn ngữ cho mỗi option
+ * - Highlight ngôn ngữ đang active
+ * - Click để đổi ngôn ngữ
+ * - Responsive: Hiện full text trên desktop, chỉ cờ trên mobile
+ * 
+ * Ngôn ngữ support:
+ * - en (English) 🇺🇸
+ * - vi (Tiếng Việt) 🇻🇳
+ * 
+ * State management:
+ * - Sử dụng useLanguage hook để get/set ngôn ngữ
+ * - Preference được lưu trong localStorage
+ * - Tự động apply cho toàn bộ app
+ */
+
+// Import icons
 import { Globe } from "lucide-react";
+
+// Import language hook và types
 import { useLanguage } from "../hooks/useLanguage";
 import { Language } from "../data/translations";
+
+// Import UI components
 import {
   DropdownMenu,
   DropdownMenuContent,

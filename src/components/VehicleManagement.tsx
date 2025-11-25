@@ -1,9 +1,33 @@
+/**
+ * ========================================
+ * VEHICLE MANAGEMENT COMPONENT
+ * ========================================
+ * Component quản lý xe của người dùng
+ * 
+ * Chức năng chính:
+ * - Hiển thị danh sách xe đã đăng ký
+ * - Thêm xe mới với thông tin đầy đủ:
+ *   + Biển số, hãng xe, mẫu xe, năm sản xuất, màu
+ *   + Dung lượng pin (kWh)
+ *   + Loại đầu sạc (connector type)
+ * - Chỉnh sửa thông tin xe
+ * - Xóa xe khỏi danh sách
+ * - Validate dữ liệu đầu vào
+ * 
+ * Dữ liệu xe quan trọng cho sạc:
+ * - battery_capacity_kwh: Dùng để tính thời gian sạc và % pin
+ * - connector_type_id: Đảm bảo tương thích với điểm sạc
+ */
+
+// Import React hooks
 import { useState, useEffect } from "react";
+
+// Import UI components
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import {
-  Dialog,
+  Dialog,           // Component modal
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -13,16 +37,26 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import {
-  Select,
+  Select,           // Component dropdown select
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+
+// Import icons
 import { Car, Plus, Trash2, Edit, Battery, Calendar, Zap } from "lucide-react";
+
+// Import API và types
 import { vehicleApi, Vehicle, ConnectorType } from "../api/vehicleApi";
+
+// Import service xác thực
 import { AuthService } from "../services/authService";
+
+// Import thông báo toast
 import { toast } from "sonner";
+
+// Import hook đa ngôn ngữ
 import { useLanguage } from "../hooks/useLanguage";
 
 export function VehicleManagement() {

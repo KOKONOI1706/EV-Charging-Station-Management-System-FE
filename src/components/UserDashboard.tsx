@@ -1,3 +1,46 @@
+/**
+ * ===============================================================
+ * USER DASHBOARD COMPONENT
+ * ===============================================================
+ * Dashboard chính cho khách hàng sau khi đăng nhập
+ * 
+ * Chức năng:
+ * - 📊 Hiển thị thống kê user: Tổng sessions, dung lượng sạc, chi phí, điểm
+ * - ⚡ Quản lý phiên sạc active (ActiveChargingSession)
+ * - 📜 Lịch sử sạc (ChargingHistory)
+ * - 🚗 Quản lý xe (VehicleManagement)
+ * - ⚡ Bắt đầu sạc (StartChargingModal)
+ * - 👤 Chỉnh sửa profile và đổi password
+ * 
+ * Tabs:
+ * - Active Session: Phiên sạc đang chạy + Auto refresh mỗi 5s
+ * - History: Lịch sử tất cả sessions
+ * - Vehicles: CRUD xe điện của user
+ * - Settings: Profile modal + Change password modal
+ * 
+ * Props:
+ * - bookings: Danh sách bookings (không dùng nữa, để backward compat)
+ * - userName: Tên user hiển thị
+ * - autoOpenStartCharging: Auto mở modal sẢc khi vào dashboard (từ reservation)
+ * - pendingChargingData: Data pre-fill cho StartChargingModal (từ localStorage)
+ * 
+ * Auto-start flow:
+ * 1. User check-in reservation → Lưu data vào localStorage
+ * 2. Navigate to /dashboard với autoOpenStartCharging=true
+ * 3. useEffect detect flag → Mở StartChargingModal với pre-filled data
+ * 4. User nhập battery % → Bắt đầu sạc
+ * 5. Clear localStorage sau khi start thành công
+ * 
+ * Real-time updates:
+ * - ActiveChargingSession: Poll backend mỗi 5s
+ * - sessionRefreshKey: Force re-render khi start session mới
+ * 
+ * Dependencies:
+ * - userStatsApi: Lấy thống kê user (total sessions, revenue, points)
+ * - AuthService: Lấy current user info
+ * - chargingPointsApi: Load charging points cho modal
+ */
+
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";

@@ -1,3 +1,26 @@
+/**
+ * ========================================
+ * BATTERY INPUT MODAL COMPONENT
+ * ========================================
+ * Modal để người dùng nhập mức pin hiện tại và mục tiêu sạc
+ * 
+ * Chức năng:
+ * - Cho phép nhập % pin hiện tại (0-100%)
+ * - Chọn mục tiêu sạc: 80% (khuyến nghị) hoặc 100% (đầy)
+ * - Tính toán và hiển thị:
+ *   + Năng lượng cần sạc (kWh)
+ *   + Thời gian ước tính sạc
+ * - Validate: pin hiện tại phải < mục tiêu
+ * 
+ * Props:
+ * @param open - Trạng thái mở/đóng modal
+ * @param onOpenChange - Callback khi đóng modal
+ * @param vehicleBatteryCapacity - Dung lượng pin xe (kWh)
+ * @param chargingPowerKw - Công suất sạc (kW)
+ * @param onConfirm - Callback khi xác nhận với (currentBattery%, targetBattery%)
+ */
+
+// Import các component cần thiết
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
@@ -7,12 +30,15 @@ import { Slider } from './ui/slider';
 import { Alert, AlertDescription } from './ui/alert';
 import { Battery, Zap, Clock, Info } from 'lucide-react';
 
+/**
+ * Interface định nghĩa props của component
+ */
 interface BatteryInputModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  vehicleBatteryCapacity: number;  // kWh
-  chargingPowerKw: number;         // kW
-  onConfirm: (batteryPercent: number, targetPercent: number) => void;
+  open: boolean;                 // Trạng thái hiển thị modal
+  onOpenChange: (open: boolean) => void;  // Hàm callback đóng/mở modal
+  vehicleBatteryCapacity: number;  // Dung lượng pin xe (kWh)
+  chargingPowerKw: number;         // Công suất điểm sạc (kW)
+  onConfirm: (batteryPercent: number, targetPercent: number) => void; // Callback khi xác nhận
 }
 
 export function BatteryInputModal({

@@ -1,23 +1,57 @@
+/**
+ * ========================================
+ * AUTHENTICATION SERVICE
+ * ========================================
+ * Service xử lý tất cả logic xác thực và quản lý người dùng
+ * 
+ * Chức năng chính:
+ * - Login: Đăng nhập với email/password
+ * - Register: Đăng ký tài khoản mới
+ * - Logout: Đăng xuất và xóa session
+ * - Change Password: Đổi mật khẩu
+ * - Update Profile: Cập nhật thông tin cá nhân
+ * - Validate Password: Kiểm tra độ mạnh mật khẩu
+ * - Storage Management: Lưu/đọc user từ localStorage
+ * 
+ * Cơ chế hoạt động:
+ * 1. Gọi API backend để xác thực
+ * 2. Fallback về demo mode nếu API fail (cho development)
+ * 3. Lưu user vào localStorage sau khi login thành công
+ * 4. Transform API response thành frontend User interface
+ * 
+ * Demo accounts (fallback):
+ * - customer@demo.com / 123 (Customer role)
+ * - staff@demo.com / 123 (Staff role)
+ * - admin@demo.com / 123 (Admin role)
+ */
+
+// Import types
 import { User, MOCK_USERS } from "../data/mockDatabase";
 
-// Get API URL from environment or default
+// Lấy API URL từ environment variable hoặc dùng default
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 
+/**
+ * Interface cho dữ liệu đăng nhập
+ */
 export interface LoginCredentials {
-  email: string;
-  password: string;
+  email: string;      // Email đăng nhập
+  password: string;   // Mật khẩu
 }
 
+/**
+ * Interface cho dữ liệu đăng ký
+ */
 export interface RegisterData {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  vehicleInfo: {
-    make: string;
-    model: string;
-    year: number;
-    batteryCapacity: number;
+  name: string;       // Tên người dùng
+  email: string;      // Email
+  phone: string;      // Số điện thoại
+  password: string;   // Mật khẩu
+  vehicleInfo: {      // Thông tin xe (optional)
+    make: string;           // Hãng xe
+    model: string;          // Mẫu xe
+    year: number;           // Năm sản xuất
+    batteryCapacity: number; // Dung lượng pin (kWh)
   };
 }
 

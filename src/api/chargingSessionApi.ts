@@ -1,5 +1,30 @@
-// API service for charging session management
+/**
+ * ===============================================================
+ * CHARGING SESSION API SERVICE
+ * ===============================================================
+ * Service quản lý các API liên quan đến phiên sạc xe điện
+ * 
+ * Chức năng:
+ * - 🔄 Quản lý phiên sạc (bắt đầu, dừng, theo dõi real-time)
+ * - 📊 Tính toán tiến độ pin, thời gian ước tính, chi phí
+ * - 🔋 Tracking pin từ % hiện tại → % mục tiêu
+ * - ⚡ Real-time polling: Backend sync mỗi 5s, UI mỗi 1s
+ * - 💰 Quản lý hóa đơn và thanh toán
+ * - 📈 Lấy lịch sử phiên sạc của user/staff/admin
+ * 
+ * Interfaces:
+ * - ChargingSession: Dữ liệu phiên sạc (trạng thái, meter, pin, chi phí)
+ * - StartSessionRequest: Params bắt đầu sạc (vehicle, point, battery %)
+ * - StopSessionRequest: Params dừng sạc (meter_end, idle_minutes)
+ * - Invoice: Hóa đơn thanh toán (total_amount, status)
+ * 
+ * Dependencies:
+ * - Backend API endpoints: /charging-sessions
+ * - Supabase: Lưu trữ data phiên sạc
+ * - Real-time calculation: Tính tiến độ pin, kW, thời gian còn lại
+ */
 
+// URL backend API - lấy từ env hoặc mặc định localhost:5000
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface Invoice {

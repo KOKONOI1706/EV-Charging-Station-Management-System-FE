@@ -1,18 +1,55 @@
+/**
+ * ========================================
+ * AUTH CONTEXT
+ * ========================================
+ * React Context để quản lý state xác thực toàn app
+ * 
+ * Chức năng:
+ * - Cung cấp thông tin user cho toàn bộ app
+ * - Quản lý trạng thái đăng nhập (authenticated state)
+ * - Cung cấp hàm login/logout
+ * - Cung cấp hàm cập nhật thông tin user
+ * - Tự động khôi phục session từ localStorage khi app load
+ * 
+ * Cách sử dụng:
+ * 1. Wrap app với <AuthProvider>
+ * 2. Dùng hook useAuth() để truy cập context
+ * 
+ * State cung cấp:
+ * - user: Thông tin user hiện tại (hoặc null nếu chưa login)
+ * - isAuthenticated: Boolean cho biết đã login hay chưa
+ * - isLoading: Boolean cho biết đang check auth state
+ * - login(): Hàm set user sau khi đăng nhập
+ * - logout(): Hàm đăng xuất
+ * - updateUser(): Hàm cập nhật thông tin user
+ */
+
+// Import React
 import React, { createContext, useContext, useState, useEffect } from 'react';
+
+// Import types và services
 import { User } from '../data/mockDatabase';
 import { AuthService } from '../services/authService';
 
+/**
+ * Interface định nghĩa cấu trúc dữ liệu của AuthContext
+ */
 interface AuthContextType {
-  user: User | null;
-  login: (user: User) => void;
-  logout: () => Promise<void>;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  updateUser: (updates: Partial<User>) => Promise<void>;
+  user: User | null;                          // User hiện tại (null nếu chưa login)
+  login: (user: User) => void;                // Hàm đăng nhập
+  logout: () => Promise<void>;                // Hàm đăng xuất
+  isAuthenticated: boolean;                   // Trạng thái đã xác thực
+  isLoading: boolean;                         // Trạng thái đang tải
+  updateUser: (updates: Partial<User>) => Promise<void>; // Cập nhật user
 }
 
+// Tạo Context với giá trị mặc định là undefined
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Hook để sử dụng AuthContext
+ * Throw error nếu dùng ngoài AuthProvider
+ */
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {

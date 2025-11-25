@@ -1,3 +1,72 @@
+/**
+ * ===============================================================
+ * ENHANCED ADMIN DASHBOARD
+ * ===============================================================
+ * Dashboard toàn diện cho Admin quản lý hệ thống
+ * 
+ * Chức năng chính:
+ * - 📊 Analytics: Revenue, sessions, users, stations statistics
+ * - 👥 User Management: CRUD users, phân quyền (Customer/Staff/Admin)
+ * - 📍 Station Management: CRUD stations, charging points, layout editor
+ * - ⚡ Charging Sessions: Xem tất cả sessions, filter, export
+ * - 🔌 Charging Points: Quản lý trạng thái, maintenance
+ * - ⚠️ System Alerts: Bảo trì, lỗi, cảnh báo hệ thống
+ * - 🔧 Settings: Maintenance mode, auto backup, notifications
+ * 
+ * Tabs:
+ * 1. Overview:
+ *    - Key metrics: Total revenue, sessions, active users, stations
+ *    - Revenue chart (7 ngày gần đây)
+ *    - Top performing stations
+ *    - System alerts
+ *    - Recent activities
+ * 
+ * 2. Analytics:
+ *    - Revenue trends (daily/weekly/monthly)
+ *    - Session statistics
+ *    - User growth chart
+ *    - Station utilization heatmap
+ * 
+ * 3. User Management:
+ *    - Table danh sách users với role badges
+ *    - CRUD operations: Create/Edit/Delete users
+ *    - Phân quyền: Customer (0), Staff (1), Admin (2)
+ *    - Active/Inactive status toggle
+ * 
+ * 4. Station Management:
+ *    - Table danh sách stations
+ *    - CRUD operations: Create/Edit/Delete stations
+ *    - Layout editor: Vẽ sơ đồ trạm với charging points
+ *    - Price per kWh configuration
+ * 
+ * 5. Charging Sessions:
+ *    - ChargingSessionsManagement component
+ *    - Filter by status, date, user
+ *    - Export to CSV/Excel
+ * 
+ * 6. Charging Points:
+ *    - ChargingPointsManagement component
+ *    - Trạng thái: Available, Occupied, Offline, Maintenance
+ *    - Update status, power, connectors
+ * 
+ * 7. Settings:
+ *    - Maintenance mode toggle
+ *    - Auto backup schedule
+ *    - Email/SMS notifications
+ *    - Debug mode
+ * 
+ * Real-time data:
+ * - Auto refresh metrics mỗi 30s
+ * - Live session status updates
+ * - Real-time alerts
+ * 
+ * Dependencies:
+ * - adminStatsApi: API lấy thống kê toàn hệ thống
+ * - usersApi: CRUD users
+ * - stationApi: CRUD stations
+ * - Recharts: Biểu đồ revenue, sessions
+ */
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";

@@ -1,15 +1,52 @@
+/**
+ * ========================================
+ * HEADER COMPONENT
+ * ========================================
+ * Thanh điều hướng chính của ứng dụng
+ * 
+ * Chức năng:
+ * - Logo: Click để về trang chủ (logout nếu đã đăng nhập)
+ * - Navigation menu:
+ *   + Find Stations: Tìm trạm sạc
+ *   + Dashboard: Trang quản lý (chỉ hiện khi đã login)
+ *   + Pricing: Bảng giá
+ *   + Support: Hỗ trợ
+ * - Language selector: Chọn ngôn ngữ (EN/VI)
+ * - Auth button:
+ *   + Chưa login: Hiển thị "Login"
+ *   + Đã login: Hiển thị avatar + tên user
+ * - Responsive: Mobile menu với hamburger icon
+ * 
+ * State:
+ * - currentView: Highlight menu item đang active
+ * - isAuthenticated: Hiển thị nội dung khác nhau
+ * - userName: Hiển thị tên user khi đã login
+ * 
+ * Navigation:
+ * - Smooth scroll cho Find Stations khi ở trang chủ
+ * - Route navigation cho các trang khác
+ */
+
+// Import UI components
 import { Button } from "./ui/button";
+
+// Import icons
 import { User, Menu } from "lucide-react";
+
+// Import services và components
 import { AuthService } from "../services/authService";
 import { LanguageSelector } from "./LanguageSelector";
 import { useLanguage } from "../hooks/useLanguage";
 
+/**
+ * Interface định nghĩa props của Header
+ */
 interface HeaderProps {
-  onAuthClick: () => void;
-  isAuthenticated: boolean;
-  userName?: string;
-  currentView: string;
-  onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void;
+  onAuthClick: () => void;            // Callback khi click nút Login
+  isAuthenticated: boolean;           // Trạng thái đăng nhập
+  userName?: string;                  // Tên user (nếu đã login)
+  currentView: string;                // View đang active
+  onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void; // Callback điều hướng
 }
 
 export function Header({ onAuthClick, isAuthenticated, userName, currentView, onNavigate }: HeaderProps) {

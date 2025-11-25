@@ -1,5 +1,34 @@
-// API service for vehicle management
+/**
+ * ===============================================================
+ * VEHICLE API SERVICE
+ * ===============================================================
+ * Service quản lý API xe điện của user
+ * 
+ * Chức năng:
+ * - 🚗 CRUD operations cho xe điện (Create, Read, Update, Delete)
+ * - 🔋 Quản lý thông tin pin (battery_capacity_kwh)
+ * - 🔌 Quản lý loại đầu sạc (connector_type_id)
+ * - 📝 Lưu thông tin xe: biển số, hãng, model, năm sản xuất, màu sắc
+ * - 👤 Phân quyền: Mỗi user chỉ quản lý xe của mình
+ * 
+ * Interfaces:
+ * - Vehicle: Dữ liệu xe (plate_number, make, model, battery_capacity_kwh, connector_type)
+ * - ConnectorType: Loại đầu sạc (Type 2, CCS, CHAdeMO, etc.)
+ * - CreateVehicleRequest: Params tạo xe mới
+ * - UpdateVehicleRequest: Params cập nhật thông tin xe
+ * 
+ * Validation:
+ * - Biển số xe phải unique trong hệ thống
+ * - Battery capacity > 0 kWh
+ * - Connector type phải tồn tại trong database
+ * 
+ * Dependencies:
+ * - Backend API: /vehicles
+ * - Supabase: Lưu trữ vehicle records và connector_types
+ * - Quan hệ: vehicles.connector_type_id → connector_types.connector_type_id
+ */
 
+// URL backend API
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface ConnectorType {

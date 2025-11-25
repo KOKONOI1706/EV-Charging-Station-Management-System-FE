@@ -1,4 +1,37 @@
+/**
+ * ========================================
+ * LOGIN MODAL COMPONENT
+ * ========================================
+ * Modal đăng nhập/đăng ký cho người dùng
+ * 
+ * Chức năng:
+ * - 2 tabs: Login và Register
+ * - Login: Đăng nhập bằng email + password
+ * - Register: Đăng ký tài khoản mới với validation
+ * - Toggle hiện/ẩn password
+ * - Error handling và toast notifications
+ * - Auto reset form khi đóng modal
+ * 
+ * Validation:
+ * - Email: Phải đúng format email
+ * - Password: Tối thiểu 6 ký tự
+ * - Confirm Password: Phải khớp với Password
+ * - Phone: Format số điện thoại Việt Nam
+ * - Name: Không được để trống
+ * 
+ * Flow:
+ * 1. User mở modal
+ * 2. Chọn tab Login hoặc Register
+ * 3. Nhập thông tin
+ * 4. Submit -> Gọi AuthService
+ * 5. Thành công -> onSuccess callback + đóng modal
+ * 6. Thất bại -> Hiển thị error message
+ */
+
+// Import React hooks
 import { useState, useEffect } from "react";
+
+// Import UI components
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -6,15 +39,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Alert, AlertDescription } from "./ui/alert";
+
+// Import icons
 import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
+
+// Import services
 import { AuthService } from "../services/authService";
 import { toast } from "sonner";
 import { useLanguage } from "../hooks/useLanguage";
 
+/**
+ * Interface định nghĩa props của LoginModal
+ */
 interface LoginModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: (user: any) => void;
+  isOpen: boolean;                    // Trạng thái mở/đóng modal
+  onClose: () => void;                // Callback khi đóng modal
+  onSuccess: (user: any) => void;     // Callback khi login/register thành công
 }
 
 export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {

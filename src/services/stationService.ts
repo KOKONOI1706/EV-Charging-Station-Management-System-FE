@@ -1,3 +1,25 @@
+/**
+ * ========================================
+ * STATION SERVICE
+ * ========================================
+ * Service quản lý các thao tác với trạm sạc (stations)
+ * 
+ * Chức năng:
+ * - Lấy danh sách tất cả trạm sạc
+ * - Lấy chi tiết 1 trạm theo ID
+ * - Lấy danh sách điểm sạc của trạm
+ * - Tìm trạm gần vị trí hiện tại (nearby search)
+ * - Tìm kiếm trạm theo tên/địa chỉ
+ * - Lọc điểm sạc đang sẵn sàng
+ * - Kiểm tra kết nối backend
+ * 
+ * Tất cả method đều:
+ * - Gọi API thông qua apiService
+ * - Xử lý lỗi gracefully (không throw, return empty array/null)
+ * - Log lỗi ra console để debug
+ */
+
+// Import API service và types
 import { apiService, ApiResponse, Station, ChargingPoint } from './apiService';
 
 export class StationService {

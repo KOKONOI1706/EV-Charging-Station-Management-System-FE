@@ -1,8 +1,42 @@
+/**
+ * ========================================
+ * FOOTER COMPONENT
+ * ========================================
+ * Footer của ứng dụng với thông tin công ty và links
+ * 
+ * Cấu trúc:
+ * - Column 1: Company Info
+ *   + Logo và tên ChargeTech
+ *   + Slogan/Description
+ *   + Social media links (Twitter, Facebook, Instagram, LinkedIn)
+ * - Column 2: Quick Links
+ *   + Find Stations, Pricing, Support, Download App
+ * - Column 3: Services
+ *   + DC Fast Charging, Level 2 Charging, Fleet Solutions, Business Partnerships
+ * - Column 4: Contact
+ *   + Địa chỉ văn phòng
+ *   + Số điện thoại hotline
+ *   + Email support
+ * - Bottom: Copyright notice
+ * 
+ * Tính năng:
+ * - Multi-language support qua useLanguage hook
+ * - Navigation callbacks cho internal links
+ * - Hover effects cho social icons
+ * - Responsive grid layout
+ */
+
+// Import icons
 import { MapPin, Phone, Mail, Twitter, Facebook, Instagram, Linkedin } from "lucide-react";
+
+// Import language hook
 import { useLanguage } from "../hooks/useLanguage";
 
+/**
+ * Interface định nghĩa props của Footer
+ */
 interface FooterProps {
-  onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void;
+  onNavigate: (view: "home" | "dashboard" | "pricing" | "support") => void; // Callback điều hướng
 }
 
 export function Footer({ onNavigate }: FooterProps) {

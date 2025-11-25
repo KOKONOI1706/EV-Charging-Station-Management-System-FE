@@ -1,19 +1,62 @@
+/**
+ * ========================================
+ * PAYMENT MODAL COMPONENT
+ * ========================================
+ * Modal thanh toán cho phiên sạc đã hoàn thành
+ * 
+ * Chức năng:
+ * - Hiển thị tóm tắt phiên sạc (thời gian, năng lượng, chi phí)
+ * - Chọn phương thức thanh toán:
+ *   + MoMo: Chuyển hướng đến MoMo payment gateway
+ *   + VNPay: Chuyển hướng đến VNPay gateway
+ *   + Tiền mặt: Đánh dấu là thanh toán offline
+ * - Gọi API tạo payment request
+ * - Redirect đến payment gateway
+ * - Xử lý callback sau khi thanh toán
+ * 
+ * Payment flow:
+ * 1. Dừng phiên sạc -> Mở PaymentModal
+ * 2. Hiển thị chi tiết phiên và tổng tiền
+ * 3. User chọn payment method
+ * 4. Click "Thanh toán"
+ * 5. Call API create payment (MoMo/VNPay)
+ * 6. Nhận payUrl -> Redirect
+ * 7. User thanh toán trên gateway
+ * 8. Gateway redirect về callback URL
+ * 9. Backend xác nhận payment
+ * 10. Frontend hiển thị kết quả
+ * 
+ * Integration:
+ * - MoMo Payment Gateway
+ * - VNPay Payment Gateway
+ * - Backend API: POST /api/payments/momo, /api/payments/vnpay
+ */
+
+// Import React hooks
 import { useState } from 'react';
+
+// Import UI components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Separator } from './ui/separator';
+
+// Import icons
 import {
-  CreditCard,
-  Zap,
-  Clock,
-  AlertCircle,
-  Loader2
+  CreditCard,   // Icon thẻ tín dụng
+  Zap,          // Icon sạc điện
+  Clock,        // Icon thời gian
+  AlertCircle,  // Icon cảnh báo
+  Loader2       // Icon loading
 } from 'lucide-react';
+
+// Import payment components
 import { PaymentMethodSelector, PaymentMethod } from './PaymentMethodSelector';
+
+// Import utilities
 import { toast } from 'sonner';
 
-// API configuration
+// Lấy API URL từ environment
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 interface PaymentModalProps {

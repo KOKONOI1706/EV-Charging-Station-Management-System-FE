@@ -1,5 +1,38 @@
+/**
+ * ===============================================================
+ * STATION API SERVICE
+ * ===============================================================
+ * Service quản lý API trạm sạc (stations)
+ * 
+ * Chức năng:
+ * - 📍 Lấy danh sách tất cả trạm sạc
+ * - 🔍 Tìm kiếm trạm theo location (lat, lng, radius)
+ * - 🗺️ Tính khoảng cách từ vị trí user đến từng trạm
+ * - ⚡ Lấy charging points của mỗi trạm (power, status, connectors)
+ * - 🖼️ Hiển thị ảnh trạm (Unsplash images)
+ * - 💰 Hiển thị giá sạc (price_per_kwh)
+ * - 📊 Theo dõi trạng thái real-time (available/unavailable points)
+ * 
+ * Interfaces:
+ * - Station: Dữ liệu trạm sạc (name, address, lat, lng, price_per_kwh)
+ * - StationApiResponse: Response từ backend (success, data, total)
+ * - StationSearchParams: Params tìm kiếm (query, filters, location)
+ * 
+ * Features:
+ * - Distance calculation: Haversine formula
+ * - Image fallback: Unsplash placeholder nếu không có ảnh
+ * - Caching: No-cache để luôn lấy data mới nhất
+ * - Aggregation: Gộp charging points theo station_id
+ * 
+ * Dependencies:
+ * - Backend API: /stations, /charging-points
+ * - Supabase: Lưu trữ stations và charging_points
+ * - Unsplash: Ảnh mẫu trạm sạc
+ */
+
 import { Station } from '../data/mockDatabase';
 
+// URL backend API
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper function to get default station images from Unsplash

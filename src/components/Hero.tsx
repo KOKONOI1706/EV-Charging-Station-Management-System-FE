@@ -1,11 +1,47 @@
+/**
+ * ========================================
+ * HERO COMPONENT
+ * ========================================
+ * Banner chính (Hero section) của trang chủ
+ * 
+ * Cấu trúc:
+ * - Left side: Content
+ *   + Tiêu đề lớn (H1)
+ *   + Mô tả ngắn gọn
+ *   + 2 CTA buttons: "Find Stations" và "Learn More"
+ *   + 3 feature highlights với icons:
+ *     * Ultra-Fast Charging
+ *     * Easy Booking (24/7)
+ *     * Nationwide Network
+ * - Right side: Hero image
+ *   + Ảnh trạm sạc xe điện hiện đại
+ *   + Fallback image nếu load fail
+ *   + Stats badge overlay (floating card)
+ * 
+ * Tính năng:
+ * - Responsive grid layout (2 cột trên desktop, 1 cột trên mobile)
+ * - Multi-language support
+ * - Gradient background
+ * - Hover effects cho buttons
+ * - Image với fallback handling
+ */
+
+// Import UI components
 import { Button } from "./ui/button";
+
+// Import icons
 import { MapPin, Clock, Zap } from "lucide-react";
+
+// Import image component và language hook
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useLanguage } from "../hooks/useLanguage";
 
+/**
+ * Interface định nghĩa props của Hero
+ */
 interface HeroProps {
-  onFindStations: () => void;
-  onLearnMore?: () => void;
+  onFindStations: () => void;  // Callback khi click "Find Stations" (scroll to finder)
+  onLearnMore?: () => void;    // Callback khi click "Learn More" (navigate to pricing)
 }
 
 export function Hero({ onFindStations, onLearnMore }: HeroProps) {

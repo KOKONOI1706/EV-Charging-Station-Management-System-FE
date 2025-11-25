@@ -1,3 +1,43 @@
+/**
+ * ===============================================================
+ * STATION FINDER COMPONENT
+ * ===============================================================
+ * Component tìm kiếm và hiển thị danh sách trạm sạc
+ * 
+ * Chức năng:
+ * - 🔍 Tìm kiếm trạm theo tên hoặc địa chỉ
+ * - 📍 Filter theo: All / Available / Fast charging (>=150kW)
+ * - 🗺️ 3 chế độ xem: List view / Map view / Detail view
+ * - 📍 Hiển thị khoảng cách từ vị trí user (nếu có GPS)
+ * - ⚡ Hiển thị số điểm sạc available / total
+ * - 💰 Hiển thị giá sạc (price_per_kwh)
+ * - ⭐ Hiển thị rating trạm
+ * 
+ * Views:
+ * 1. List view: Danh sách cards gọn gàng, click để booking
+ * 2. Map view: Hiển thị tất cả trạm trên Google Maps
+ * 3. Detail view: Chi tiết 1 trạm (charging points, amenities, reviews)
+ * 
+ * Filters:
+ * - all: Tất cả trạm
+ * - available: Chỉ trạm có ít nhất 1 điểm sạc available
+ * - fast: Chỉ trạm có fast charging (powerKw >= 150)
+ * 
+ * Props:
+ * - onBookStation: Callback khi user click "Book" (station, chargingPointId)
+ * 
+ * Flow:
+ * 1. Component load → Fetch stations từ MockDatabaseService
+ * 2. User nhập search / chọn filter → Filter danh sách
+ * 3. User click "View Details" → Chế độ detail view
+ * 4. User click "Book" → Gọi onBookStation(station, pointId)
+ * 
+ * Dependencies:
+ * - StationMapView: Hiển thị map với markers
+ * - StationDetailView: Hiển thị chi tiết trạm
+ * - MockDatabaseService: Fetch stations data
+ */
+
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";

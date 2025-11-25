@@ -1,3 +1,60 @@
+/**
+ * ===============================================================
+ * ENHANCED STAFF DASHBOARD
+ * ===============================================================
+ * Dashboard cho Staff quản lý trạm sạc được assign
+ * 
+ * Chức năng:
+ * - 📍 Chọn station: Staff có thể được assign nhiều stations
+ * - 📊 Station Metrics: Sessions, revenue, utilization, satisfaction
+ * - 📈 Analytics: Daily usage, hourly patterns, weekly trends
+ * - ⚡ Charging Sessions Management: Xem, filter, export sessions
+ * - 🔌 Charging Points Management: Cập nhật trạng thái, bảo trì
+ * - ⚠️ Maintenance Alerts: Cảnh báo cần bảo trì
+ * 
+ * Tabs:
+ * 1. Overview:
+ *    - Key metrics: Today's sessions, revenue, utilization, avg duration
+ *    - Customer satisfaction score
+ *    - Maintenance alerts count
+ *    - Comparison với yesterday (% change)
+ * 
+ * 2. Analytics:
+ *    - Daily usage chart (sessions + revenue)
+ *    - Hourly pattern (sessions by hour)
+ *    - Weekly trend (7 days)
+ *    - Recent sessions table
+ * 
+ * 3. Charging Sessions:
+ *    - ChargingSessionsManagement component
+ *    - Filter theo trạm được chọn
+ *    - Xem chi tiết session: Duration, energy, cost
+ * 
+ * 4. Charging Points:
+ *    - ChargingPointsManagement component
+ *    - Cập nhật trạng thái: Available, Occupied, Offline, Maintenance
+ *    - Report issues
+ * 
+ * Station Selection:
+ * - Load danh sách stations của staff từ userStationsApi
+ * - Auto select station đầu tiên nếu chỉ có 1 station
+ * - Dropdown chọn station khi có nhiều stations
+ * 
+ * Real-time:
+ * - Auto refresh metrics khi đổi station
+ * - Live session updates mỗi 30s
+ * 
+ * Phân quyền:
+ * - Staff chỉ xem được data của stations được assign
+ * - Không thể CRUD stations (chỉ Admin)
+ * - Có thể update charging points status
+ * 
+ * Dependencies:
+ * - staffStatsApi: Lấy metrics của station
+ * - userStationsApi: Lấy danh sách stations của staff
+ * - Recharts: Biểu đồ analytics
+ */
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';

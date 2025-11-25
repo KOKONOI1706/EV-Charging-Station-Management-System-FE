@@ -1,4 +1,37 @@
+/**
+ * ========================================
+ * STATION CRUD MODAL COMPONENT
+ * ========================================
+ * Modal tạo/sửa/xem trạm sạc (Admin only)
+ * 
+ * Modes:
+ * - create: Tạo trạm mới
+ * - edit: Chỉnh sửa trạm có sẵn
+ * - view: Xem chi tiết (read-only)
+ * 
+ * Chức năng:
+ * - Form nhập thông tin trạm đầy đủ:
+ *   + Thông tin cơ bản: name, address, city, phone
+ *   + Tọa độ GPS: lat, lng (để hiển thị trên map)
+ *   + Thông số kỹ thuật: powerKw, pricePerKwh, connector types
+ *   + Tiện ích: amenities (WiFi, Toilet, Cafe...)
+ *   + Layout: Sơ đồ mặt bằng trạm với điểm sạc
+ * - Tab "Basic Info": Thông tin cơ bản
+ * - Tab "Layout": Thiết kế layout trạm (drag & drop)
+ * - Validation dữ liệu đầy đủ
+ * - Preview layout trước khi save
+ * 
+ * Layout Editor:
+ * - Drag & drop các facilities (charging points, parking, entrance)
+ * - Grid-based positioning
+ * - Convert giữa grid position và pixel position
+ * - Auto-expand grid khi kéo facility ra ngoài
+ */
+
+// Import React hooks
 import { useState, useEffect } from 'react';
+
+// Import UI components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,6 +39,8 @@ import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
+
+// Import types và API
 import { Station } from '../data/mockDatabase';
 import { Plus, Trash2, Zap } from 'lucide-react';
 import { toast } from 'sonner';

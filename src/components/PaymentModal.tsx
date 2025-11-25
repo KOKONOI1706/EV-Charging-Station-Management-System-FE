@@ -1,22 +1,62 @@
-import { useState, useEffect } from 'react';
+/**
+ * ========================================
+ * PAYMENT MODAL COMPONENT
+ * ========================================
+ * Modal thanh toán cho phiên sạc đã hoàn thành
+ * 
+ * Chức năng:
+ * - Hiển thị tóm tắt phiên sạc (thời gian, năng lượng, chi phí)
+ * - Chọn phương thức thanh toán:
+ *   + MoMo: Chuyển hướng đến MoMo payment gateway
+ *   + VNPay: Chuyển hướng đến VNPay gateway
+ *   + Tiền mặt: Đánh dấu là thanh toán offline
+ * - Gọi API tạo payment request
+ * - Redirect đến payment gateway
+ * - Xử lý callback sau khi thanh toán
+ * 
+ * Payment flow:
+ * 1. Dừng phiên sạc -> Mở PaymentModal
+ * 2. Hiển thị chi tiết phiên và tổng tiền
+ * 3. User chọn payment method
+ * 4. Click "Thanh toán"
+ * 5. Call API create payment (MoMo/VNPay)
+ * 6. Nhận payUrl -> Redirect
+ * 7. User thanh toán trên gateway
+ * 8. Gateway redirect về callback URL
+ * 9. Backend xác nhận payment
+ * 10. Frontend hiển thị kết quả
+ * 
+ * Integration:
+ * - MoMo Payment Gateway
+ * - VNPay Payment Gateway
+ * - Backend API: POST /api/payments/momo, /api/payments/vnpay
+ */
+
+// Import React hooks
+import { useState } from 'react';
+
+// Import UI components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Separator } from './ui/separator';
-import {
-  CreditCard,
-  Zap,
-  Clock,
-  AlertCircle,
-  Loader2,
-  Gift,
-  TrendingDown
-} from 'lucide-react';
-import { PaymentMethodSelector, PaymentMethod } from './PaymentMethodSelector';
-import { toast } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
 
-// API configuration
+// Import icons
+import {
+  CreditCard,   // Icon thẻ tín dụng
+  Zap,          // Icon sạc điện
+  Clock,        // Icon thời gian
+  AlertCircle,  // Icon cảnh báo
+  Loader2       // Icon loading
+} from 'lucide-react';
+
+// Import payment components
+import { PaymentMethodSelector, PaymentMethod } from './PaymentMethodSelector';
+
+// Import utilities
+import { toast } from 'sonner';
+
+// Lấy API URL từ environment
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 interface PaymentModalProps {
@@ -50,53 +90,9 @@ export function PaymentModal({
     sessionData
   });
 
-  const { user } = useAuth();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('momo');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Benefits & pricing state
-  const [priceInfo, setPriceInfo] = useState<any>(null);
-  const [loadingPrice, setLoadingPrice] = useState(false);
-
-  // Load price with benefits when modal opens
-  useEffect(() => {
-    if (open && user && sessionData) {
-      loadPriceWithBenefits();
-    }
-  }, [open, user, sessionData]);
-
-  const loadPriceWithBenefits = async () => {
-    if (!user) return;
-    
-    setLoadingPrice(true);
-    try {
-      const userId = parseInt(user.id);
-      const response = await fetch(`${API_BASE_URL}/benefits/calculate-price`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          original_price: sessionData.amount
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setPriceInfo(result.data);
-      } else {
-        setPriceInfo(null);
-      }
-    } catch (err) {
-      console.error('Error loading price with benefits:', err);
-      setPriceInfo(null);
-    } finally {
-      setLoadingPrice(false);
-    }
-  };
-
-  const finalAmount = priceInfo?.discounted_price || sessionData.amount;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -131,7 +127,7 @@ export function PaymentModal({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               session_id: sessionId,
-              amount: finalAmount, // Use discounted amount
+              amount: sessionData.amount,
               currency: 'VND',
               description: `Thanh toán phiên sạc #${sessionId} - ${sessionData.stationName}`
             })
@@ -256,53 +252,17 @@ export function PaymentModal({
                 </span>
               </div>
               
-              {!loadingPrice && priceInfo && priceInfo.discount_rate > 0 && (
-                <>
-                  <Separator className="my-2" />
-                  
-                  <div className="flex justify-between text-gray-600">
-                    <span>Tạm tính:</span>
-                    <span className="line-through">{formatCurrency(priceInfo.original_price)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between text-green-700 font-medium">
-                    <span className="flex items-center gap-1">
-                      <Gift className="w-4 h-4" />
-                      Giảm giá ({priceInfo.discount_rate}%):
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <TrendingDown className="w-4 h-4" />
-                      -{formatCurrency(priceInfo.savings)}
-                    </span>
-                  </div>
-                  
-                  {priceInfo.session_limit_info && (
-                    <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
-                      <AlertCircle className="w-3 h-3 inline mr-1" />
-                      {priceInfo.session_limit_info.message}
-                    </div>
-                  )}
-                </>
-              )}
-              
               <Separator className="my-2" />
               
               <div className="flex justify-between items-center">
                 <span className="text-green-800 font-semibold">Tổng tiền:</span>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(finalAmount)}
+                    {formatCurrency(sessionData.amount)}
                   </div>
-                  {priceInfo && priceInfo.savings > 0 && (
-                    <span className="text-xs text-green-700">
-                      Tiết kiệm {formatCurrency(priceInfo.savings)}!
-                    </span>
-                  )}
-                  {!priceInfo?.savings && (
-                    <span className="text-xs text-green-700">
-                      (Đã bao gồm VAT)
-                    </span>
-                  )}
+                  <span className="text-xs text-green-700">
+                    (Đã bao gồm VAT)
+                  </span>
                 </div>
               </div>
             </div>
@@ -348,7 +308,7 @@ export function PaymentModal({
               ) : (
                 <>
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Thanh toán {formatCurrency(finalAmount)}
+                  Thanh toán {formatCurrency(sessionData.amount)}
                 </>
               )}
             </Button>

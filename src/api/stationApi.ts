@@ -1,7 +1,39 @@
-import { Station } from '../data/mockDatabase';
-import { apiFetch } from '../lib/api';
+/**
+ * ===============================================================
+ * STATION API SERVICE
+ * ===============================================================
+ * Service quản lý API trạm sạc (stations)
+ * 
+ * Chức năng:
+ * - 📍 Lấy danh sách tất cả trạm sạc
+ * - 🔍 Tìm kiếm trạm theo location (lat, lng, radius)
+ * - 🗺️ Tính khoảng cách từ vị trí user đến từng trạm
+ * - ⚡ Lấy charging points của mỗi trạm (power, status, connectors)
+ * - 🖼️ Hiển thị ảnh trạm (Unsplash images)
+ * - 💰 Hiển thị giá sạc (price_per_kwh)
+ * - 📊 Theo dõi trạng thái real-time (available/unavailable points)
+ * 
+ * Interfaces:
+ * - Station: Dữ liệu trạm sạc (name, address, lat, lng, price_per_kwh)
+ * - StationApiResponse: Response từ backend (success, data, total)
+ * - StationSearchParams: Params tìm kiếm (query, filters, location)
+ * 
+ * Features:
+ * - Distance calculation: Haversine formula
+ * - Image fallback: Unsplash placeholder nếu không có ảnh
+ * - Caching: No-cache để luôn lấy data mới nhất
+ * - Aggregation: Gộp charging points theo station_id
+ * 
+ * Dependencies:
+ * - Backend API: /stations, /charging-points
+ * - Supabase: Lưu trữ stations và charging_points
+ * - Unsplash: Ảnh mẫu trạm sạc
+ */
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+import { Station } from '../data/mockDatabase';
+
+// URL backend API
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper function to get default station images from Unsplash
 function getDefaultStationImage(stationId?: string): string {
@@ -63,16 +95,16 @@ export async function fetchStations(): Promise<Station[]> {
     if (!result.success) {
       throw new Error('Failed to fetch stations from API');
     }
-
+    
     // Fetch all charging points for all stations in one call
+    const chargingPointsResponse = await fetch(`${API_URL}/charging-points`);
     let allChargingPoints: any[] = [];
-    try {
-      const cpResult = await apiFetch(`${API_URL}/charging-points` as any);
-      if (cpResult && cpResult.success && cpResult.data) {
+    
+    if (chargingPointsResponse.ok) {
+      const cpResult = await chargingPointsResponse.json();
+      if (cpResult.success && cpResult.data) {
         allChargingPoints = cpResult.data;
       }
-    } catch (e) {
-      // ignore missing charging points endpoint
     }
     
     // Group charging points by station_id
@@ -100,22 +132,32 @@ export async function fetchStations(): Promise<Station[]> {
 // Fetch station by ID
 export async function fetchStationById(id: string): Promise<Station | null> {
   try {
-    const result = await apiFetch(`${API_URL}/stations/${id}` as any);
+    const response = await fetch(`${API_URL}/stations/${id}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
     if (!result.success) {
       throw new Error('Failed to fetch station from API');
     }
-
+    
     // Fetch real charging points from database
-    let realChargingPoints: any[] = [];
-    try {
-      const cpResult = await apiFetch(`${API_URL}/charging-points?station_id=${id}` as any);
-      if (cpResult && cpResult.success && cpResult.data) {
+    const chargingPointsResponse = await fetch(`${API_URL}/charging-points?station_id=${id}`);
+    let realChargingPoints = [];
+    
+    if (chargingPointsResponse.ok) {
+      const cpResult = await chargingPointsResponse.json();
+      if (cpResult.success && cpResult.data) {
         realChargingPoints = cpResult.data;
       }
-    } catch (e) {
-      // ignore
     }
-
+    
     return transformApiStation(result.data, realChargingPoints);
   } catch (error) {
     console.error(`Error fetching station ${id} from API:`, error);
@@ -126,24 +168,33 @@ export async function fetchStationById(id: string): Promise<Station | null> {
 // Search stations with filters
 export async function searchStations(params: StationSearchParams): Promise<Station[]> {
   try {
-    const result: StationApiResponse = await apiFetch(`${API_URL}/stations/search`, {
+    const response = await fetch(`${API_URL}/stations/search`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(params),
-    } as any);
-
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result: StationApiResponse = await response.json();
+    
     if (!result.success) {
       throw new Error('Failed to search stations from API');
     }
-
+    
     // Fetch all charging points
+    const chargingPointsResponse = await fetch(`${API_URL}/charging-points`);
     let allChargingPoints: any[] = [];
-    try {
-      const cpResult = await apiFetch(`${API_URL}/charging-points` as any);
-      if (cpResult && cpResult.success && cpResult.data) {
+    
+    if (chargingPointsResponse.ok) {
+      const cpResult = await chargingPointsResponse.json();
+      if (cpResult.success && cpResult.data) {
         allChargingPoints = cpResult.data;
       }
-    } catch (e) {
-      // ignore
     }
     
     // Group charging points by station_id

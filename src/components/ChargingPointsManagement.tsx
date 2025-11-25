@@ -1,38 +1,72 @@
+/**
+ * ========================================
+ * CHARGING POINTS MANAGEMENT COMPONENT
+ * ========================================
+ * Component quản lý các điểm sạc cho Staff và Admin
+ * 
+ * Chức năng:
+ * - Hiển thị danh sách điểm sạc theo trạm
+ * - Cập nhật trạng thái điểm sạc (Available, In Use, Maintenance, Offline)
+ * - Refresh danh sách real-time
+ * - Phân quyền: Staff chỉ thấy trạm được assign, Admin thấy tất cả
+ * 
+ * Trạng thái điểm sạc:
+ * - Available: Sẵn sàng sử dụng
+ * - In Use: Đang được sử dụng
+ * - Reserved: Đã đặt chỗ
+ * - Maintenance: Đang bảo trì
+ * - Offline: Mất kết nối
+ */
+
+// Import React hooks
 import { useState, useEffect } from 'react';
+
+// Import UI components
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+
+// Import icons
 import { 
-  Zap, 
-  Wrench, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle,
-  RefreshCw
+  Zap,           // Icon sạc điện
+  Wrench,        // Icon bảo trì
+  CheckCircle,   // Icon hoàn thành
+  XCircle,       // Icon lỗi
+  AlertTriangle, // Icon cảnh báo
+  RefreshCw      // Icon làm mới
 } from 'lucide-react';
+
+// Import thông báo toast
 import { toast } from 'sonner';
 
+// Lấy API URL từ environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+/**
+ * Interface định nghĩa cấu trúc dữ liệu điểm sạc
+ */
 interface ChargingPoint {
-  point_id: number;
-  station_id: string;
-  name: string;
-  power_kw: number;
-  connector_type: string;
-  status: 'Available' | 'In Use' | 'Reserved' | 'Maintenance' | 'Offline';
-  last_seen_at?: string;
-  updated_at?: string;
-  stations?: {
+  point_id: number;          // ID của điểm sạc
+  station_id: string;        // ID trạm sạc
+  name: string;              // Tên điểm sạc
+  power_kw: number;          // Công suất (kW)
+  connector_type: string;    // Loại đầu sạc
+  status: 'Available' | 'In Use' | 'Reserved' | 'Maintenance' | 'Offline'; // Trạng thái
+  last_seen_at?: string;     // Thời gian nhìn thấy lần cuối
+  updated_at?: string;       // Thời gian cập nhật
+  stations?: {               // Thông tin trạm (optional)
     id: string;
     name: string;
     address: string;
   };
 }
 
+/**
+ * Interface props của component
+ */
 interface ChargingPointsManagementProps {
-  stationId?: string; // For staff - specific station
-  userRole: 'staff' | 'admin';
+  stationId?: string;                // ID trạm (cho Staff - chỉ quản lý 1 trạm)
+  userRole: 'staff' | 'admin';       // Vai trò: staff hoặc admin
 }
 
 export function ChargingPointsManagement({ stationId, userRole }: ChargingPointsManagementProps) {

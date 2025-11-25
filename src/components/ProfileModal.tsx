@@ -1,18 +1,53 @@
+/**
+ * ========================================
+ * PROFILE MODAL COMPONENT
+ * ========================================
+ * Modal để người dùng chỉnh sửa thông tin cá nhân
+ * 
+ * Chức năng:
+ * - Hiển thị thông tin hiện tại của user
+ * - Cho phép chỉnh sửa: Name, Email, Phone
+ * - Validation input trước khi submit
+ * - Toast notification khi update thành công/thất bại
+ * 
+ * Validation:
+ * - Name: Không được để trống
+ * - Email: Không được để trống và phải đúng format
+ * - Phone: Optional nhưng nếu có thì phải đúng format
+ * 
+ * Flow:
+ * 1. Modal mở với thông tin hiện tại
+ * 2. User chỉnh sửa các field
+ * 3. Click Save -> Validate
+ * 4. Gọi onUpdate callback với dữ liệu mới
+ * 5. Parent component xử lý API call
+ * 6. Hiển thị toast success/error
+ * 7. Đóng modal nếu thành công
+ */
+
+// Import React hooks
 import { useState } from "react";
+
+// Import UI components
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+
+// Import utilities
 import { toast } from "sonner";
 import { useLanguage } from "../hooks/useLanguage";
 
+/**
+ * Interface định nghĩa props của ProfileModal
+ */
 interface ProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  userName: string;
-  userEmail: string;
-  userPhone: string;
-  onUpdate: (name: string, email: string, phone: string) => void;
+  isOpen: boolean;                    // Trạng thái mở/đóng
+  onClose: () => void;                // Callback đóng modal
+  userName: string;                   // Tên hiện tại
+  userEmail: string;                  // Email hiện tại
+  userPhone: string;                  // Số điện thoại hiện tại
+  onUpdate: (name: string, email: string, phone: string) => void; // Callback khi update
 }
 
 export function ProfileModal({

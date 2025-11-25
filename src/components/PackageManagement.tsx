@@ -1,4 +1,36 @@
+/**
+ * ========================================
+ * PACKAGE MANAGEMENT COMPONENT
+ * ========================================
+ * Component quản lý các gói dịch vụ/membership (Admin only)
+ * 
+ * Chức năng:
+ * - Hiển thị danh sách tất cả gói dịch vụ
+ * - Thêm gói mới với thông tin đầy đủ
+ * - Chỉnh sửa gói đã có
+ * - Xóa gói (soft delete - set status = Inactive)
+ * - Tìm kiếm gói theo tên
+ * - Phân trang kết quả
+ * 
+ * Thông tin gói dịch vụ:
+ * - name: Tên gói (VD: "Premium", "Basic")
+ * - description: Mô tả chi tiết
+ * - price: Giá (VND)
+ * - duration_days: Thời hạn (ngày)
+ * - benefits: Các quyền lợi (JSON structure)
+ * - status: Active/Inactive
+ * 
+ * Benefits structure có thể bao gồm:
+ * - Giảm giá % cho mỗi lần sạc
+ * - Số lượng sessions miễn phí
+ * - Priority booking
+ * - Free parking
+ */
+
+// Import React
 import React, { useEffect, useState } from 'react';
+
+// Import UI components
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Button } from "./ui/button";
@@ -6,16 +38,23 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+
+// Import package service
 import {
-  getPackages,
-  createPackage,
-  updatePackage,
-  deletePackage,
-  ServicePackage,
+  getPackages,      // Lấy danh sách gói
+  createPackage,    // Tạo gói mới
+  updatePackage,    // Cập nhật gói
+  deletePackage,    // Xóa gói
+  ServicePackage,   // Type definition
 } from "../services/packageService";
+
+// Import icons
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 
+/**
+ * Component PackageManagement - Quản lý gói dịch vụ
+ */
 const PackageManagement: React.FC = () => {
   const [packages, setPackages] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);

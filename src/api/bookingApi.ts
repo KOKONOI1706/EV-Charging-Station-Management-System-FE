@@ -1,3 +1,33 @@
+/**
+ * ===============================================================
+ * BOOKING API SERVICE
+ * ===============================================================
+ * Service quản lý API đặt chỗ trước tại trạm sạc
+ * 
+ * Chức năng:
+ * - 📅 Tạo booking mới (đặt trước charging point)
+ * - 📋 Lấy danh sách bookings của user
+ * - ✏️ Cập nhật trạng thái booking (Pending → Confirmed → Completed/Canceled)
+ * - 🎟️ Áp dụng mã khuyến mãi (promo code)
+ * - 💵 Tính giá ước tính dựa trên thời gian đặt
+ * 
+ * Interfaces:
+ * - CreateBookingRequest: Dữ liệu tạo booking (user_id, point_id, start_time, expire_time, promo_id)
+ * - BookingResponse: Response chung cho tất cả API calls (success, data, error)
+ * 
+ * Flow:
+ * 1. User chọn trạm và thời gian → createBooking()
+ * 2. Backend kiểm tra availability → Tạo booking status=Pending
+ * 3. User check-in tại trạm → Cập nhật status=Confirmed
+ * 4. Bắt đầu sạc hoặc hết hạn → status=Completed/Canceled
+ * 
+ * Dependencies:
+ * - Backend API: /bookings
+ * - Supabase: Lưu trữ booking records
+ * - Validation: Check thời gian trùng lặp, điểm sạc available
+ */
+
+// URL backend API
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export interface CreateBookingRequest {

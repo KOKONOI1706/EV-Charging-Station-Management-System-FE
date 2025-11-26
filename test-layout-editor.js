@@ -1,5 +1,86 @@
 #!/usr/bin/env node
 
+/*
+========================================
+TEST LAYOUT EDITOR - Script Test Interactive Station Layout
+========================================
+
+Mô tả:
+Script kiểm tra đầy đủ tính năng Interactive Layout Editor.
+Verify database migration, API endpoints, position update, dependencies.
+
+Chức năng chính:
+
+📌 TEST 1: checkPackageJson()
+• Kiểm tra reactflow@11.10.4 đã được install chưa
+• Đọc package.json và parse dependencies
+• Alert nếu thiếu → Hướng dẫn: npm install reactflow@11.10.4
+
+📌 TEST 2: checkComponentFile()
+• Verify file InteractiveStationLayout.tsx tồn tại
+• Check có import ReactFlow không
+• Check có code xử lý pos_x, pos_y không
+• Hiển thị đường dẫn nếu không tìm thấy
+
+📌 TEST 3: checkDatabaseMigration()
+• Gọi GET /api/charging-points?limit=1
+• Kiểm tra charging point có columns pos_x, pos_y chưa
+• Nếu chưa → Alert "Run database/add_position_columns.sql"
+• Hiển thị sample point nếu migration đã xong
+
+📌 TEST 4: testAPIEndpoint()
+• Test GET /api/charging-points/connector-types/list
+• Test GET /api/charging-points?limit=5
+• Verify API trả về data đúng format
+• Alert nếu backend server chưa chạy
+
+📌 TEST 5: testPositionUpdate()
+• Lấy 1 charging point bất kỳ
+• Generate random position (testPosX, testPosY)
+• Gọi PUT /api/charging-points/:id với {pos_x, pos_y}
+• Verify response có pos_x === testPosX && pos_y === testPosY
+• Confirm position update thành công
+
+Test Suite:
+- runAllTests(): Chạy tất cả 5 tests theo thứ tự
+- Hiển thị summary: X/5 tests passed
+- Color coding:
+  + Green: Test passed ✅
+  + Red: Test failed ❌
+  + Yellow: Warning ⚠️
+  + Cyan: Section headers
+  + Blue: Info messages
+
+Helper functions:
+- log(message, color): Console.log với màu
+- logSection(title): Header với border
+- ANSI color codes: \x1b[32m (green), \x1b[31m (red)...
+
+Success outcome:
+• Tất cả tests pass → Hiển thị:
+  "🎉 All tests passed! Interactive Layout Editor is ready to use."
+• Next steps:
+  1. Import component
+  2. Use <InteractiveStationLayout stationId="..." stationName="..." />
+  3. See docs/QUICK_START_LAYOUT_EDITOR.md
+
+Fail outcome:
+• Một số tests fail → Hiển thị:
+  "⚠️ Some tests failed. Please fix the issues above."
+• List ra từng test failed với error details
+
+Usage:
+```bash
+node test-layout-editor.js
+# hoặc
+npm run test:layout-editor
+```
+
+Dependencies:
+- Node.js built-in: fs, path
+- Fetch API: Call backend endpoints
+*/
+
 /**
  * Test Script for Interactive Layout Editor
  * Run this to verify the editor is working correctly

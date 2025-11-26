@@ -1,4 +1,76 @@
 /**
+ * ===============================================================
+ * USER STATIONS API (FRONTEND)
+ * ===============================================================
+ * API quản lý assignment của Staff đến Stations
+ * 
+ * Chức năng:
+ * - 📍 Lấy station được assign cho user (staff)
+ * - ✏️ Cập nhật station assignment (Admin assign staff đến trạm)
+ * - 👥 Lấy danh sách staff của 1 station
+ * 
+ * Use cases:
+ * 1. Staff login → Lấy station được assign → Hiển thị dashboard của station đó
+ * 2. Admin assign staff đến station → Update assignment
+ * 3. Admin xem danh sách staff của station
+ * 
+ * Interfaces:
+ * 
+ * 1. Station:
+ *    - id: UUID
+ *    - name: Tên trạm
+ *    - address: Địa chỉ
+ *    - latitude, longitude: Tọa độ
+ *    - total_spots, available_spots: Số chỗ
+ * 
+ * 2. UserStationData:
+ *    - userId: ID của user
+ *    - name: Tên user
+ *    - email: Email
+ *    - roleId: ID vai trò
+ *    - stationId: UUID của station (null nếu chưa assign)
+ *    - station: Station object (null nếu chưa assign)
+ * 
+ * 3. StaffMember:
+ *    - user_id: ID staff
+ *    - name: Tên
+ *    - email: Email
+ *    - role_id: Role ID
+ *    - station_id: Station UUID
+ *    - created_at: Ngày assign
+ * 
+ * Methods:
+ * 
+ * 1. getUserStation(userId)
+ *    - GET /api/user-stations/{userId}
+ *    - Lấy station được assign cho user
+ *    - Return: UserStationData với station info
+ * 
+ * 2. updateUserStation(userId, stationId)
+ *    - PUT /api/user-stations/{userId}
+ *    - Cập nhật station assignment
+ *    - stationId = null để unassign
+ *    - Return: Updated UserStationData
+ * 
+ * 3. getStationStaff(stationId)
+ *    - GET /api/user-stations/staff/{stationId}
+ *    - Lấy tất cả staff được assign tại station
+ *    - Return: { stationId, staffCount, staff[] }
+ * 
+ * Flow assign staff:
+ * 1. Admin vào User Management
+ * 2. Chọn staff cần assign
+ * 3. Chọn station từ dropdown
+ * 4. Gọi updateUserStation(staffId, stationId)
+ * 5. Backend cập nhật users.station_id = stationId
+ * 6. Staff login lại → Chỉ thấy data của station đó
+ * 
+ * Dependencies:
+ * - Backend API: /api/user-stations
+ * - env: VITE_API_BASE_URL
+ */
+
+/**
  * User Stations API
  * Manages the assignment of staff members to charging stations
  */

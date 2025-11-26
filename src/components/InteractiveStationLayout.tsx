@@ -1,3 +1,69 @@
+/**
+ * ===============================================================
+ * INTERACTIVE STATION LAYOUT (SƠ ĐỒ TRẠM TƯƠNG TÁC)
+ * ===============================================================
+ * Component cho phép Admin/Staff tạo và chỉnh sửa layout trạm sạc 2D
+ * 
+ * Chức năng:
+ * - 🗺️ Drag-and-drop charging points và facilities trên canvas 2D
+ * - ➕ Thêm charging points mới (tạo trong DB + hiển thị trên layout)
+ * - ✏️ Chỉnh sửa vị trí, power, connector type
+ * - 🗑️ Xóa charging points
+ * - 🏢 Thêm facilities (restroom, cafe, shop, parking)
+ * - 💾 Lưu layout vào DB (pos_x, pos_y của mỗi point)
+ * - 🔄 Auto-refresh status mỗi 30s
+ * - 👁️ Read-only mode cho Staff (chỉ xem, không edit)
+ * 
+ * Props:
+ * - stationId: UUID của station
+ * - isReadOnly: Boolean (true = Staff view, false = Admin edit mode)
+ * - onChargingPointClick: Callback khi click point (đặt chỗ)
+ * 
+ * Node types:
+ * 1. ChargingPointNode:
+ *    - Hiển thị thông tin: Name, status, power, connector
+ *    - Màu sắc theo status (Available=Green, InUse=Red, etc.)
+ *    - Draggable (nếu không read-only)
+ *    - Click để edit hoặc đặt chỗ
+ * 
+ * 2. FacilityNode:
+ *    - Hiển thị icon + label (🚻 Restroom, ☕ Cafe, etc.)
+ *    - Màu sắc theo type
+ *    - Draggable (nếu không read-only)
+ * 
+ * Layout storage:
+ * - Mỗi charging point có pos_x, pos_y trong DB
+ * - Facilities lưu trong stations.layout JSON field
+ * - Format: { facilities: [{ id, type, name, pos_x, pos_y }] }
+ * 
+ * ReactFlow integration:
+ * - Sử dụng ReactFlow library cho drag-and-drop
+ * - Nodes: Charging points + Facilities
+ * - Edges: Không có (chỉ cần nodes)
+ * - Controls: Zoom, pan, fit view
+ * - Background: Dot grid
+ * - MiniMap: Overview của layout
+ * 
+ * Edit mode features:
+ * - Add Point button: Mở form nhập name, power, connector
+ * - Add Facility button: Chọn type từ dropdown
+ * - Edit button trên mỗi node: Mở edit modal
+ * - Delete button: Xác nhận trước khi xóa
+ * - Save button: Gọi API cập nhật pos_x, pos_y
+ * 
+ * Status colors:
+ * - Available: Green (#10b981)
+ * - InUse: Red (#f63b3b)
+ * - Maintenance: Orange (#f59e0b)
+ * - Offline: Gray (#6b7280)
+ * - Reserved: Purple (#8b5cf6)
+ * 
+ * Dependencies:
+ * - ReactFlow: Drag-and-drop canvas
+ * - chargingPointsApi: CRUD charging points
+ * - stationApi: Update layout JSON
+ */
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import ReactFlow, {
   Node,

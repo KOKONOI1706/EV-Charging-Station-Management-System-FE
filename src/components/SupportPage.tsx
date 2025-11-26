@@ -1,3 +1,82 @@
+/*
+========================================
+SUPPORT PAGE - Trang Hỗ Trợ Khách Hàng
+========================================
+
+Mô tả:
+Trang hỗ trợ khách hàng đầy đủ với 3 tabs: FAQ, Contact Us, System Status.
+Hỗ trợ đa ngôn ngữ (useLanguage), search FAQ, submit support ticket.
+
+Chức năng chính:
+
+📌 TAB 1: FAQ (Câu Hỏi Thường Gặp)
+• Danh sách FAQs với categories (charging, technical, billing, reservations)
+• Search box tìm kiếm trong question + answer
+• Filter theo category
+• Accordion mở/đóng từng FAQ item
+• Hiển thị "No FAQs found" nếu không có kết quả
+
+📌 TAB 2: Contact Us (Liên Hệ)
+Left panel:
+• Form submit support ticket:
+  - Subject (required)
+  - Category: charging, billing, technical, account, other
+  - Priority: low, medium, high, urgent
+  - Message (required)
+• Validate form trước khi submit
+• Toast notification khi submit thành công
+
+Right panel:
+• Contact Information cards:
+  - Phone: 1-800-CHARGE-1 (click to call)
+  - Email: support@chargetech.com (click to open email)
+  - Address: Click to open Google Maps
+  - Support hours: 24/7 emergencies, Mon-Fri 8AM-8PM general
+• Emergency contacts box (red alert)
+
+📌 TAB 3: System Status
+• Overall status badge (All Systems Operational - green)
+• Core Services status:
+  - Charging Network
+  - Mobile App
+  - Payment System
+• Support Services status:
+  - Customer Support
+  - Account Management
+  - Web Portal
+• Recent Updates timeline
+
+Header:
+• Language Selector (switch EN/VI)
+• Sign Out button (logout → redirect home)
+
+State management:
+- searchQuery: Từ khóa tìm kiếm FAQ
+- selectedCategory: Category đang filter ("all" hoặc category name)
+- expandedFAQ: ID của FAQ đang mở (hoặc null)
+- contactForm: Object chứa {subject, category, priority, message}
+
+FAQ Structure:
+- FAQItem interface: {id, question, answer, category}
+- FAQ_ITEMS: Mảng các câu hỏi được translate từ useLanguage
+- filteredFAQs: Filter theo searchQuery + selectedCategory
+
+Interactive features:
+• Click phone → window.location.href = 'tel:...'
+• Click email → window.location.href = 'mailto:...'
+• Click address → Open Google Maps in new tab
+• Click "Start Chat" → Switch to Contact tab
+• Form validation → Toast errors/success
+
+Dependencies:
+- shadcn/ui: Card, Button, Input, Textarea, Tabs, Badge, Select
+- lucide-react: Icons
+- useAuth: Logout function
+- useLanguage: Đa ngôn ngữ (t object)
+- useNavigate: Redirect sau logout
+- toast: Notifications
+*/
+
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";

@@ -1,3 +1,72 @@
+/**
+ * ===============================================================
+ * APP WITH ROUTER (ỨNG DỤNG VỚI ROUTING)
+ * ===============================================================
+ * Root component thiết lập routing và global providers
+ * 
+ * Chức năng:
+ * - 🛣️ React Router với tất cả routes
+ * - 🌐 LanguageProvider (multi-language)
+ * - 🔐 AuthProvider (authentication context)
+ * - 🔔 Toaster (notifications)
+ * 
+ * Routes:
+ * 
+ * Public routes:
+ * - / → HomePage (landing page)
+ * - /auth → AuthPage (login/register)
+ * - /pricing → PricingPage (pricing plans)
+ * - /support → SupportPage (help/FAQ)
+ * - /payment/callback → PaymentCallback (MoMo/VNPay return)
+ * - /reservation-test → ReservationTestPage (testing)
+ * 
+ * Protected routes (Customer):
+ * - /dashboard → DashboardPage
+ * - /charging-session → ChargingSessionPage
+ * - /user-history → UserHistoryPage
+ * - /personal-report → PersonalReportPage
+ * 
+ * Protected routes (Staff):
+ * - /staff → StaffPage (staff dashboard)
+ * - Có thể access /user-history, /personal-report
+ * 
+ * Protected routes (Admin):
+ * - /admin → AdminPage (admin dashboard)
+ * - Có thể access tất cả routes
+ * 
+ * 404 route:
+ * - * → 404 page với link về home
+ * 
+ * Provider hierarchy:
+ * ```
+ * LanguageProvider (outermost)
+ *   └─ AuthProvider
+ *       └─ RouterProvider
+ *       └─ Toaster
+ * ```
+ * 
+ * ProtectedRoute:
+ * - Wrapper kiểm tra authentication + role
+ * - allowedRoles: ['customer'] / ['staff'] / ['admin']
+ * - Nếu không authorized → Redirect /auth
+ * 
+ * Toaster:
+ * - Sonner toast notifications
+ * - Position: bottom-right
+ * - Duration: 3s default
+ * 
+ * Router config:
+ * - createBrowserRouter (React Router v6)
+ * - HTML5 history mode
+ * - No hash (#) in URLs
+ * 
+ * Dependencies:
+ * - React Router v6
+ * - LanguageProvider: i18n
+ * - AuthProvider: Authentication context
+ * - Sonner: Toast notifications
+ */
+
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { LanguageProvider } from "./components/LanguageProvider";
 import { AuthProvider } from "./contexts/AuthContext";

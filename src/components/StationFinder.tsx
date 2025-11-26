@@ -1,12 +1,12 @@
 /**
  * ===============================================================
- * STATION FINDER COMPONENT
+ * STATION FINDER COMPONENT (TÌM KIẾM TRẠM SẠC)
  * ===============================================================
  * Component tìm kiếm và hiển thị danh sách trạm sạc
  * 
  * Chức năng:
  * - 🔍 Tìm kiếm trạm theo tên hoặc địa chỉ
- * - 📍 Filter theo: All / Available / Fast charging (>=150kW)
+ * - 📊 Filter theo: All / Available / Fast charging (>=150kW)
  * - 🗺️ 3 chế độ xem: List view / Map view / Detail view
  * - 📍 Hiển thị khoảng cách từ vị trí user (nếu có GPS)
  * - ⚡ Hiển thị số điểm sạc available / total

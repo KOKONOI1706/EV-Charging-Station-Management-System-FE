@@ -1,3 +1,86 @@
+/**
+ * ===============================================================
+ * TRANSLATIONS DATA - Dữ liệu Đa Ngôn Ngữ (English + Tiếng Việt)
+ * ===============================================================
+ * File chứa tất cả text content của app với 2 ngôn ngữ
+ * 
+ * Chức năng:
+ * - 🌍 i18n (internationalization) cho toàn bộ app
+ * - 🇬🇧 English: Ngôn ngữ mặc định
+ * - 🇻🇳 Tiếng Việt: Ngôn ngữ thứ hai
+ * - 🔄 Switch language real-time không reload page
+ * 
+ * Cấu trúc:
+ * 
+ * 1. Language Type:
+ *    type Language = "en" | "vi"
+ * 
+ * 2. Translation Interface:
+ *    - Header: signIn, signOut, welcome, dashboard...
+ *    - Hero Section: heroTitle, heroSubtitle, findStationsButton...
+ *    - Features: whyChooseTitle, ultraFastCharging...
+ *    - Station Finder: searchPlaceholder, filterStations...
+ *    - Map & Layout: mapView, listView, stationLayout...
+ *    - Booking: bookChargingSession, selectDateTime, totalCost...
+ *    - Dashboard: myDashboard, overview, chargingSessions...
+ *    - Forms: email, password, confirmPassword...
+ *    - Status: active, completed, pending, cancelled...
+ *    - Payments: paymentHistory, paymentMethod, totalAmount...
+ *    - Errors: errorOccurred, requiredField, invalidEmail...
+ *    - Common: save, cancel, delete, edit, loading...
+ * 
+ * 3. Translations Object:
+ *    ```typescript
+ *    const translations: Record<Language, Translation> = {
+ *      en: { signIn: "Sign In", ... },
+ *      vi: { signIn: "Đăng Nhập", ... }
+ *    }
+ *    ```
+ * 
+ * Usage Example:
+ * ```typescript
+ * import { useLanguage } from '@/contexts/LanguageContext';
+ * 
+ * function MyComponent() {
+ *   const { t } = useLanguage(); // t = translations object
+ *   
+ *   return (
+ *     <div>
+ *       <h1>{t.heroTitle}</h1>
+ *       <button>{t.signIn}</button>
+ *     </div>
+ *   );
+ * }
+ * ```
+ * 
+ * Total Keys: ~500+ translation keys
+ * Categories:
+ * - Navigation & Header (20+)
+ * - Hero & Marketing (30+)
+ * - Station Finder (50+)
+ * - Booking & Reservation (40+)
+ * - Dashboard & Analytics (60+)
+ * - Forms & Validation (50+)
+ * - Status & States (30+)
+ * - Payments & Invoices (40+)
+ * - Charging Sessions (50+)
+ * - User Management (30+)
+ * - Settings & Profile (30+)
+ * - Errors & Messages (40+)
+ * - Common Actions (30+)
+ * - Date & Time (20+)
+ * 
+ * Storage:
+ * - Language preference lưu trong localStorage
+ * - Key: 'language' → 'en' | 'vi'
+ * - Persist across sessions
+ * 
+ * Dependencies:
+ * - LanguageContext: Provider và useLanguage hook
+ * - React Context API: State management
+ * - localStorage: Persist language choice
+ */
+
 export type Language = "en" | "vi";
 
 export interface Translation {

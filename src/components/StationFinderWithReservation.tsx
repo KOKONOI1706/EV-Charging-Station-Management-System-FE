@@ -1,3 +1,56 @@
+/**
+ * ===============================================================
+ * STATION FINDER WITH RESERVATION (TÌM TRẠM VỚI ĐẶT CHỐ)
+ * ===============================================================
+ * Component tìm trạm sạc kết hợp với chức năng đặt chỗ 15 phút
+ * 
+ * Chức năng chính:
+ * - 🔍 Tìm kiếm trạm sạc (dùng StationFinder component)
+ * - 🎫 Đặt chỗ tại trạm (giữ chỗ 15 phút)
+ * - ⏱️ Hiển thị countdown timer cho reservation
+ * - 🔔 Thông báo cảnh báo khi còn 5 phút
+ * - 📢 Browser notification (nếu user cho phép)
+ * - ❌ Hủy reservation
+ * - ✅ Check-in khi đến trạm
+ * 
+ * Props:
+ * - userId: ID của user đang đăng nhập (hoặc guest ID)
+ * 
+ * State quản lý:
+ * - selectedStation: Station đang được chọn để đặt chỗ
+ * - selectedChargingPointId: Điểm sạc cụ thể (nếu có)
+ * - showConfirmModal: Hiển/ẩn modal xác nhận đặt chỗ
+ * - activeReservation: Reservation đang active của user
+ * - notification: Thông báo hiển thị (5 phút cuối, hết hạn)
+ * 
+ * Flow đặt chỗ:
+ * 1. User chọn station + charging point → Click "Đặt chỗ"
+ * 2. Kiểm tra chưa có reservation active khác
+ * 3. Mở ReservationConfirmModal để xác nhận
+ * 4. User confirm → Gọi reservationService.createReservation()
+ * 5. Nhận reservation object → Hiển thị ReservationTimer
+ * 6. Timer đếm ngược từ 15:00 → 00:00
+ * 7. Khi còn 5:00 → Hiển thị alert + Browser notification
+ * 8. User đến trạm click "Đã đến trạm" → Navigate /dashboard auto-start charging
+ * 
+ * Notifications:
+ * - 5 phút cuối: Alert banner + Browser notification
+ * - Hết hạn: Clear reservation + Hiển thông báo
+ * - Auto-hide sau 10s
+ * 
+ * Browser Notification:
+ * - Yêu cầu permission khi component mount
+ * - Chỉ hiển thị nếu user granted permission
+ * - Title: "⚠️ Cảnh báo giữ chỗ"
+ * - Body: "Còn 5 phút trước khi hết thời gian giữ chỗ tại..."
+ * 
+ * Dependencies:
+ * - StationFinder: Component tìm kiếm trạm
+ * - ReservationConfirmModal: Modal xác nhận đặt chỗ
+ * - ReservationTimer: Hiển thị countdown timer
+ * - reservationService: Service quản lý reservations
+ */
+
 import { useState, useEffect } from 'react';
 import { Station } from '../data/mockDatabase';
 import { reservationService, ReservationResult } from '../services/reservationService';

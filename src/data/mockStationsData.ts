@@ -1,3 +1,145 @@
+/**
+ * ===============================================================
+ * MOCK STATIONS DATA - Dữ Liệu Trạm Sạc Mẫu (Mock Data)
+ * ===============================================================
+ * File chứa dữ liệu mẫu chi tiết cho các trạm sạc tại TP.HCM
+ * 
+ * Chức năng:
+ * - 🏢 6 trạm sạc mẫu với dữ liệu realistic
+ * - 🔌 Chi tiết charging points cho mỗi trạm
+ * - 🗺️ Station layouts với entrances, facilities
+ * - 📍 Tọa độ GPS thực tế tại TP.HCM
+ * - ⚡ Đa dạng connector types, power levels
+ * 
+ * Enhanced Features:
+ * - Charging Points: Mỗi trạm có 4-15 charging points
+ * - Point Status: available, in-use, maintenance
+ * - Layouts: Visual grid với entrances, facilities
+ * - Amenities: WiFi, nhà vệ sinh, cafe, shopping...
+ * 
+ * generateChargingPoints(stationId, total, available):
+ * - Tạo array charging points cho 1 trạm
+ * - Input:
+ *   + stationId: ID của station (để link foreign key)
+ *   + total: Tổng số charging points
+ *   + available: Số points available (còn lại là in-use/maintenance)
+ * - Output: ChargingPoint[] với:
+ *   + id: `{stationId}-cp-{number}`
+ *   + number: 1, 2, 3...
+ *   + connectorType: CCS, CHAdeMO (rotation i % 3)
+ *   + powerKw: 100kW, 150kW (rotation i % 2)
+ *   + status: available | in-use | maintenance
+ *   + currentUser: Random nếu in-use
+ *   + estimatedTimeRemaining: 30-150 phút nếu in-use
+ *   + position: { x, y } (grid layout)
+ * 
+ * Station Data (6 trạm):
+ * 
+ * 1. VinFast Landmark 81:
+ *    - Location: Nguyễn Hữu Cảnh, Bình Thạnh
+ *    - Coordinates: 10.7946, 106.7218
+ *    - Charging Points: 8 total, 4 available
+ *    - Power: 150kW
+ *    - Connectors: CCS, Type 2
+ *    - Price: 3.500đ/kWh
+ *    - Rating: 4.9/5
+ *    - Amenities: WiFi, Restroom, Mall, Security 24/7
+ *    - Layout: 6x4 grid, 2 entrances (west/east), restroom + cafe + parking
+ * 
+ * 2. VinFast Vivo City:
+ *    - Location: Nguyễn Văn Linh, Quận 7
+ *    - Coordinates: 10.7414, 106.6994
+ *    - Charging Points: 10 total, 0 available (BUSY - test case)
+ *    - Power: 120kW
+ *    - Price: 3.200đ/kWh
+ *    - Rating: 4.7/5
+ *    - Hours: 09:00 - 22:00
+ *    - Amenities: Vivo City Mall, Food Court, Free Parking, Covered
+ * 
+ * 3. Tesla Supercharger Thảo Điền:
+ *    - Location: Quốc Hương, Thảo Điền, Q2
+ *    - Coordinates: 10.8014, 106.7397
+ *    - Charging Points: 6 total, 6 available (ALL AVAILABLE)
+ *    - Power: 250kW (ultra-fast Tesla V3)
+ *    - Price: 4.200đ/kWh
+ *    - Rating: 4.8/5
+ *    - 24/7
+ *    - Amenities: Tesla exclusive, Lounge, Premium
+ * 
+ * 4. Shell Recharge Phú Mỹ Hưng:
+ *    - Location: Nguyễn Văn Linh, PMH, Q7
+ *    - Coordinates: 10.7256, 106.7019
+ *    - Charging Points: 12 total, 8 available
+ *    - Power: 180kW
+ *    - Connectors: CCS, Type 2, CHAdeMO
+ *    - Price: 3.800đ/kWh
+ *    - Rating: 4.6/5
+ *    - Amenities: Shell Store, Car Wash, Air Pump
+ * 
+ * 5. EVgo District 1:
+ *    - Location: Lê Lợi, Quận 1 (center)
+ *    - Coordinates: 10.7730, 106.6980
+ *    - Charging Points: 4 total, 2 available (LIMITED)
+ *    - Power: 100kW
+ *    - Price: 4.000đ/kWh (premium location)
+ *    - Rating: 4.5/5
+ *    - Hours: 06:00 - 23:00
+ *    - Amenities: City center, Shopping nearby
+ * 
+ * 6. GreenCharge Airport:
+ *    - Location: Trường Sơn, Tân Bình (near airport)
+ *    - Coordinates: 10.8187, 106.6598
+ *    - Charging Points: 15 total, 12 available
+ *    - Power: 200kW
+ *    - Price: 4.500đ/kWh
+ *    - Rating: 4.7/5
+ *    - 24/7
+ *    - Amenities: Airport proximity, Waiting lounge, Luggage storage
+ * 
+ * Layout Structure:
+ * ```typescript
+ * layout: {
+ *   width: number,        // Grid width (cells)
+ *   height: number,       // Grid height (cells)
+ *   entrances: Array<{    // Entry/exit points
+ *     x: number,
+ *     y: number,
+ *     direction: 'north' | 'south' | 'east' | 'west'
+ *   }>,
+ *   facilities: Array<{   // Amenities locations
+ *     type: 'restroom' | 'cafe' | 'parking' | 'shop',
+ *     x: number,
+ *     y: number,
+ *     width: number,
+ *     height: number
+ *   }>
+ * }
+ * ```
+ * 
+ * Status Display:
+ * - Available (Green): >= 50% spots free
+ * - Limited (Yellow): < 50% spots free
+ * - Busy (Red): 0 spots free
+ * 
+ * Usage:
+ * ```typescript
+ * import { ENHANCED_MOCK_STATIONS } from '@/data/mockStationsData';
+ * 
+ * // Map stations
+ * const stations = ENHANCED_MOCK_STATIONS;
+ * 
+ * // Find by ID
+ * const station = stations.find(s => s.id === '1');
+ * 
+ * // Get charging points
+ * const points = station.chargingPoints;
+ * ```
+ * 
+ * Dependencies:
+ * - mockDatabase.ts: Station, ChargingPoint interfaces
+ * - TypeScript: Type safety
+ */
+
 // Enhanced Mock Stations Data with Charging Points and Layouts
 import { Station, ChargingPoint } from './mockDatabase';
 

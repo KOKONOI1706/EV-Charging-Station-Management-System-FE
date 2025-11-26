@@ -1,27 +1,138 @@
 /**
- * ========================================
- * AUTH CONTEXT
- * ========================================
- * React Context để quản lý state xác thực toàn app
+ * ===============================================================
+ * AUTH CONTEXT (QUẢN LÝ XÁC THỰC TOÀN APP)
+ * ===============================================================
+ * React Context Provider quản lý trạng thái xác thực (authentication) cho toàn bộ ứng dụng
  * 
- * Chức năng:
- * - Cung cấp thông tin user cho toàn bộ app
- * - Quản lý trạng thái đăng nhập (authenticated state)
- * - Cung cấp hàm login/logout
- * - Cung cấp hàm cập nhật thông tin user
- * - Tự động khôi phục session từ localStorage khi app load
+ * Mô tả:
+ * Context này cung cấp state và methods liên quan đến authentication cho tất cả components
+ * trong app thông qua React Context API. Giúp tránh prop drilling và quản lý user state tập trung.
+ * 
+ * Chức năng chính:
+ * - 👤 Quản lý thông tin user hiện tại (user state)
+ * - 🔐 Quản lý trạng thái đăng nhập (authenticated state)
+ * - 💾 Tự động khôi phục session từ localStorage khi app load
+ * - 🔄 Cung cấp methods login/logout/updateUser cho toàn app
+ * - ⏳ Quản lý loading state khi check authentication
+ * - 🚀 Performance: Chỉ re-render components khi auth state thay đổi
+ * 
+ * Context Value (AuthContextType):
+ * ```typescript
+ * {
+ *   user: User | null;              // Thông tin user đang đăng nhập (null = chưa login)
+ *   isAuthenticated: boolean;        // true = đã login, false = chưa login
+ *   isLoading: boolean;              // true = đang check auth state (app startup)
+ *   login: (user) => void;           // Set user sau khi đăng nhập thành công
+ *   logout: () => Promise<void>;     // Đăng xuất và xóa localStorage
+ *   updateUser: (updates) => Promise<void>; // Cập nhật thông tin user
+ * }
+ * ```
  * 
  * Cách sử dụng:
- * 1. Wrap app với <AuthProvider>
- * 2. Dùng hook useAuth() để truy cập context
  * 
- * State cung cấp:
- * - user: Thông tin user hiện tại (hoặc null nếu chưa login)
- * - isAuthenticated: Boolean cho biết đã login hay chưa
- * - isLoading: Boolean cho biết đang check auth state
- * - login(): Hàm set user sau khi đăng nhập
- * - logout(): Hàm đăng xuất
- * - updateUser(): Hàm cập nhật thông tin user
+ * 1. **Setup Provider (main.tsx hoặc App.tsx):**
+ * ```tsx
+ * import { AuthProvider } from './contexts/AuthContext';
+ * 
+ * <AuthProvider>
+ *   <App />
+ * </AuthProvider>
+ * ```
+ * 
+ * 2. **Sử dụng trong component:**
+ * ```tsx
+ * import { useAuth } from './contexts/AuthContext';
+ * 
+ * function MyComponent() {
+ *   const { user, isAuthenticated, login, logout } = useAuth();
+ *   
+ *   if (!isAuthenticated) return <div>Please login</div>;
+ *   
+ *   return <div>Welcome {user.name}!</div>;
+ * }
+ * ```
+ * 
+ * 3. **Login flow:**
+ * ```tsx
+ * const { login } = useAuth();
+ * const handleLogin = async () => {
+ *   const user = await AuthService.login(email, password);
+ *   login(user); // ← Set user vào context
+ * }
+ * ```
+ * 
+ * 4. **Logout flow:**
+ * ```tsx
+ * const { logout } = useAuth();
+ * const handleLogout = async () => {
+ *   await logout(); // ← Xóa user + localStorage
+ * }
+ * ```
+ * 
+ * 5. **Update user info:**
+ * ```tsx
+ * const { updateUser } = useAuth();
+ * const handleUpdate = async () => {
+ *   await updateUser({ name: 'New Name' }); // ← Cập nhật backend + context
+ * }
+ * ```
+ * 
+ * Lifecycle:
+ * 
+ * 1. **App startup (useEffect):**
+ *    - isLoading = true
+ *    - Check localStorage có user không
+ *    - Nếu có → setUser, setIsAuthenticated = true
+ *    - Nếu không → user = null, isAuthenticated = false
+ *    - isLoading = false
+ * 
+ * 2. **Login:**
+ *    - User login thành công → AuthService trả về user object
+ *    - Gọi login(user) → setUser, setIsAuthenticated = true
+ *    - AuthService tự động lưu vào localStorage
+ * 
+ * 3. **Logout:**
+ *    - Gọi logout() → AuthService xóa localStorage
+ *    - setUser(null), setIsAuthenticated = false
+ *    - Force logout ngay cả khi API call fail (để UX tốt)
+ * 
+ * State Persistence:
+ * - AuthService quản lý localStorage:
+ *   * Key: "chargetech_user"
+ *   * Value: JSON.stringify(user)
+ * - Khi app refresh → useEffect tự động khôi phục user từ localStorage
+ * 
+ * Error Handling:
+ * - updateUser: Throw error nếu không có user đang login
+ * - logout: Catch error từ API nhưng vẫn force logout (clear state)
+ * - useAuth hook: Throw error nếu dùng ngoài AuthProvider
+ * 
+ * Protected Routes Integration:
+ * ```tsx
+ * import { useAuth } from './contexts/AuthContext';
+ * import { Navigate } from 'react-router-dom';
+ * 
+ * function ProtectedRoute({ children }) {
+ *   const { isAuthenticated, isLoading } = useAuth();
+ *   
+ *   if (isLoading) return <Spinner />;
+ *   if (!isAuthenticated) return <Navigate to="/login" />;
+ *   
+ *   return children;
+ * }
+ * ```
+ * 
+ * Dependencies:
+ * - React Context API (createContext, useContext)
+ * - React Hooks (useState, useEffect)
+ * - AuthService (login/logout/updateProfile/getCurrentUser)
+ * - mockDatabase (User interface)
+ * - localStorage (session persistence)
+ * 
+ * Type Safety:
+ * - AuthContextType: Interface định nghĩa cấu trúc context
+ * - useAuth(): Custom hook với type checking
+ * - Throw error nếu useAuth() dùng ngoài Provider
  */
 
 // Import React

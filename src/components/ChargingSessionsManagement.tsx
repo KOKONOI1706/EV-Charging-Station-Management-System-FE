@@ -1,3 +1,59 @@
+/**
+ * ===============================================================
+ * CHARGING SESSIONS MANAGEMENT COMPONENT
+ * ===============================================================
+ * Component quản lý tất cả charging sessions (Admin/Staff/Customer)
+ * 
+ * Chức năng:
+ * - 📋 Hiển thị table danh sách tất cả sessions
+ * - 🔍 Filter theo status (All, Active, Completed, Error)
+ * - 📊 Thống kê: Total sessions, active, completed, energy, revenue
+ * - 👁️ Xem chi tiết session (modal)
+ * - 📝 Export to CSV/Excel (TODO)
+ * - 📅 Sắp xếp theo ngày
+ * 
+ * Roles:
+ * - Admin: Xem tất cả sessions của hệ thống
+ * - Staff: Xem sessions của station được assign (filter theo stationId)
+ * - Customer: Xem sessions của chính mình (filter theo userId)
+ * 
+ * Props:
+ * - userRole: 'admin' | 'staff' | 'customer'
+ * - userId: ID của customer (nếu role=customer)
+ * - stationId: UUID của station (nếu role=staff)
+ * 
+ * Statistics:
+ * - totalSessions: Tổng số sessions
+ * - activeSessions: Sessions đang active
+ * - completedSessions: Sessions đã hoàn thành
+ * - totalEnergyConsumed: Tổng kWh
+ * - totalRevenue: Tổng doanh thu (VND)
+ * - averageSessionDuration: Thời gian trung bình (phút)
+ * 
+ * Table columns:
+ * - Session ID
+ * - User (name, email)
+ * - Vehicle (plate_number)
+ * - Station (name, address)
+ * - Charging Point (name, power)
+ * - Energy (kWh)
+ * - Cost (VND)
+ * - Status (badge với màu)
+ * - Start time
+ * - Duration
+ * - Actions (View details)
+ * 
+ * Detail Modal:
+ * - Full session info
+ * - Payment info
+ * - Battery tracking (nếu có)
+ * - Idle fee breakdown
+ * 
+ * Dependencies:
+ * - Backend API: /charging-sessions
+ * - Toast: Thông báo lỗi
+ */
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";

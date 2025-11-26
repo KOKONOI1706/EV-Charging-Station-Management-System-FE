@@ -1,3 +1,41 @@
+/**
+ * ===============================================================
+ * API SERVICE - LEGACY VERSION (PHIÊN BẢN CŨ)
+ * ===============================================================
+ * ⚠️ WARNING: File này có vẻ là legacy code (dùng REACT_APP_ thay vì VITE_)
+ * 
+ * Mô tả:
+ * HTTP client service để gọi backend API với các methods:
+ * - Authentication (login, register)
+ * - Stations CRUD
+ * - Bookings CRUD
+ * - KV Store operations
+ * - Health check
+ * 
+ * Chức năng:
+ * - 🔐 login(email, password): Đăng nhập
+ * - 📝 register(userData): Đăng ký tài khoản
+ * - 🏢 getStations(): Lấy danh sách trạm
+ * - 📍 getStation(id): Lấy chi tiết trạm
+ * - ➕ createStation(data): Tạo trạm mới
+ * - 📅 getBookings(userId?): Lấy bookings
+ * - ➕ createBooking(data): Tạo booking mới
+ * - ✏️ updateBooking(id, updates): Cập nhật booking
+ * - ❌ cancelBooking(id): Hủy booking
+ * - 💾 kvGet/kvSet/kvDelete: KV storage operations
+ * - ❤️ healthCheck(): Kiểm tra backend
+ * 
+ * Note:
+ * - Dùng process.env.REACT_APP_API_URL (Create React App style)
+ * - Project hiện tại dùng Vite (import.meta.env.VITE_API_URL)
+ * - Có thể cần migrate sang apiService.ts
+ * 
+ * TODO:
+ * - [ ] Kiểm tra xem file này còn được dùng không
+ * - [ ] Nếu không dùng → Xóa
+ * - [ ] Nếu còn dùng → Migrate sang Vite env
+ */
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**

@@ -1,3 +1,72 @@
+/**
+ * ===============================================================
+ * LEAFLET MAP COMPONENT (BẢN ĐỒ LEAFLET)
+ * ===============================================================
+ * Component hiển thị bản đồ tương tác với Leaflet library
+ * 
+ * Chức năng:
+ * - 🗺️ Render bản đồ OpenStreetMap
+ * - 📍 Hiển thị markers cho tất cả stations
+ * - 🎨 Custom marker colors theo status (xanh/vàng/đỏ/xám)
+ * - 💬 Popup khi click marker
+ * - 🖱️ Click marker → onStationSelect callback
+ * - 🔄 Auto-update markers khi stations thay đổi
+ * 
+ * Props:
+ * - stations: Station[] - Danh sách trạm cần hiển thị
+ * - center: [lat, lng] - Tọa độ trung tâm ban đầu
+ * - zoom: number - Zoom level ban đầu (1-18)
+ * - onStationSelect: (station) => void - Callback khi click marker
+ * - onViewDetails: (station) => void - Callback "Xem chi tiết"
+ * 
+ * Leaflet setup:
+ * - Tile layer: OpenStreetMap
+ * - Default marker icons: CDN (cloudflare)
+ * - Custom markers: Teardrop shape với màu status
+ * 
+ * Marker colors (dựa vào getStationStatus):
+ * - Available (còn nhiều chỗ): Green (#22c55e)
+ * - Limited (sắp đầy): Yellow (#eab308)
+ * - Full (hết chỗ): Red (#ef4444)
+ * - Maintenance: Gray (#9ca3af)
+ * 
+ * Popup content:
+ * - 📌 Tên trạm (bold)
+ * - 📍 Địa chỉ
+ * - ✅ Số chỗ: {available}/{total}
+ * - ⚡ Công suất: {power}kW
+ * - 💰 Giá: {price}/kWh
+ * - Nút "Đặt chỗ" → onStationSelect
+ * - Nút "Xem chi tiết" → onViewDetails
+ * 
+ * Coordinates handling:
+ * - Support cả station.lat/lng VÀ station.latitude/longitude
+ * - Handle function getters: latitude() / longitude()
+ * - Validate coordinates (skip invalid)
+ * 
+ * Custom marker design:
+ * - Teardrop/pin shape (border-radius 50% 50% 50% 0)
+ * - Rotate -45deg
+ * - White border (3px)
+ * - Box shadow
+ * - Inner white dot (rotate back +45deg)
+ * 
+ * Lifecycle:
+ * 1. Mount: Khởi tạo map với center + zoom
+ * 2. Add tile layer (OSM)
+ * 3. Stations change → Clear old markers → Add new markers
+ * 4. Unmount: Cleanup map instance
+ * 
+ * Refs:
+ * - mapRef: L.Map instance (persistent)
+ * - mapContainerRef: HTML div container
+ * - markersRef: Array of L.Marker (để cleanup)
+ * 
+ * Dependencies:
+ * - Leaflet: Map library
+ * - getStationStatus: Util tính status color
+ */
+
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';

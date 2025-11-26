@@ -1,3 +1,54 @@
+/**
+ * ===============================================================
+ * START CHARGING MODAL COMPONENT
+ * ===============================================================
+ * Modal bắt đầu phiên sạc mới
+ * 
+ * Chức năng:
+ * - 🚗 Chọn xe (từ danh sách vehicles của user)
+ * - 💡 Nhập meter reading (chỉ số đồng hồ điện)
+ * - 🔋 Nhập battery % hiện tại và mục tiêu (nếu có xe)
+ * - ⚡ Gọi API bắt đầu sạc
+ * - 🎯 Auto-select xe nếu user chỉ có 1 xe
+ * - ➕ Link đến VehicleManagement nếu chưa có xe
+ * 
+ * Props:
+ * - isOpen: Boolean điều khiển hiển/ẩn modal
+ * - onClose: Callback đóng modal
+ * - pointId: ID điểm sạc
+ * - pointName: Tên điểm sạc (hiển thị)
+ * - stationName: Tên trạm (hiển thị)
+ * - powerKw: Công suất điểm sạc (hiển thị)
+ * - pricePerKwh: Giá tiền/kWh (hiển thị)
+ * - bookingId: ID của reservation (optional)
+ * - onSuccess: Callback khi bắt đầu thành công
+ * 
+ * Flow:
+ * 1. Modal mở → Load danh sách vehicles của user
+ * 2. User chọn xe (hoặc auto-select nếu 1 xe)
+ * 3. User nhập meter reading (0-10,000 kWh)
+ * 4. User click "Tiếp tục"
+ *    - Nếu có xe + battery info → Mở BatteryInputModal
+ *    - Nếu không có xe/battery → Start trực tiếp (không track pin)
+ * 5. Trong BatteryInputModal: Nhập current % + target %
+ * 6. Gọi chargingSessionApi.startSession() với:
+ *    - user_id, vehicle_id, point_id, booking_id
+ *    - meter_start
+ *    - initial_battery_percent, target_battery_percent
+ * 7. Success → Toast + onSuccess callback → Refresh dashboard
+ * 
+ * Validation:
+ * - Meter reading: 0-10,000 kWh
+ * - Phải có vehicle để track battery
+ * - Battery %: 0-100
+ * 
+ * Dependencies:
+ * - chargingSessionApi: API bắt đầu session
+ * - vehicleApi: Lấy danh sách xe
+ * - BatteryInputModal: Modal nhập battery %
+ * - useAuth: Lấy current user
+ */
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';

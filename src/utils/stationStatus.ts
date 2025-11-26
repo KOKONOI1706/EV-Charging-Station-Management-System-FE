@@ -1,3 +1,87 @@
+/**
+ * ===============================================================
+ * STATION STATUS UTILS (TIỆN ÍCH TRẠNG THÁI TRẠM)
+ * ===============================================================
+ * Utilities tính toán và hiển thị trạng thái trạm sạc
+ * 
+ * Chức năng:
+ * - 🟢 Xác định trạng thái trạm (available/limited/full/maintenance)
+ * - 🎨 Cung cấp màu sắc, icon, label cho UI
+ * - ⏳ Kiểm tra xe sắp sạc xong (trong 10 phút)
+ * - 🗺️ Tạo marker colors cho bản đồ
+ * - ✅ Kiểm tra có thể đặt chỗ không
+ * 
+ * Status types:
+ * 1. available (Còn chỗ): 
+ *    - available > 30% total
+ *    - Color: Green (#22c55e)
+ *    - Icon: ✅
+ * 
+ * 2. limited (Sắp đầy):
+ *    - 0 < available <= 30% total
+ *    - Color: Yellow (#eab308)
+ *    - Icon: ⚠️
+ * 
+ * 3. full (Hết chỗ):
+ *    - available = 0
+ *    - Không có xe sắp xong
+ *    - Color: Red (#ef4444)
+ *    - Icon: 🔴
+ * 
+ * 4. maintenance (Bảo trì):
+ *    - station.status = 'maintenance' hoặc 'offline'
+ *    - Color: Gray (#9ca3af)
+ *    - Icon: 🔧
+ * 
+ * Special case "Sắp có chỗ":
+ * - available = 0 NHƯNG có xe sắp sạc xong (< 10 phút)
+ * - Status: limited
+ * - Label: "Sắp có chỗ"
+ * - Icon: ⏳
+ * 
+ * Functions:
+ * 
+ * 1. getStationStatus(station): StationStatusInfo
+ *    - Trả về đầy đủ info: status, color, bgColor, textColor, label, icon
+ *    - Logic:
+ *      * Kiểm tra maintenance/offline → return maintenance
+ *      * Tính availabilityRate = available / total
+ *      * Nếu available = 0:
+ *        - checkChargingSoon() → return limited ("Sắp có chỗ")
+ *        - Ngược lại → return full
+ *      * Nếu availabilityRate <= 0.3 → return limited
+ *      * Ngược lại → return available
+ * 
+ * 2. checkChargingSoon(station): boolean
+ *    - Kiểm tra có charging point nào status='in-use' VÀ estimatedTimeRemaining <= 10
+ *    - Fallback: 20% random nếu không có data
+ * 
+ * 3. getMarkerColor(station): string
+ *    - Return hex color cho marker trên map
+ * 
+ * 4. getStatusBadgeClasses(station): string
+ *    - Return Tailwind classes cho badge (bg-green-100 text-green-800)
+ * 
+ * 5. getStatusLabel(station): string
+ *    - Return label tiếng Việt ("Còn chỗ", "Sắp đầy", etc.)
+ * 
+ * 6. getStatusIcon(station): string
+ *    - Return emoji icon (✅, ⚠️, 🔴, 🔧)
+ * 
+ * 7. canBookStation(station): boolean
+ *    - Return true nếu status = available HOẶC limited
+ *    - Return false nếu full hoặc maintenance
+ * 
+ * Use cases:
+ * - Station list: Hiển thị badge trạng thái
+ * - Map markers: Tô màu marker theo trạng thái
+ * - Booking validation: Kiểm tra có thể đặt chỗ không
+ * - Real-time updates: Cập nhật UI khi trạng thái thay đổi
+ * 
+ * Dependencies:
+ * - Station interface với chargingPoints relation
+ */
+
 import { Station } from '../data/mockDatabase';
 
 export type StationStatusType = 'available' | 'limited' | 'full' | 'maintenance';

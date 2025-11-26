@@ -1,3 +1,68 @@
+/**
+ * ===============================================================
+ * RESERVATION CONFIRM MODAL (XÁC NHẬN ĐẶT CHỐ)
+ * ===============================================================
+ * Modal xác nhận đặt chỗ trước khi tạo reservation
+ * 
+ * Chức năng:
+ * - 📝 Hiển thị thông tin trạm và điểm sạc được chọn
+ * - ✅ Validate trước khi cho phép đặt chỗ
+ * - ⚠️ Hiển thị warnings (chưa có xe, không tương thích connector)
+ * - 🔒 Kiểm tra user đã đăng nhập
+ * - 🚗 Kiểm tra user có xe trong hệ thống
+ * - 🔌 Kiểm tra charging point available
+ * - 📡 Gọi API tạo reservation
+ * - ⏰ Thông báo thời gian giữ chỗ (15 phút)
+ * 
+ * Props:
+ * - station: Station object
+ * - userId: ID của user
+ * - chargingPointId: ID điểm sạc (optional, nếu không chọn cụ thể)
+ * - onSuccess: Callback khi đặt chỗ thành công
+ * - onCancel: Callback hủy modal
+ * 
+ * Validation flow:
+ * 1. Load data:
+ *    - User vehicles từ vehicleApi
+ *    - Charging points của station từ chargingPointsApi
+ * 
+ * 2. Kiểm tra cơ bản:
+ *    - User phải đăng nhập → Nếu không: Error "Bạn cần đăng nhập"
+ *    - User phải có ít nhất 1 xe → Nếu không: Error "Bạn cần thêm xe"
+ * 
+ * 3. Nếu chọn charging point cụ thể:
+ *    - Kiểm tra point tồn tại
+ *    - Kiểm tra status = Available
+ *    - Dùng BookingValidationService.validateBooking()
+ *    - Hiển warnings nếu có (connector không tương thích)
+ * 
+ * 4. Nếu không chọn point:
+ *    - Kiểm tra station có ít nhất 1 point Available
+ *    - Warning: "Chúng tôi sẽ tự động chọn điểm sạc phù hợp"
+ * 
+ * Confirm button:
+ * - Disabled nếu:
+ *   * Đang loading
+ *   * Có error (chưa đăng nhập, chưa có xe, point không available)
+ * - Click → Gọi reservationService.createReservation()
+ * 
+ * Success flow:
+ * - Nhận reservation object từ service
+ * - Gọi onSuccess(result)
+ * - Parent component hiển thị ReservationTimer
+ * 
+ * Error handling:
+ * - Network error: "Không thể kết nối server"
+ * - Point occupied: "Chỗ này đã được đặt"
+ * - Duplicate reservation: "Bạn đã có chỗ đang giữ"
+ * 
+ * Dependencies:
+ * - reservationService: Tạo reservation
+ * - vehicleApi: Lấy xe của user
+ * - chargingPointsApi: Lấy charging points
+ * - BookingValidationService: Validate compatibility
+ */
+
 import { useState, useEffect } from 'react';
 import { Station } from '../data/mockDatabase';
 import { reservationService, ReservationResult } from '../services/reservationService';

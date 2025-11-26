@@ -1,3 +1,51 @@
+/**
+ * ===============================================================
+ * USER HISTORY PAGE (TRANG LỊCH SỬ NGƯỜI DÙNG)
+ * ===============================================================
+ * Page hiển thị lịch sử hoạt động của user
+ * 
+ * Chức năng:
+ * - 📜 Hiển thị danh sách actions của user
+ * - 🕐 Timestamp cho mỗi action
+ * - 📊 Table view với ID, User ID, Action, Timestamp
+ * 
+ * Data structure:
+ * ```typescript
+ * interface UserHistory {
+ *   id: number;
+ *   userId: number;
+ *   action: string;  // "Login", "Logout", "Book station", etc.
+ *   timestamp: string;  // ISO date string
+ * }
+ * ```
+ * 
+ * API:
+ * - GET /api/user-history
+ * - Return: UserHistory[]
+ * 
+ * States:
+ * - data: UserHistory[] - Dữ liệu lịch sử
+ * - loading: Boolean - Đang load
+ * - error: String | null - Error message
+ * 
+ * UI:
+ * - Table với 4 columns:
+ *   * ID
+ *   * User ID
+ *   * Action
+ *   * Timestamp
+ * - Loading state: "Loading data..."
+ * - Error state: "Error: {message}"
+ * 
+ * Protected route:
+ * - Allowed roles: customer, staff, admin
+ * 
+ * URL: /user-history
+ * 
+ * Dependencies:
+ * - Backend API: /api/user-history
+ */
+
 import React, { useEffect, useState } from 'react';
 
 interface UserHistory {

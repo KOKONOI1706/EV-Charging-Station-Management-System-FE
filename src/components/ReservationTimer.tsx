@@ -1,3 +1,52 @@
+/**
+ * ===============================================================
+ * RESERVATION TIMER COMPONENT
+ * ===============================================================
+ * Hiển thị countdown timer cho reservation (15 phút)
+ * 
+ * Chức năng:
+ * - ⏱️ Countdown timer real-time (cập nhật mỗi 1s)
+ * - 🟢 Progress bar hiển thị % thời gian còn lại
+ * - 🔔 Thông báo khi còn 5 phút (1 lần)
+ * - ❌ Nút hủy reservation
+ * - ✅ Nút "Đã đến trạm" (check-in)
+ * - 📍 Hiển thị station name, charging point ID
+ * - 🟡 Màu sắc thay đổi: Xanh (>5 phút) → Đỏ (<5 phút)
+ * 
+ * Props:
+ * - reservation: Reservation object (từ reservationService)
+ * - onCancel: Callback khi hủy reservation
+ * - onComplete: Callback khi check-in (completeReservation)
+ * - onExpired: Callback khi hết hạn
+ * 
+ * Timer logic:
+ * 1. useEffect start interval 1s
+ * 2. Mỗi giây get updated reservation từ reservationService
+ * 3. Check status:
+ *    - expired → Call onExpired + Clear interval
+ *    - completed → Stop timer (không gọi onComplete - đã được nút xử lý)
+ *    - cancelled → Call onCancel + Clear interval
+ * 4. Update remainingTime → Re-render
+ * 5. Nếu remainingTime <= 5*60 và chưa notify → Hiển thị alert
+ * 
+ * Progress bar:
+ * - 100% = 15 phút (900s)
+ * - Width = (remainingTime / 900) * 100%
+ * - Gradient: Xanh khi > 5 phút, Đỏ khi <= 5 phút
+ * 
+ * Callbacks:
+ * - handleCancel: Gọi reservationService.cancelReservation() + Toast + onCancel
+ * - handleComplete: Gọi reservationService.completeReservation() + Toast + onComplete
+ * 
+ * Extra components:
+ * - NoReservation: Hiển thị khi chưa có reservation
+ * - ExpiredReservation: Hiển thị khi reservation hết hạn
+ * 
+ * Dependencies:
+ * - reservationService: Get/cancel/complete reservation
+ * - toast (sonner): Thông báo
+ */
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';

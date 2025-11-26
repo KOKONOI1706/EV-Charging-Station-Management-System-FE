@@ -1,3 +1,78 @@
+/**
+ * ===============================================================
+ * MOCK DATABASE (DỮ LIỆU MẪU)
+ * ===============================================================
+ * TypeScript interfaces và mock data service cho frontend
+ * 
+ * Chức năng:
+ * - 📦 Định nghĩa interfaces cho tất cả entities
+ * - 🔄 Fetch data từ backend API
+ * - 🎯 Type-safe data structures
+ * 
+ * Interfaces:
+ * 
+ * 1. ChargingPoint:
+ *    - id, stationId, number
+ *    - connectorType, powerKw
+ *    - status: available/in-use/maintenance/offline
+ *    - currentUser, estimatedTimeRemaining
+ *    - position: { x, y } (grid position)
+ * 
+ * 2. Station:
+ *    - id, name, address, city, state, zipCode
+ *    - lat, lng, distance
+ *    - available, total (số chỗ)
+ *    - rating, price, pricePerKwh
+ *    - connector, power, powerKw
+ *    - image, amenities, operatingHours, phone
+ *    - network, status
+ *    - chargingPoints: ChargingPoint[]
+ *    - layout: { width, height, entrances, facilities }
+ * 
+ * 3. User:
+ *    - id, name, email, phone
+ *    - memberSince, totalSessions, totalSpent
+ *    - favoriteStations: string[]
+ *    - role: customer/staff/admin
+ *    - vehicleInfo: { make, model, year, batteryCapacity }
+ * 
+ * 4. Booking:
+ *    - id, userId, stationId, station
+ *    - date, time, duration
+ *    - status: confirmed/completed/cancelled/in-progress
+ *    - price, actualKwh
+ *    - startTime, endTime
+ *    - receipt: { id, kwh, cost, sessionDuration }
+ * 
+ * 5. PricingPlan:
+ *    - id, name, monthlyPrice, annualPrice
+ *    - features: string[]
+ *    - popular: boolean
+ *    - savings: string
+ * 
+ * Methods:
+ * 
+ * 1. fetchStationsFromApi():
+ *    - GET /api/stations
+ *    - Transform API response → Station interface
+ *    - Return Station[]
+ * 
+ * 2. fetchStationByIdFromApi(id):
+ *    - GET /api/stations/:id
+ *    - Return Station | null
+ * 
+ * Mock data:
+ * - PRICING_PLANS: Array của 3 plans (Basic, Plus, Premium)
+ * 
+ * Note:
+ * - "Mock" trong tên nhưng thực tế gọi API thật
+ * - Interfaces được dùng trong toàn bộ frontend
+ * - Đảm bảo type safety với TypeScript
+ * 
+ * Dependencies:
+ * - stationApi: Backend API calls
+ */
+
 // Mock Database Service for EV Charging System
 import { fetchStations as fetchStationsFromApi, fetchStationById as fetchStationByIdFromApi } from '../api/stationApi';
 

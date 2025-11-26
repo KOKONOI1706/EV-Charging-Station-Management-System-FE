@@ -1,3 +1,91 @@
+/**
+ * ===============================================================
+ * PRICING PAGE COMPONENT (COMPONENT TRANG GIÁ)
+ * ===============================================================
+ * Component hiển thị các gói dịch vụ (pricing plans)
+ * 
+ * Chức năng:
+ * - 💰 Hiển thị 3 pricing plans (Basic, Plus, Premium)
+ * - 🔄 Toggle Monthly/Annual billing
+ * - 🌐 Multi-language support (EN/VI)
+ * - 🎯 Highlight "Popular" plan
+ * - ✅ Feature comparison
+ * - 🚀 "Get Started" CTA buttons
+ * 
+ * Props:
+ * - onGetStarted: (planId) => void - Callback khi click button
+ * 
+ * State:
+ * - isAnnual: Boolean (false=Monthly, true=Annual)
+ * 
+ * Plans (từ PRICING_PLANS):
+ * 
+ * 1. Basic:
+ *    - Monthly: $29.99
+ *    - Annual: $299.99 (save $60)
+ *    - Features:
+ *      * Giảm 10% mỗi lần sạc
+ *      * Miễn phí idle fee
+ *      * Hỗ trợ 24/7
+ *      * Tích điểm rewards
+ * 
+ * 2. Plus (Popular):
+ *    - Monthly: $49.99
+ *    - Annual: $499.99 (save $100)
+ *    - All Basic features +
+ *      * Giảm 15%
+ *      * Ưu tiên booking
+ *      * Guest passes
+ * 
+ * 3. Premium:
+ *    - Monthly: $79.99
+ *    - Annual: $799.99 (save $160)
+ *    - All Plus features +
+ *      * Giảm 20%
+ *      * VIP support
+ *      * Valet service
+ *      * Airport lounge
+ * 
+ * Billing toggle:
+ * - Switch Monthly/Annual
+ * - Badge "Save 17%" khi chọn Annual
+ * - Price tự động update
+ * 
+ * Language support:
+ * - useLanguage hook
+ * - getPlanText(planId) → Return translated text
+ * - LanguageSelector top-right
+ * 
+ * Card design:
+ * - Popular plan có border green + "Most Popular" badge
+ * - Gradient background từ green-50 → white → green-50
+ * - Icon cho mỗi plan:
+ *   * Basic: Zap ⚡
+ *   * Plus: TrendingUp 📈
+ *   * Premium: Users 👥
+ * 
+ * Features display:
+ * - Check icon (✓) cho mỗi feature
+ * - Green text cho highlights
+ * - Bullet list
+ * 
+ * Get Started button:
+ * - Green cho popular plan
+ * - Outline cho others
+ * - Hover effects
+ * - Call onGetStarted(planId)
+ * 
+ * Header:
+ * - Title: "Choose Your Plan" / "Chọn Gói Của Bạn"
+ * - Description: Multi-language
+ * - Gradient text green
+ * 
+ * Dependencies:
+ * - PRICING_PLANS data
+ * - useLanguage hook
+ * - LanguageSelector component
+ */
+
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";

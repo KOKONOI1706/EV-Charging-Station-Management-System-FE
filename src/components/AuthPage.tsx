@@ -1,3 +1,89 @@
+/**
+ * ===============================================================
+ * AUTH PAGE COMPONENT (COMPONENT ĐĂNG NHẬP/ĐĂNG KÝ)
+ * ===============================================================
+ * Component form đăng nhập và đăng ký với email verification
+ * 
+ * Chức năng:
+ * - 🔐 Login form (email + password)
+ * - ✍️ Register form (email + password + confirmPassword)
+ * - 📧 Email verification (gửi code 6 digits)
+ * - 👁️ Show/hide password
+ * - ⏪ Back button về trang chủ
+ * - ⚠️ Error handling đầy đủ
+ * 
+ * Props:
+ * - onSuccess: (user) => void - Callback khi login/register thành công
+ * - onBack: () => void - Callback nút quay lại
+ * 
+ * States:
+ * - isLogin: Boolean (true=Login tab, false=Register tab)
+ * - isLoading: Boolean (đang submit)
+ * - error: String (error message)
+ * - showPassword, showConfirmPassword: Boolean
+ * - loginForm: { email, password }
+ * - registerForm: { email, password, confirmPassword }
+ * - verificationStep: 'input' | 'verifying'
+ * - verificationCode: String (6 digits)
+ * - isSendingCode, isVerifying: Boolean
+ * 
+ * Login flow:
+ * 1. User nhập email + password
+ * 2. Submit → AuthService.login(email, password)
+ * 3. Nhận user object
+ * 4. Toast "Chào mừng trở lại, {name}!"
+ * 5. Gọi onSuccess(user)
+ * 
+ * Register flow (2 steps):
+ * 
+ * Step 1 - Input:
+ * 1. User nhập email, password, confirmPassword
+ * 2. Validate:
+ *    - Email không trống
+ *    - Password >= 6 ký tự
+ *    - password === confirmPassword
+ * 3. Submit → Gửi POST /users/send-code { email }
+ * 4. Backend tạo code 6 digits → Gửi email
+ * 5. Toast "Mã xác thực đã được gửi!"
+ * 6. Chuyển sang Step 2 (verificationStep = 'verifying')
+ * 
+ * Step 2 - Verifying:
+ * 1. Hiển thị input nhập code 6 digits
+ * 2. Nút "Gửi lại mã" (handleSendVerificationCode)
+ * 3. User nhập code → Submit
+ * 4. Gọi POST /users/verify-code { email, code }
+ * 5. Nếu code đúng → Gọi AuthService.register()
+ * 6. Nhận user object
+ * 7. Toast "Đăng ký thành công!"
+ * 8. Gọi onSuccess(user)
+ * 
+ * Validation:
+ * - Email: Không trống
+ * - Password: >= 6 ký tự
+ * - Confirm password: Phải khớp với password
+ * - Verification code: 6 digits
+ * 
+ * Error messages:
+ * - "Email đã tồn tại"
+ * - "Mật khẩu không khớp"
+ * - "Mã xác thực không đúng"
+ * - "Mã xác thực đã hết hạn"
+ * - "Đăng nhập thất bại"
+ * 
+ * UI:
+ * - Card với gradient green background
+ * - 2 tabs: Đăng nhập / Đăng ký
+ * - Eye icon toggle password visibility
+ * - Alert hiển thị error (red)
+ * - Loading state trên button
+ * - "Quay lại" button top-left
+ * 
+ * Dependencies:
+ * - AuthService: login, register
+ * - Backend API: /users/send-code, /users/verify-code
+ * - toast (sonner): Notifications
+ */
+
 import { useState, useEffect } from "react";
 import { AuthService } from "../services/authService";
 import { User } from "../data/mockDatabase";

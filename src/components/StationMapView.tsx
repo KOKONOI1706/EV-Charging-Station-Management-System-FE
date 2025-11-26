@@ -1,3 +1,57 @@
+/**
+ * ===============================================================
+ * STATION MAP VIEW (XEM BẢN ĐỒ TRẠM SẠC)
+ * ===============================================================
+ * Component hiển thị trạm sạc trên Google Maps với Leaflet
+ * 
+ * Chức năng:
+ * - 🗺️ Hiển thị tất cả trạm trên bản đồ (Leaflet + OpenStreetMap)
+ * - 📍 Markers cho từng trạm với icon trạng thái (xanh/vàng/đỏ)
+ * - 🔍 Tìm kiếm trạm theo tên/địa chỉ/thành phố
+ * - 📊 Legend (chú thích) hiển thị ý nghĩa màu sắc
+ * - 📱 Chế độ xem: Map view / List view (toggle)
+ * - 👁️ Click marker → onStationSelect callback
+ * - 📝 Click "Xem chi tiết" → onViewDetails callback
+ * 
+ * Props:
+ * - onStationSelect: Callback khi chọn trạm (đặt chỗ)
+ * - onViewDetails: Callback xem chi tiết trạm
+ * 
+ * View modes:
+ * 1. Map view:
+ *    - Leaflet map với OpenStreetMap tiles
+ *    - Markers với popup hiển thị thông tin trạm
+ *    - Click marker → Hiển popup + onStationSelect
+ *    - Legend floating ở góc trên trái
+ * 
+ * 2. List view:
+ *    - Grid cards (2-3 columns)
+ *    - Mỗi card hiển thị: Image, name, address, status, available slots
+ *    - Hover effect: Shadow + border green
+ *    - Click card → onStationSelect
+ *    - Nút "Xem chi tiết" → onViewDetails
+ * 
+ * Status colors (dùng getStationStatus util):
+ * - ✅ Xanh (còn nhiều chỗ): available > 50% total
+ * - ⚠️ Vàng (sắp đầy): available <= 50% và > 0
+ * - 🔴 Đỏ (hết chỗ): available = 0
+ * - 🔧 Xám (bảo trì): status = maintenance
+ * 
+ * Default location:
+ * - Center: TP.HCM (10.762622, 106.660172)
+ * - Zoom: 13
+ * 
+ * Search:
+ * - Filter theo name, address, city
+ * - Case-insensitive
+ * - Real-time filtering
+ * 
+ * Dependencies:
+ * - LeafletMap: Component render Leaflet map
+ * - getStationStatus: Util tính trạng thái trạm
+ * - MockDatabaseService: Lấy danh sách stations
+ */
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';

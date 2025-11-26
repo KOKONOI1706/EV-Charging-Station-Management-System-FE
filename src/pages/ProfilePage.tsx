@@ -1,3 +1,78 @@
+/**
+ * ===============================================================
+ * PROFILE PAGE (TRANG HỒ SƠ NGƯỜI DÙNG)
+ * ===============================================================
+ * Trang hiển thị và chỉnh sửa thông tin cá nhân của user
+ * 
+ * Chức năng:
+ * - 👤 Xem/chỉnh sửa thông tin cá nhân (name, email, phone)
+ * - 🚗 Xem/chỉnh sửa thông tin xe (make, model, year, battery)
+ * - 🔐 Đổi mật khẩu
+ * - ✅ Validation đầy đủ
+ * - 💾 Lưu vào DB qua AuthService
+ * - 🔒 Protected route (yêu cầu đăng nhập)
+ * 
+ * Tabs:
+ * 1. Hồ sơ (Profile):
+ *    - Họ và tên (required)
+ *    - Số điện thoại (required, 10 số)
+ *    - Email (required, format validation)
+ *    - Edit/Save buttons
+ * 
+ * 2. Phương tiện (Vehicle):
+ *    - Hãng xe (make) - VD: Tesla, VinFast
+ *    - Mẫu xe (model) - VD: Model 3, VF e34
+ *    - Năm sản xuất (year) - 2000 → current year + 1
+ *    - Dung lượng pin (battery_capacity_kwh) - kWh
+ *    - Preview: "🚗 2024 Tesla Model 3 • 75 kWh"
+ * 
+ * 3. Bảo mật (Security):
+ *    - Mật khẩu hiện tại (required)
+ *    - Mật khẩu mới (min 6 ký tự)
+ *    - Xác nhận mật khẩu mới (phải khớp)
+ *    - Yêu cầu: Tối thiểu 6 ký tự, kết hợp chữ và số
+ * 
+ * Profile header:
+ * - Avatar circle với chữ cái đầu tên
+ * - Tên + email
+ * - Role badge (Customer/Staff/Admin)
+ * - "Thành viên từ" date
+ * - CheckCircle icon (verified)
+ * 
+ * Validation:
+ * - Name: Không để trống
+ * - Email: Format email hợp lệ
+ * - Phone: 10 chữ số
+ * - Password: Min 6 ký tự, confirmPassword phải khớp
+ * 
+ * Save flow:
+ * 1. User click "Lưu"
+ * 2. Validate form
+ * 3. Gọi AuthService.updateProfile(userId, data)
+ * 4. Nhận updated user từ API
+ * 5. Gọi AuthContext.updateUser(updatedUser)
+ * 6. Cập nhật local state
+ * 7. Toast success
+ * 
+ * Change password flow:
+ * 1. User nhập currentPassword, newPassword, confirmPassword
+ * 2. Validate: newPassword === confirmPassword && length >= 6
+ * 3. Gọi AuthService.changePassword(userId, current, new)
+ * 4. Toast success
+ * 5. Clear form
+ * 
+ * Protected route:
+ * - Nếu !isAuthenticated → Hiển thị "Truy cập bị từ chối" card
+ * - Button "Đăng nhập" → Navigate /auth
+ * 
+ * URL: /profile
+ * 
+ * Dependencies:
+ * - AuthService: updateProfile, changePassword
+ * - AuthContext: user, isAuthenticated, updateUser
+ * - toast (sonner): Thông báo
+ */
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";

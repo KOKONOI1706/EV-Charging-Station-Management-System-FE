@@ -1,4 +1,102 @@
 /**
+ * ===============================================================
+ * BOOKING VALIDATION SERVICE (KIỂM TRA ĐẶT CHỖ)
+ * ===============================================================
+ * Service kiểm tra các điều kiện trước khi cho phép đặt chỗ
+ * 
+ * Chức năng:
+ * - ✅ Validate user đã đăng nhập
+ * - 🚗 Validate user đã có xe trong hệ thống
+ * - 🔌 Validate connector compatibility (đầu sạc xe khớp với trạm)
+ * - 📊 Validate charging point status (Available/Occupied/etc.)
+ * - ⚠️ Hiển thị warnings (battery nhỏ + sạc nhanh, chưa cập nhật connector)
+ * 
+ * Validation levels:
+ * 1. Critical errors: Chặn đặt chỗ (isValid = false)
+ *    - Chưa đăng nhập
+ *    - Chưa có xe
+ *    - Point không available
+ *    - Connector không tương thích
+ * 
+ * 2. Warnings: Cho phép đặt nhưng cảnh báo (isValid = true)
+ *    - Chưa cập nhật connector type của xe
+ *    - Battery xe nhỏ với sạc siêu nhanh (>150kW)
+ * 
+ * Interfaces:
+ * 
+ * ValidationResult:
+ * - isValid: boolean
+ * - errors: string[] (danh sách lỗi critical)
+ * - warnings: string[] (danh sách cảnh báo)
+ * 
+ * Methods:
+ * 
+ * 1. validateBooking(user, chargingPoint, userVehicles)
+ *    - Validate khi user chọn charging point cụ thể
+ *    - Kiểm tra:
+ *      * Authentication
+ *      * User có xe
+ *      * Point status = Available
+ *      * Connector compatibility
+ *      * Battery size vs power warning
+ * 
+ * 2. validateStationBooking(user, hasAvailablePoints, userVehicles)
+ *    - Validate khi user đặt chỗ station (không chọn point cụ thể)
+ *    - Kiểm tra:
+ *      * Authentication
+ *      * User có xe
+ *      * Station có ít nhất 1 point Available
+ * 
+ * Connector compatibility:
+ * - So sánh vehicle.connector_types.name với chargingPoint.connector_type
+ * - Normalize: Lowercase + remove spaces/hyphens
+ * - Exact match: "CCS2" === "CCS2"
+ * - CCS family: "CCS1" compatible với "CCS2"
+ * - AC family: "Type2" compatible với "J1772"
+ * - CHAdeMO: Chỉ khớp CHAdeMO
+ * - Tesla: Chỉ khớp Tesla
+ * 
+ * Status mapping:
+ * - Available: Có thể đặt chỗ ✅
+ * - Occupied: "Đang có xe đang sạc" ❌
+ * - Reserved: "Đã có người đặt chỗ trước" ❌
+ * - AlmostDone: "Đang có xe sạc (sắp xong)" ❌
+ * - Maintenance: "Đang bảo trì" ❌
+ * - Faulted: "Điểm sạc đang gặp lỗi kỹ thuật" ❌
+ * 
+ * Warning scenarios:
+ * 1. Vehicle chưa có connector_type_id:
+ *    - Warning: "Bạn chưa cập nhật loại đầu sạc cho xe. Vui lòng kiểm tra tính tương thích."
+ *    - isValid = true (cho phép đặt)
+ * 
+ * 2. High-power charger (≥150kW) + Small battery (<60kWh):
+ *    - Warning: "Lưu ý: Đây là sạc siêu nhanh (150kW+). Xe của bạn có thể không tận dụng hết công suất này."
+ *    - isValid = true
+ * 
+ * Helper methods:
+ * 
+ * - isStatusAvailable(status): Boolean
+ *   Chỉ return true nếu status === 'Available'
+ * 
+ * - getStatusMessage(status): string
+ *   Trả về message tiếng Việt cho từng status
+ * 
+ * - checkConnectorCompatibility(pointConnector, vehicles): { compatible, message }
+ *   Kiểm tra xe có tương thích với connector không
+ * 
+ * - areConnectorsCompatible(vehicleConnector, pointConnector): boolean
+ *   So sánh 2 connector types
+ * 
+ * - getConnectorDisplayName(connectorType): string
+ *   Format: "CCS2" → "CCS Type 2 (DC Fast)"
+ * 
+ * Dependencies:
+ * - Vehicle interface với connector_types relation
+ * - ChargingPoint interface
+ * - User interface
+ */
+
+/**
  * Booking Validation Service
  * Validates all conditions before allowing a user to book a charging point
  */

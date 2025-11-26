@@ -1,3 +1,63 @@
+/**
+ * ===============================================================
+ * STATION DETAIL VIEW (XEM CHI TIẾT TRẠM SẠC)
+ * ===============================================================
+ * Component hiển thị thông tin chi tiết trạm sạc + interactive layout
+ * 
+ * Chức năng:
+ * - 📍 Hiển thị thông tin trạm: Tên, địa chỉ, giờ mở cửa, số điện thoại
+ * - 🔌 Danh sách charging points với trạng thái real-time
+ * - 🗺️ Interactive station layout (sơ đồ trạm 2D)
+ * - 🔄 Auto-refresh status mỗi 30s
+ * - 👁️ Click charging point → Hiển thị thông tin chi tiết
+ * - 🚗 Kiểm tra tương thích xe của user với connector
+ * - 🎯 Nút "Đặt chỗ" cho từng charging point
+ * - ← Nút "Quay lại" danh sách trạm
+ * 
+ * Props:
+ * - station: Station object (từ StationFinder)
+ * - onBack: Callback quay lại list view
+ * - onBookChargingPoint: Callback đặt chỗ (station, chargingPointId)
+ * 
+ * Data loading:
+ * 1. Load charging points từ backend (getStationChargingPoints API)
+ * 2. Load user vehicles (nếu đã đăng nhập)
+ * 3. Auto-refresh mỗi 30s để cập nhật trạng thái
+ * 
+ * Charging Point Card:
+ * - Tên điểm sạc (Point A1, Point B2, etc.)
+ * - Trạng thái: Available / Occupied / AlmostDone / Offline / Maintenance
+ * - Công suất (kW)
+ * - Loại đầu cắm (Type 2, CCS, CHAdeMO)
+ * - Compatibility badge (nếu xe của user tương thích)
+ * - Nút "Đặt chỗ" (chỉ active nếu Available)
+ * 
+ * Interactive Layout:
+ * - Canvas 2D hiển thị sơ đồ trạm
+ * - Charging points được hiển thị tại vị trí (pos_x, pos_y)
+ * - Facilities: Tường, cửa, bãi đậu xe, toilet, etc.
+ * - Click point → Highlight + scroll to info
+ * - Màu sắc theo status
+ * 
+ * Compatibility check:
+ * - So sánh connector_type_id của point với vehicles của user
+ * - Hiển thị badge "Tương thích với [Plate Number]" nếu match
+ * - Warning nếu không tương thích
+ * 
+ * Status colors:
+ * - Available: Green
+ * - Occupied: Blue
+ * - AlmostDone: Yellow/Orange (cảnh báo idle fee)
+ * - Offline: Gray
+ * - Maintenance: Red
+ * 
+ * Dependencies:
+ * - chargingPointsApi: Lấy charging points từ backend
+ * - vehicleApi: Lấy xe của user
+ * - InteractiveStationLayout: Component render layout 2D
+ * - useAuth: Kiểm tra user authentication
+ */
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';

@@ -1,5 +1,60 @@
-// Reservation Service - Quản lý đặt chỗ và giữ chỗ
+/**
+ * ===============================================================
+ * RESERVATION SERVICE (FRONTEND)
+ * ===============================================================
+ * Service quản lý đặt chỗ (reservation) với auto-expiry và localStorage sync
+ * 
+ * Chức năng:
+ * - 🎫 Tạo reservation mới (15 phút validity)
+ * - ⏰ Auto-expiry: Timer đếm ngược + tự động hủy khi hết hạn
+ * - 📢 Thông báo khi còn 5 phút
+ * - 🔒 Reserved slots tracking: Giảm available slots khi có reservation
+ * - 💾 Persist to localStorage: Sync across tabs
+ * - 🔌 Reserved charging points: Track điểm sạc đã được đặt
+ * - 📡 Backend integration: Call reservationApi để tạo/cancel reservation
+ * 
+ * Flow đặt chỗ:
+ * 1. User click "Đặt chỗ" tại station → createReservation()
+ * 2. Check user chưa có reservation active
+ * 3. Call backend API → Nhận booking_id, expire_time
+ * 4. Tạo local reservation object + Start countdown timer
+ * 5. Giảm available slots của station (trong memory + localStorage)
+ * 6. Mark charging point as reserved
+ * 7. Timer update mỗi 1s → Update remainingTime
+ * 8. Khi còn 5 phút → Trigger notification callback
+ * 9. Khi hết hạn → Auto expire + Release slots + Call expiration callback
+ * 
+ * Reservation states:
+ * - active: Đang giữ chỗ, chưa check-in
+ * - completed: Đã check-in (start charging)
+ * - expired: Hết hạn 15 phút
+ * - cancelled: User hủy
+ * 
+ * localStorage keys:
+ * - ev-reservations: Map<reservationId, Reservation>
+ * - ev-reserved-slots: Map<stationId, count>
+ * - ev-reserved-points: Map<stationId_pointId, userId>
+ * 
+ * Callbacks:
+ * - onNotification: Gọi khi còn 5 phút (hiển thị toast)
+ * - onExpiration: Gọi khi hết hạn (hiển thị modal/toast)
+ * 
+ * Methods:
+ * - createReservation(): Tạo reservation mới
+ * - cancelReservation(): Hủy reservation + Release slots
+ * - completeReservation(): Check-in + Release slots (start charging)
+ * - getActiveReservationByUser(): Lấy reservation đang active của user
+ * - getActualAvailableSlots(): Tính available slots sau khi trừ reserved
+ * - formatRemainingTime(): Format seconds thành "MM:SS"
+ * 
+ * Dependencies:
+ * - reservationApi: Backend API calls
+ * - localStorage: Persist data across page reloads
+ */
+
+// Import Station type từ mockDatabase
 import { Station } from '../data/mockDatabase';
+// Import API client cho backend reservations
 import * as reservationApi from '../api/reservationApi';
 
 export interface Reservation {

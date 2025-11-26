@@ -1,4 +1,62 @@
 /**
+ * ===============================================================
+ * CHARGING POINTS API (FRONTEND)
+ * ===============================================================
+ * API client lấy thông tin charging points từ backend
+ * 
+ * Chức năng:
+ * - 🔌 Lấy danh sách charging points của station
+ * - 🔍 Lấy chi tiết 1 charging point
+ * - ⚡ Filter charging points theo status (Available, Occupied, etc.)
+ * - ➕ Tạo charging point mới (Admin)
+ * - ✏️ Cập nhật charging point (Staff/Admin)
+ * - 🗑️ Xóa charging point (Admin)
+ * 
+ * Interfaces:
+ * - ChargingPoint: Dữ liệu điểm sạc
+ *   * point_id: BIGINT
+ *   * name: Tên điểm (vd: "Point A1")
+ *   * power_kw: Công suất (50, 150, 350 kW)
+ *   * connector_type: Loại đầu cắm (Type 2, CCS, CHAdeMO)
+ *   * status: Available, Occupied, AlmostDone, Offline, Maintenance
+ *   * station_id: UUID của station
+ *   * pos_x, pos_y: Tọa độ trong layout editor
+ * 
+ * - Station: Thông tin station (id, name, address, price)
+ * 
+ * Methods:
+ * 
+ * 1. getStationChargingPoints(stationId)
+ *    - GET /api/charging-points?station_id={stationId}
+ *    - Return array of ChargingPoint
+ *    - Transform: Extract connector_type từ nested connector_types object
+ * 
+ * 2. getChargingPoint(pointId)
+ *    - GET /api/charging-points/{pointId}
+ *    - Return single ChargingPoint
+ * 
+ * 3. getAvailableChargingPoints(stationId)
+ *    - Filter points với status=Available
+ *    - Dùng cho booking/reservation
+ * 
+ * 4. createChargingPoint(data)
+ *    - POST /api/charging-points
+ *    - Admin only
+ * 
+ * 5. updateChargingPoint(pointId, data)
+ *    - PUT /api/charging-points/{pointId}
+ *    - Staff/Admin
+ * 
+ * Data transformation:
+ * - Backend trả connector_types object → Frontend extract connector_type string
+ * - connector_types.name hoặc connector_types.code → connector_type
+ * 
+ * Dependencies:
+ * - Backend API: /api/charging-points
+ * - env: VITE_API_BASE_URL
+ */
+
+/**
  * Charging Points API
  * Fetch real charging points data from database
  */

@@ -1,3 +1,68 @@
+/*
+========================================
+PAYMENT CALLBACK PAGE - Trang Callback Thanh Toán MoMo
+========================================
+
+Mô tả:
+Trang xử lý callback từ MoMo sau khi user thanh toán xong.
+Verify trạng thái thanh toán với backend và hiển thị kết quả cho user.
+
+Chức năng chính:
+• Parse URL params từ MoMo redirect (orderId, resultCode, amount, message)
+• Verify trạng thái thanh toán với backend API
+• Auto-retry nếu backend chưa nhận IPN từ MoMo
+• Hiển thị UI tương ứng: Pending, Completed, Failed, Error, Not Found
+• Countdown 3 giây và auto-redirect về dashboard khi thành công
+• Manual update payment nếu MoMo trả success (resultCode=0) nhưng backend chưa nhận IPN
+
+Flow hoạt động:
+1. User thanh toán trên MoMo app/web
+2. MoMo redirect về: /payment-callback?orderId=xxx&resultCode=0&amount=yyy
+3. Component đọc URL params
+4. Kiểm tra resultCode:
+   - Nếu !== '0' → Failed ngay (không cần verify backend)
+   - Nếu === '0' → Gọi manual-complete API (workaround cho IPN delay)
+5. Gọi GET /api/payments/momo/status/:orderId để verify
+6. Xử lý response:
+   - 404 → Not Found → Auto-retry sau 3s (max 5 lần)
+   - 200 + status === 'Completed' → Success → Countdown 3s → Redirect dashboard
+   - 200 + status === 'Pending' → Pending → Auto-retry sau 3s (max 10 lần)
+   - 200 + status === 'Failed' → Failed
+7. Backend tự động update charging session thành 'Completed' khi payment success
+
+Workaround cho IPN delay:
+- MoMo gửi 2 requests: Redirect (ngay lập tức) + IPN (có thể delay)
+- Nếu resultCode=0 (success) → Manually call /api/payments/momo/manual-complete
+- Endpoint này update payment status → Session status trước khi IPN đến
+- Đợi 1 giây cho DB update xong → Sau đó verify status
+
+State management:
+- status: 'pending' | 'completed' | 'failed' | 'error' | 'not_found'
+- message: Thông báo hiển thị cho user
+- countdown: Đếm ngược 3s trước khi redirect
+- retryCount: Số lần retry verify (tránh infinite loop)
+- debugInfo: Thông tin debug (orderId, response data)
+- manualUpdateDone: Flag đảm bảo chỉ gọi manual-complete 1 lần
+
+Auto-retry logic:
+- Not Found: Retry 5 lần, mỗi lần cách 3s
+- Pending: Retry 10 lần, mỗi lần cách 3s (tổng 30s)
+- Dùng setTimeout thay vì setRetryCount trong useEffect (tránh infinite loop)
+
+UI States:
+- Pending: Loading spinner + "Đang xác minh..."
+- Completed: Green checkmark + Success message + Countdown + Redirect buttons
+- Failed: Red error + "Thanh toán không thành công"
+- Not Found: Yellow warning + "Đang chờ IPN..." + Retry info
+- Error: Red error + "Lỗi khi liên hệ máy chủ"
+
+Dependencies:
+- useSearchParams: Đọc URL query params
+- useNavigate: Redirect về dashboard
+- toast: Hiển thị notification
+- useRef: Track manualUpdateDone flag
+*/
+
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';

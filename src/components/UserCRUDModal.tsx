@@ -1,3 +1,72 @@
+/**
+ * ===============================================================
+ * USER CRUD MODAL (TẠO/SỬA/XEM USER)
+ * ===============================================================
+ * Modal cho Admin quản lý users (Create/Edit/View)
+ * 
+ * Chức năng:
+ * - ➕ Tạo user mới (mode='create')
+ * - ✏️ Chỉnh sửa thông tin user (mode='edit')
+ * - 👁️ Xem thông tin user (mode='view', read-only)
+ * - ✅ Validation form đầy đủ
+ * - 🔒 Phân quyền role: Customer/Staff/Admin
+ * - 🔑 Nhập mật khẩu khi tạo mới
+ * - 📧 Validate email format
+ * - 📞 Validate số điện thoại (10 số)
+ * 
+ * Props:
+ * - open: Boolean điều khiển hiển/ẩn modal
+ * - onClose: Callback đóng modal
+ * - user: User object (null nếu tạo mới)
+ * - mode: 'create' | 'edit' | 'view'
+ * - onSave: Callback sau khi save thành công
+ * 
+ * Form fields:
+ * - name: Tên người dùng (required)
+ * - email: Email (required, unique, format validation)
+ * - phone: Số điện thoại (required, 10 số)
+ * - role: Customer/Staff/Admin (dropdown)
+ * - password: Mật khẩu (required khi create, optional khi edit)
+ * - confirmPassword: Xác nhận mật khẩu (phải khớp)
+ * 
+ * Validation rules:
+ * 1. Tên: Không được để trống
+ * 2. Email: Không được để trống + format email hợp lệ
+ * 3. Phone: 10 chữ số (chỉ cho phép số)
+ * 4. Password (create mode):
+ *    - Không được để trống
+ *    - Ít nhất 6 ký tự
+ *    - confirmPassword phải khớp
+ * 5. Password (edit mode):
+ *    - Optional (không bắt buộc đổi)
+ *    - Nếu nhập: Ít nhất 6 ký tự + confirmPassword khớp
+ * 
+ * Mode behaviors:
+ * - create: Tất cả fields editable, password required
+ * - edit: Tất cả fields editable, password optional
+ * - view: Tất cả fields read-only, không hiển password
+ * 
+ * Submit flow:
+ * 1. Validate form
+ * 2. Nếu mode=create:
+ *    - Gọi usersApi.createUser()
+ *    - Toast success: "Tạo user thành công"
+ * 3. Nếu mode=edit:
+ *    - Gọi usersApi.updateUser()
+ *    - Toast success: "Cập nhật thành công"
+ * 4. Gọi onSave() để refresh danh sách
+ * 5. Đóng modal
+ * 
+ * Error handling:
+ * - Hiển thị lỗi dưới mỗi field
+ * - Toast error nếu API call thất bại
+ * - Email duplicate: "Email đã tồn tại"
+ * 
+ * Dependencies:
+ * - usersApi: CRUD operations
+ * - toast (sonner): Thông báo
+ */
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';

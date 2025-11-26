@@ -1,3 +1,52 @@
+/**
+ * ===============================================================
+ * USERS API SERVICE (FRONTEND)
+ * ===============================================================
+ * API client quản lý users (CRUD operations)
+ * 
+ * Chức năng:
+ * - 📋 GET /api/users - Lấy danh sách users (pagination, search, filter)
+ * - 🔍 GET /api/users/:id - Lấy chi tiết 1 user
+ * - ➕ POST /api/users - Tạo user mới
+ * - ✏️ PUT /api/users/:id - Cập nhật user
+ * - 🗑️ DELETE /api/users/:id - Xóa user
+ * 
+ * User Interface:
+ * - id: User ID (string)
+ * - name: Tên user
+ * - email: Email (unique)
+ * - phone: Số điện thoại
+ * - role: 'customer' | 'staff' | 'admin'
+ * - memberSince: Ngày đăng ký
+ * - totalSessions: Tổng số sessions
+ * - totalSpent: Tổng chi tiêu
+ * - status: 'active' | 'inactive' | 'suspended'
+ * - favoriteStations: Danh sách station yêu thích
+ * - vehicleInfo: Thông tin xe (make, model, year, battery)
+ * 
+ * Query params (GET /users):
+ * - page: Trang hiện tại (pagination)
+ * - limit: Số users mỗi trang (default 10)
+ * - role: Filter theo role
+ * - search: Tìm kiếm theo name/email
+ * 
+ * Response:
+ * - users: Array of User objects
+ * - total: Tổng số users
+ * - page: Current page number
+ * - limit: Items per page
+ * 
+ * Data transformation:
+ * - Backend trả user_id → Frontend transform thành id
+ * - Backend trả username → Frontend transform thành name
+ * - Normalize status: 'Active' → 'active'
+ * - Default values cho missing fields
+ * 
+ * Dependencies:
+ * - Backend API: /api/users endpoints
+ * - env: VITE_API_URL
+ */
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface User {

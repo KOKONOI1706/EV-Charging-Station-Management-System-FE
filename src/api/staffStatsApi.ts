@@ -1,4 +1,64 @@
                                                                                                                                                             /**
+ * ===============================================================
+ * STAFF STATISTICS API (FRONTEND)
+ * ===============================================================
+ * API client lấy thống kê cho Staff Dashboard
+ * 
+ * Chức năng:
+ * - 📊 Lấy metrics của station (sessions, revenue, utilization)
+ * - 📈 Lấy analytics data cho charts (daily, hourly, weekly)
+ * - 📍 Filter theo station ID (hoặc 'all' cho tất cả stations của staff)
+ * - 📅 Filter theo date range (startDate, endDate)
+ * 
+ * Interfaces:
+ * 
+ * 1. StaffMetrics:
+ *    - todaysSessions: Số sessions hôm nay
+ *    - todaysRevenue: Doanh thu hôm nay (VND)
+ *    - currentUtilization: Tỉ lệ sử dụng hiện tại (%)
+ *    - averageSessionDuration: Thời gian session trung bình (phút)
+ *    - customerSatisfaction: Đánh giá khách hàng (1-5 sao)
+ *    - maintenanceAlerts: Số cảnh báo bảo trì
+ *    - percentageChanges: So sánh với hôm qua (% tăng/giảm)
+ * 
+ * 2. StaffAnalytics:
+ *    - dailyUsage: Sử dụng theo ngày (7-30 ngày gần đây)
+ *      * Array<{ date, sessions, revenue }>
+ *    - hourlyPattern: Pattern theo giờ trong ngày (0-23h)
+ *      * Array<{ hour, sessions, utilization }>
+ *    - weeklyTrend: Xu hướng tuần (7 ngày)
+ *      * Array<{ day, sessions, revenue }>
+ *    - recentSessions: Sessions gần đây nhất
+ *      * Array<{ id, customer, duration, amount, status }>
+ * 
+ * Methods:
+ * 
+ * 1. getStaffMetrics(stationId?, startDate?, endDate?)
+ *    - GET /api/staff-stats/metrics
+ *    - stationId: UUID của station hoặc 'all'
+ *    - startDate/endDate: YYYY-MM-DD format
+ *    - Mặc định: 7 ngày gần đây
+ * 
+ * 2. getStaffAnalytics(stationId?, startDate?, endDate?)
+ *    - GET /api/staff-stats/analytics
+ *    - Return data cho charts (daily, hourly, weekly)
+ * 
+ * Query params:
+ * - stationId: Filter theo station (optional, default 'all')
+ * - startDate: Ngày bắt đầu YYYY-MM-DD (optional)
+ * - endDate: Ngày kết thúc YYYY-MM-DD (optional)
+ * 
+ * Error handling:
+ * - Return default values (0) nếu API call thất bại
+ * - Log errors ra console
+ * - Không throw exception để không crash UI
+ * 
+ * Dependencies:
+ * - Backend API: /staff-stats/metrics, /staff-stats/analytics
+ * - env: VITE_API_URL
+ */
+
+/**
  * Staff Statistics API - Using Backend API
  * Backend will handle Supabase queries with service role
  */

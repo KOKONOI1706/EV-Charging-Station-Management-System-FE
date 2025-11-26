@@ -1,4 +1,66 @@
 
+/*
+========================================
+VITE CONFIG - Cấu hình Vite Build Tool
+========================================
+
+Mô tả:
+File config cho Vite (build tool thay thế Create React App).
+Cấu hình plugins, path aliases, build settings, dev server.
+
+Chức năng chính:
+• Plugin: React với SWC (fast refresh, JSX transform)
+• Path aliases: Resolve dependency version conflicts
+• Build settings: Target ESNext, output to 'build/'
+• Dev server: Port 3000, auto-open browser
+
+Plugins:
+- @vitejs/plugin-react-swc: Fast Refresh + SWC compiler (nhanh hơn Babel)
+
+Path Aliases:
+Resolve conflicts giữa các version của dependencies.
+Ví dụ: 'vaul@1.1.2' → 'vaul' (dùng version latest)
+
+Alias categories:
+1. UI Libraries:
+   - vaul, sonner, recharts: UI components
+   - react-resizable-panels, react-hook-form, react-day-picker
+   
+2. Radix UI Components (shadcn/ui base):
+   - @radix-ui/react-*: Tooltip, Toggle, Tabs, Switch, Slider...
+   - 30+ components từ Radix UI primitives
+   
+3. Styling & Utilities:
+   - next-themes: Dark mode support
+   - lucide-react: Icon library
+   - class-variance-authority: CSS variants
+   - cmdk: Command menu
+   
+4. Other:
+   - input-otp: OTP input component
+   - embla-carousel-react: Carousel
+   - @jsr/supabase__supabase-js: Supabase client
+   
+5. '@' alias: Shortcut to './src' directory
+   - Import example: import { Button } from '@/components/ui/button'
+
+Build Settings:
+- target: 'esnext' → Sử dụng modern JavaScript features
+- outDir: 'build' → Output folder (thay vì 'dist')
+
+Dev Server:
+- port: 3000 → http://localhost:3000
+- open: true → Tự động mở browser khi start
+
+Extensions:
+- resolve.extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
+- Auto-resolve imports không cần viết extension
+
+Dependencies:
+- vite: Build tool & dev server
+- @vitejs/plugin-react-swc: React plugin với SWC
+*/
+
   import { defineConfig } from 'vite';
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';

@@ -1,3 +1,48 @@
+/**
+ * ===============================================================
+ * CHARGING HISTORY COMPONENT
+ * ===============================================================
+ * Hiển thị lịch sử các phiên sạc đã hoàn thành của user
+ * 
+ * Chức năng:
+ * - 📃 Hiển thị danh sách sessions status=Completed
+ * - 📊 Thống kê: Energy consumed, chi phí, thời gian
+ * - 📄 Xem hóa đơn (invoice) cho mỗi session
+ * - 🖨️ In hóa đơn (print invoice)
+ * - 📥 Tải hóa đơn (download PDF - TODO)
+ * - 📍 Hiển thị station name, address
+ * - ⏱️ Thời gian sạc (start_time → end_time)
+ * 
+ * Props:
+ * - limit: Số sessions hiển thị (default 10)
+ * 
+ * Data fields:
+ * - session_id: ID phiên sạc
+ * - energy_consumed_kwh: Số kWh đã sạc
+ * - cost: Tổng chi phí (VND)
+ * - idle_fee: Phí idle (nếu có)
+ * - start_time, end_time: Thời gian bắt đầu/kết thúc
+ * - charging_points: Thông tin điểm sạc + station
+ * - vehicles: Thông tin xe (biển số)
+ * - invoice: Hóa đơn (invoice_id, total_amount, status)
+ * 
+ * Invoice Modal:
+ * - Hiển thị chi tiết hóa đơn
+ * - Thông tin trạm, thời gian, energy, giá
+ * - Nút Print và Download
+ * - Auto fetch/create invoice từ backend
+ * 
+ * Status colors:
+ * - Completed: Green
+ * - Active: Blue
+ * - Error: Red
+ * 
+ * Dependencies:
+ * - chargingSessionApi: Lấy sessions và invoices
+ * - useAuth: Lấy current user
+ * - Dialog: Modal hiển thị invoice
+ */
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';

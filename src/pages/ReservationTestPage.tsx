@@ -1,3 +1,67 @@
+/*
+========================================
+RESERVATION TEST PAGE - Trang Test Đặt Chỗ (DEV ONLY)
+========================================
+
+⚠️ CHỈ DÙNG CHO DEVELOPMENT - KHÔNG DÙNG TRONG PRODUCTION!
+
+Mô tả:
+Trang test đầy đủ tính năng đặt chỗ và giữ chỗ trạm sạc.
+Hỗ trợ dev team test reservation flow với timer 15 phút, notifications, và auto-expiry.
+
+Chức năng chính:
+• Hiển thị bản đồ chọn trạm sạc (StationMapView)
+• Đặt chỗ trạm (15 phút giữ chỗ)
+• Timer đếm ngược thời gian còn lại
+• Thông báo sau 10 phút (còn 5 phút)
+• Auto-expire sau 15 phút nếu không check-in
+• Browser notifications (nếu được phép)
+• Lịch sử notifications
+• Check-in khi đã đến trạm
+
+Flow hoạt động:
+1. User chọn trạm trên bản đồ → Click "Đặt chỗ"
+2. Modal xác nhận → Confirm → Tạo reservation (15 min)
+3. Timer bắt đầu đếm ngược từ 15:00
+4. Sau 10 phút → Notification "Còn 5 phút!"
+5. User có thể:
+   - "Đã đến trạm" → Complete reservation → Start charging
+   - "Hủy" → Cancel reservation
+   - Không làm gì → Auto-expire sau 15 phút
+6. Nếu expired → Hiển thị "Expired" message → Phải đặt lại
+
+State management:
+- activeReservation: Reservation hiện tại (hoặc null)
+- selectedStation: Station đang chọn để đặt
+- showConfirmModal: Hiển thị modal xác nhận
+- notifications: Mảng thông báo
+- showExpired: Hiển thị UI expired
+- expiredStationName: Tên trạm đã expired
+
+Reservation Service:
+- getActiveReservationByUser(userId): Check reservation hiện tại
+- onNotification(callback): Subscribe thông báo 10 phút
+- onExpiration(callback): Subscribe sự kiện hết hạn
+- cancelReservation(id): Hủy đặt chỗ
+- completeReservation(id): Check-in thành công
+
+Browser Notifications:
+- Request permission khi mount
+- Show desktop notification sau 10 phút
+- Fallback to UI notification nếu không được phép
+
+Production guard:
+- Kiểm tra import.meta.env.PROD
+- Nếu production → Hiển thị warning page → Redirect về home
+
+Dependencies:
+- reservationService: Service quản lý đặt chỗ
+- ReservationTimer: Component timer đếm ngược
+- ReservationConfirmModal: Modal xác nhận đặt chỗ
+- StationMapView: Bản đồ trạm sạc
+- useAuth: Lấy thông tin user hiện tại
+*/
+
 import { useState, useEffect } from 'react';
 import { Station } from '../data/mockDatabase';
 import { reservationService, Reservation, ReservationResult } from '../services/reservationService';

@@ -1,4 +1,39 @@
 /**
+ * ===============================================================
+ * USER STATISTICS API SERVICE (FRONTEND)
+ * ===============================================================
+ * Service lấy thống kê user từ charging sessions
+ * 
+ * Chức năng:
+ * - 📊 Tính toán statistics từ charging sessions data
+ * - 📅 Total sessions, sessions this month
+ * - 💰 Total spent, average rating
+ * - ⚡ Total energy consumed (kWh)
+ * - 🔋 Active sessions count
+ * - 📜 Recent sessions history
+ * - 🎯 Active session hiện tại
+ * 
+ * Statistics tính toán:
+ * 1. totalSessions: Tổng số sessions đã hoàn thành
+ * 2. sessionsThisMonth: Sessions trong tháng hiện tại
+ * 3. totalSpent: Tổng tiền đã chi (sum của cost)
+ * 4. totalEnergyConsumed: Tổng kWh đã sạc (sum của energy_consumed_kwh)
+ * 5. activeSessions: Số sessions đang active (status='Active')
+ * 6. averageRating: Rating trung bình (TODO: fetch từ feedbacks table)
+ * 
+ * Methods:
+ * - getUserStats(userId): Lấy tổng hợp statistics
+ * - getRecentSessions(userId, limit): Lấy N sessions gần nhất
+ * - getActiveSession(userId): Lấy session đang active
+ * - formatCurrency(amount): Format VND currency
+ * - formatEnergy(kwh): Format "XX.XX kWh"
+ * 
+ * Dependencies:
+ * - Backend API: /charging-sessions
+ * - Date calculation: Filter sessions by month/year
+ */
+
+/**
  * User Statistics API Service
  * Fetches real user statistics and charging session data
  */

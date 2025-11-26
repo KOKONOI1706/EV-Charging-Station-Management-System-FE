@@ -1,7 +1,7 @@
 /**
- * ========================================
+ * ===============================================================
  * HOME PAGE
- * ========================================
+ * ===============================================================
  * Trang chủ của ứng dụng - điểm đến đầu tiên của người dùng
  * 
  * Cấu trúc:
@@ -11,21 +11,33 @@
  * 4. Footer: Thông tin liên hệ và links
  * 
  * Tính năng:
- * - Hỗ trợ cả user đã đăng nhập và guest
- * - Tự động tạo guest user ID cho người chưa đăng nhập
- * - Smooth scroll đến Station Finder khi click "Tìm trạm sạc"
- * - Navigation đến các trang khác: pricing, support, dashboard
+ * - 🔐 Hỗ trợ cả user đã đăng nhập và guest
+ * - 👤 Tự động tạo guest user ID cho người chưa đăng nhập
+ * - 📜 Smooth scroll đến Station Finder khi click "Tìm trạm sạc"
+ * - 🧭 Navigation đến các trang khác: pricing, support, dashboard
  * 
  * Guest User:
  * - Guest user ID được tạo ngẫu nhiên và lưu trong localStorage
  * - Format: "guest-{timestamp}-{random}"
  * - Cho phép guest tìm trạm và xem thông tin (không đặt chỗ)
+ * - localStorage key: 'guest-user-id'
  * 
- * Props navigation:
- * - onAuthClick: Mở trang đăng nhập nếu chưa auth
- * - onNavigate: Điều hướng đến các trang khác
- * - onFindStations: Scroll đến section tìm trạm
- * - onLearnMore: Điều hướng đến trang pricing
+ * Navigation handlers:
+ * - handleAuthClick: Mở trang /auth nếu chưa đăng nhập
+ * - handleFindStations: Smooth scroll đến #station-finder
+ * - handleLearnMore: Điều hướng đến /pricing
+ * - onNavigate: Routing đến pricing/support/dashboard/home
+ * 
+ * Props cho components:
+ * - Header: isAuthenticated, userName, currentView='home'
+ * - Hero: onFindStations, onLearnMore (CTA callbacks)
+ * - StationFinderWithReservation: userId (authenticated user ID hoặc guestUserId)
+ * - Footer: onNavigate callback
+ * 
+ * Dependencies:
+ * - react-router-dom: Navigation
+ * - AuthContext: Kiểm tra authentication state
+ * - localStorage: Lưu guest user ID
  */
 
 // Import React Router

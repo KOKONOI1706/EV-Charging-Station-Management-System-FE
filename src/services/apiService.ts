@@ -1,3 +1,55 @@
+/**
+ * ===============================================================
+ * API SERVICE (DỊCH VỤ HTTP CLIENT)
+ * ===============================================================
+ * HTTP client wrapper để gọi RESTful API backend
+ * 
+ * Mô tả:
+ * Singleton service cung cấp các methods HTTP (GET, POST, PUT, DELETE) với:
+ * - Tự động thêm base URL
+ * - Tự động parse JSON response
+ * - Tự động thêm headers (Content-Type)
+ * - Centralized error handling
+ * 
+ * Chức năng chính:
+ * - 🌐 get<T>(endpoint): GET request
+ * - 📤 post<T>(endpoint, data): POST request
+ * - ✏️ put<T>(endpoint, data): PUT request
+ * - 🗑️ delete<T>(endpoint): DELETE request
+ * - ❤️ healthCheck(): Kiểm tra backend health
+ * 
+ * Configuration:
+ * - Base URL: VITE_API_URL environment variable hoặc http://localhost:5000/api
+ * - Headers: { 'Content-Type': 'application/json' }
+ * - Response format: JSON
+ * 
+ * Generic Types Exported:
+ * - ApiResponse<T>: { success, data, message?, error? }
+ * - Station: Trạm sạc interface
+ * - ChargingPoint: Điểm sạc interface
+ * - User: User interface
+ * - Booking: Booking interface
+ * 
+ * Error Handling:
+ * - Throw Error nếu HTTP status không OK (!response.ok)
+ * - Log error ra console
+ * - Caller phải catch error
+ * 
+ * Usage:
+ * ```typescript
+ * import { apiService } from './apiService';
+ * 
+ * const response = await apiService.get<ApiResponse<Station[]>>('/stations');
+ * if (response.success) {
+ *   const stations = response.data;
+ * }
+ * ```
+ * 
+ * Dependencies:
+ * - Vite environment variables (import.meta.env)
+ * - Fetch API (browser native)
+ */
+
 // API configuration and utilities
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
 

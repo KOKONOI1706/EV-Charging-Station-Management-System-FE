@@ -1,3 +1,75 @@
+/**
+ * ===============================================================
+ * ADMIN STATISTICS API (FRONTEND)
+ * ===============================================================
+ * API client lấy thống kê toàn hệ thống cho Admin Dashboard
+ * 
+ * Chức năng:
+ * - 📊 Lấy tất cả stats trong 1 API call (getDashboardStats)
+ * - 💰 Revenue statistics (today, week, month, YTD)
+ * - 🏆 Top performing stations
+ * - ⚠️ System alerts (warnings, errors)
+ * - 📝 Recent activities log
+ * - 👥 Total users count
+ * - 📍 Total stations count
+ * - ⚡ Total sessions count
+ * 
+ * Interfaces:
+ * 
+ * 1. RevenueStats:
+ *    - today: Doanh thu hôm nay (VND)
+ *    - thisWeek: Doanh thu tuần này
+ *    - thisMonth: Doanh thu tháng này
+ *    - yearToDate: Doanh thu từ đầu năm
+ * 
+ * 2. TopStation:
+ *    - id, name, location: Thông tin trạm
+ *    - revenue: Doanh thu
+ *    - period: Thời gian ("This Month", "This Week")
+ * 
+ * 3. SystemAlert:
+ *    - type: 'warning' | 'info' | 'error'
+ *    - title: Tiêu đề alert
+ *    - message: Nội dung
+ *    - timestamp: Thời gian
+ * 
+ * 4. RecentActivity:
+ *    - user: Tên user (hoặc userName)
+ *    - action: Hành động ("Completed session", "Created station")
+ *    - timestamp: Thời gian
+ *    - type: 'success' | 'info' | 'warning'
+ * 
+ * 5. AdminDashboardStats:
+ *    - revenue: RevenueStats
+ *    - topStations: TopStation[]
+ *    - systemAlerts: SystemAlert[]
+ *    - recentActivities: RecentActivity[]
+ *    - totalUsers, totalStations, totalSessions: Counters
+ * 
+ * Methods:
+ * 
+ * 1. getDashboardStats()
+ *    - GET /api/admin/stats
+ *    - Return tất cả stats trong 1 response
+ *    - Cache-friendly
+ * 
+ * 2. getRevenueStats()
+ *    - GET /api/admin/revenue
+ *    - Chỉ lấy revenue data
+ * 
+ * 3. getTopStations(limit = 4)
+ *    - GET /api/admin/top-stations?limit={limit}
+ *    - Top stations theo revenue
+ * 
+ * Data transformation:
+ * - Backend có thể trả userName hoặc user
+ * - Frontend normalize thành user field
+ * 
+ * Dependencies:
+ * - Backend API: /api/admin/stats, /admin/revenue, /admin/top-stations
+ * - env: VITE_API_URL
+ */
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface RevenueStats {

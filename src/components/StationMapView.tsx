@@ -85,10 +85,39 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [isLoading, setIsLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
 
   useEffect(() => {
     loadStations();
+    loadUserLocation();
   }, []);
+
+  const loadUserLocation = async () => {
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+            console.log('📍 Got user location:', position.coords);
+          },
+          (error) => {
+            console.log('📍 Could not get user location:', error.message);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      }
+    } catch (error) {
+      console.log('📍 Geolocation not supported');
+    }
+  };
 
   const loadStations = async () => {
     try {
@@ -113,10 +142,17 @@ export function StationMapView({ onStationSelect, onViewDetails }: StationMapVie
       <div className="rounded-lg overflow-hidden" style={{ height: '24rem' }}>
         <LeafletMap
           stations={filteredStations}
-          center={defaultCenter}
+          center={userLocation ? [userLocation.latitude, userLocation.longitude] : defaultCenter}
           zoom={defaultZoom}
-          onStationSelect={onStationSelect}
+          onStationSelect={(station) => {
+            setSelectedStation(station);
+            onStationSelect(station);
+          }}
           onViewDetails={onViewDetails}
+          userLocation={userLocation}
+          showUserLocation={true}
+          selectedStation={selectedStation}
+          showRoute={true}
         />
       </div>
 

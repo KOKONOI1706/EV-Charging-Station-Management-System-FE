@@ -499,6 +499,43 @@ export async function updateStation(id: string, stationData: any): Promise<Stati
   }
 }
 
+/**
+ * Fetch stations with location-based filtering
+ * Backend calculates distance and filters by radius
+ */
+export async function fetchStationsWithLocation(
+  latitude: number,
+  longitude: number,
+  radiusKm: number = 10
+): Promise<Station[]> {
+  try {
+    const response = await fetch(
+      `${API_URL}/stations?lat=${latitude}&lng=${longitude}&radius=${radiusKm}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch stations');
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.error('Error fetching stations with location:', error);
+    throw error;
+  }
+}
+
 // Delete a station
 export async function deleteStation(id: string): Promise<void> {
   try {

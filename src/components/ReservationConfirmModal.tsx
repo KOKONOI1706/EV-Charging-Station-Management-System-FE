@@ -82,6 +82,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { vehicleApi, Vehicle } from '../api/vehicleApi';
 import { getStationChargingPoints, ChargingPoint } from '../api/chargingPointsApi';
 import { BookingValidationService } from '../services/bookingValidationService';
+import { StationMap } from './StationMap';
+import { locationService } from '../services/locationService';
 
 interface ReservationConfirmModalProps {
   station: Station;
@@ -104,11 +106,24 @@ export function ReservationConfirmModal({
   const [warnings, setWarnings] = useState<string[]>([]);
   const [userVehicles, setUserVehicles] = useState<Vehicle[]>([]);
   const [isValidating, setIsValidating] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showMap, setShowMap] = useState(true);
 
   // Load data for validation
   useEffect(() => {
     loadData();
+    loadUserLocation();
   }, []);
+
+  const loadUserLocation = async () => {
+    try {
+      const location = await locationService.getCurrentLocation();
+      setUserLocation(location);
+    } catch (error) {
+      console.log('📍 Could not get user location:', error);
+      // Not critical, just hide user marker
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -284,16 +299,54 @@ export function ReservationConfirmModal({
 
           {/* Station Info */}
           <div className="space-y-3">
-            {/* Station Image */}
+            {/* Map or Image Toggle */}
+            <div className="flex justify-end mb-2">
+              <button
+                onClick={() => setShowMap(!showMap)}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                {showMap ? '🖼️ Xem ảnh' : '🗺️ Xem bản đồ'}
+              </button>
+            </div>
+
+            {/* Station Map or Image */}
             <div className="w-full h-48 rounded-lg overflow-hidden">
-              <img
-                src={station.image}
-                alt={station.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Charging+Station';
-                }}
-              />
+              {showMap ? (
+                <StationMap
+                  stations={[{
+                    id: station.id,
+                    name: station.name,
+                    lat: station.lat,
+                    lng: station.lng,
+                    address: station.address,
+                    price_per_kwh: parseInt(station.price.replace(/[^\d]/g, '')),
+                    available_points: station.available,
+                  }]}
+                  selectedStation={{
+                    id: station.id,
+                    name: station.name,
+                    lat: station.lat,
+                    lng: station.lng,
+                    address: station.address,
+                    price_per_kwh: parseInt(station.price.replace(/[^\d]/g, '')),
+                    available_points: station.available,
+                  }}
+                  userLocation={userLocation}
+                  height="192px"
+                  zoom={15}
+                  showUserLocation={!!userLocation}
+                  showRoute={true}
+                />
+              ) : (
+                <img
+                  src={station.image}
+                  alt={station.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Charging+Station';
+                  }}
+                />
+              )}
             </div>
 
             <div>

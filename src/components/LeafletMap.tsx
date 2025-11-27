@@ -67,11 +67,12 @@
  * - getStationStatus: Util tính status color
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Station } from '../data/mockDatabase';
 import { getStationStatus } from '../utils/stationStatus';
+import { routingService, RouteResult } from '../services/routingService';
 
 // Fix for default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -87,12 +88,20 @@ interface LeafletMapProps {
   zoom: number;
   onStationSelect: (station: Station) => void;
   onViewDetails: (station: Station) => void;
+  userLocation?: { latitude: number; longitude: number } | null;
+  showUserLocation?: boolean;
+  selectedStation?: Station | null;
+  showRoute?: boolean;
 }
 
-export function LeafletMap({ stations, center, zoom, onStationSelect, onViewDetails }: LeafletMapProps) {
+export function LeafletMap({ stations, center, zoom, onStationSelect, onViewDetails, userLocation, showUserLocation = true, selectedStation, showRoute = true }: LeafletMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  const routeLayerRef = useRef<L.Polyline | null>(null);
+  const routeInfoRef = useRef<L.Control | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteResult | null>(null);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -234,7 +243,179 @@ export function LeafletMap({ stations, center, zoom, onStationSelect, onViewDeta
       marker.bindPopup(popupContent);
       markersRef.current.push(marker);
     });
-  }, [stations, onStationSelect, onViewDetails]);
+
+    // Add user location marker
+    if (showUserLocation && userLocation && mapRef.current) {
+      // Remove old user marker if exists
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+      }
+
+      const userIcon = L.divIcon({
+        className: 'user-location-marker',
+        html: `
+          <div style="
+            background-color: #3b82f6;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            animation: pulse 2s infinite;
+          "></div>
+          <style>
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.2); opacity: 0.8; }
+            }
+          </style>
+        `,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
+
+      const userMarker = L.marker(
+        [userLocation.latitude, userLocation.longitude],
+        { icon: userIcon }
+      ).addTo(mapRef.current);
+
+      const userPopupContent = `
+        <div class="text-sm">
+          <p class="font-semibold text-blue-600">📍 Vị trí của bạn</p>
+          <p class="text-xs text-gray-600 mt-1">
+            ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}
+          </p>
+        </div>
+      `;
+
+      userMarker.bindPopup(userPopupContent);
+      userMarkerRef.current = userMarker;
+    }
+  }, [stations, onStationSelect, onViewDetails, userLocation, showUserLocation]);
+
+  // Calculate and display route
+  useEffect(() => {
+    if (!mapRef.current || !showRoute || !selectedStation || !userLocation) {
+      // Clear route if conditions not met
+      if (routeLayerRef.current) {
+        routeLayerRef.current.remove();
+        routeLayerRef.current = null;
+      }
+      if (routeInfoRef.current) {
+        routeInfoRef.current.remove();
+        routeInfoRef.current = null;
+      }
+      setRouteInfo(null);
+      return;
+    }
+
+    const calculateRoute = async () => {
+      try {
+        // Get station coordinates
+        let stationLat: number, stationLng: number;
+        if (typeof selectedStation.latitude === 'function') {
+          stationLat = selectedStation.latitude();
+        } else if (typeof selectedStation.latitude === 'number') {
+          stationLat = selectedStation.latitude;
+        } else {
+          stationLat = selectedStation.lat;
+        }
+
+        if (typeof selectedStation.longitude === 'function') {
+          stationLng = selectedStation.longitude();
+        } else if (typeof selectedStation.longitude === 'number') {
+          stationLng = selectedStation.longitude;
+        } else {
+          stationLng = selectedStation.lng;
+        }
+
+        console.log('🗺️ Calculating route from user to station...');
+        const route = await routingService.getRoute(
+          { lat: userLocation.latitude, lng: userLocation.longitude },
+          { lat: stationLat, lng: stationLng },
+          'car'
+        );
+
+        if (!route || !mapRef.current) return;
+
+        setRouteInfo(route);
+
+        // Clear old route
+        if (routeLayerRef.current) {
+          routeLayerRef.current.remove();
+        }
+
+        // Draw route polyline
+        const routeLine = L.polyline(
+          route.geometry.map(p => [p.lat, p.lng]),
+          {
+            color: '#3b82f6',
+            weight: 4,
+            opacity: 0.7,
+            smoothFactor: 1,
+          }
+        ).addTo(mapRef.current);
+
+        routeLayerRef.current = routeLine;
+
+        // Fit map to show entire route
+        mapRef.current.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+
+        // Add route info control
+        if (routeInfoRef.current) {
+          routeInfoRef.current.remove();
+        }
+
+        const RouteInfoControl = L.Control.extend({
+          onAdd: function() {
+            const div = L.DomUtil.create('div', 'route-info-control');
+            div.style.cssText = `
+              background: white;
+              padding: 12px 16px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+              font-size: 14px;
+              min-width: 200px;
+            `;
+            
+            const eta = routingService.getETA(route.durationMin);
+            
+            div.innerHTML = `
+              <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 18px;">🚗</span>
+                <span>Chỉ đường đến trạm</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #6b7280;">📏 Khoảng cách:</span>
+                  <span style="font-weight: 600; color: #3b82f6;">${route.distanceText}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #6b7280;">⏱️ Thời gian:</span>
+                  <span style="font-weight: 600; color: #3b82f6;">${route.durationText}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #6b7280;">🕐 Đến lúc:</span>
+                  <span style="font-weight: 600; color: #10b981;">${eta}</span>
+                </div>
+              </div>
+            `;
+            return div;
+          },
+        });
+
+        const control = new RouteInfoControl({ position: 'topright' });
+        control.addTo(mapRef.current);
+        routeInfoRef.current = control;
+
+        console.log('✅ Route displayed:', route);
+      } catch (error) {
+        console.error('❌ Error calculating route:', error);
+      }
+    };
+
+    calculateRoute();
+  }, [selectedStation, userLocation, showRoute]);
 
   return (
     <div 

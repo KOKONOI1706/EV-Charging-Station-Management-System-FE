@@ -1,66 +1,63 @@
-# EV Charging Station - Frontend
+# EV Charging Station Management System — Frontend
 
-React + TypeScript + Vite frontend application for the EV Charging Station System.
+Frontend application for an EV charging station management platform. The application provides customer-facing station discovery and booking flows together with role-based management and analytics interfaces.
+
+## Role in the Project
+
+I contributed across the project as a team leader and full-stack developer, including system design, business rules, backend, database, and frontend implementation.
+
+## Key Features
+
+- **Role-based access** — Customer, Staff, and Admin experiences.
+- **Station Finder** — Browse and search charging stations.
+- **Booking Management** — User-facing reservation workflows and management interfaces.
+- **Analytics Dashboards** — Operational and business data visualization.
+- **Responsive UI** — Designed for different screen sizes.
+- **Multi-language Support** — Localized application interface.
 
 ## Tech Stack
 
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling
-- **Radix UI** - UI components
-- **Lucide React** - Icons
-- **React Router** - Navigation
-- **Sonner** - Toast notifications
-
-## Features
-
-- 🔐 Role-based authentication (Customer, Staff, Admin)
-- 🗺️ Interactive station finder
-- 📱 Responsive design
-- 🌐 Multi-language support
-- 📊 Analytics dashboards
-- ⚡ Real-time booking management
-
-## Getting Started
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Start development server:
-```bash
-npm run dev
-```
-
-3. Build for production:
-```bash
-npm run build
-```
-
-## Environment Setup
-
-The frontend expects the backend API to be running on `http://localhost:5000`.
-
-To change this, update the API base URL in your environment configuration.
+- **React 18**
+- **TypeScript**
+- **Vite**
+- **Tailwind CSS**
+- **Radix UI**
+- **React Router**
+- **Lucide React**
+- **Sonner**
 
 ## Project Structure
 
-```
+```text
 src/
-├── components/       # Reusable React components
-│   ├── ui/          # Base UI components
+├── components/       # Reusable UI components
+│   ├── ui/           # Base UI components
 │   └── ...
-├── data/            # Mock data and services
-├── hooks/           # Custom React hooks
-├── contexts/        # React contexts
-├── styles/          # Global styles
-└── utils/           # Utility functions
+├── data/             # Data and service definitions
+├── hooks/            # Custom React hooks
+├── contexts/         # Shared application contexts
+├── styles/           # Global styles
+└── utils/            # Utility functions
 ```
 
-## Available Scripts
+## Getting Started
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
+```bash
+npm install
+npm run dev
+```
+
+For a production build:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Backend Integration
+
+The frontend consumes the project's backend REST API. Configure the API base URL in the local environment configuration before running the application.
+
+## Project Focus
+
+The main focus was translating EV charging business workflows into a usable web application while keeping the frontend aligned with authentication, station, reservation, payment, and management flows implemented across the system.
